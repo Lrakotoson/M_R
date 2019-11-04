@@ -1,0 +1,79 @@
+---
+title: "TD2 Objets"
+output: html_notebook
+---
+
+# Matrices
+## Exercice 3
+Créez une matrice de taille 6×5 en faisant le produit entre les vecteurs 1:5 et 7:12. Vérifiez que la dimension est la bonne avec dim.
+```{r}
+(M = 1:5 %*% t(7:12))
+```
+
+Sélectionnez l’élément de la ligne 3 et de la colonne 5.
+```{r}
+M[3,5]
+```
+
+Sélectionnez la colonne 3.
+```{r}
+M[,3]
+```
+
+Retirez la deuxième ligne.
+```{r}
+(M <- M[-2,])
+```
+
+Remplacez les valeurs de la ligne 4 par des zéros.
+```{r}
+M[4,] <- rep(0, ncol(M))
+M
+```
+
+Calculez les moyennes de valeurs sur chaque ligne (on peut utiliser *apply()*).
+```{r}
+apply(M, 1, mean)
+```
+
+Remplacez les valeurs impaires par des **NA**.
+```{r}
+M[ M%%2 != 0] <- NA
+M
+```
+
+
+# Arrays
+Les arrays dans R représente une généralisation des matrices à un nombre plus élevé de dimension.Nous passerons rapidement sur ces objets car leur manipulation est peu différente de celle des matrices.
+```{r}
+(A = array(1:24,dim=c(2,3,4)))
+```
+```{r}
+dim(A)
+```
+
+Transposition en $4 \times 3 \times 2$ avec **aperm()**.
+```{r}
+aperm(A)
+```
+
+
+# Listes
+Les listes sont des objets très utiles en R car il permettent de réunir dans un seul objet des objets declasses et/ou de longueurs différentes.
+```{r}
+l = list(nom="Martin", prenoms=c("Pierre","Alain","Nicolas"), annee=1972)
+l
+```
+
+
+# Data-frame
+Les data-frames (ou tableaux de données) sont des objets importants dans R car c’est le formatparticulièrement adapté aux jeux de données usuels : en effet, c’est un tableau de taille $n \times p$ ($n$ individus et $p$ variables) mais où chaque colonne peut contenir des objets de mode distincts (par exemple, une variable de type *character*, une variable de type *numeric*, etc...).
+```{r}
+(d = data.frame(nom=c("Martin","Lambert"), prenom=c("Charles","Alice"), annee=c(1958,1992)))
+```
+```{r}
+names(d)
+```
+```{r}
+d$annee
+```

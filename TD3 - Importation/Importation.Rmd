@@ -1,0 +1,248 @@
+---
+title: "Importation"
+output:
+  html_document:
+    df_print: paged
+---
+
+# Chargement et manipulation des données
+## Data-frame et facteurs
+```{r}
+data("mtcars")
+mtcars
+```
+
+Ce jeu de données est-il une matrice (**is.matrix**) ? Un data.frame (**is.data.frame**) ? Une liste ?
+```{r}
+is.matrix(mtcars)
+is.list(mtcars)
+is.data.frame(mtcars)
+```
+
+Quelle est sa dimension ?
+```{r}
+dim(mtcars)
+```
+
+Combien de variables contient-il ? Quel est leur nom (**names**) ?
+```{r}
+paste(ncol(mtcars), 'variables', sep = " ")
+names(mtcars)
+```
+
+Décrivez le jeu de données *mtcars*.
+```{r eval=FALSE, include=TRUE}
+help(mtcars) # Voir dans la fenêtre d'aide
+```
+
+Donnez le mode de chacune des variables à l’aide de la fonction **summary**.
+```{r}
+summary(mtcars)
+apply(mtcars, 2, mode)
+```
+
+Affectez à $x$ la première colonne de *mtcars*, à l’aide du numéro de colonne (**[,i]**) et ensuite du nom de la colonne (**$**).
+```{r}
+x <- mtcars[,1]
+x <- mtcars$mpg
+x
+```
+
+Affichez le 15e, le 3e et le 4e élément de $x$ dans cet ordre.
+```{r}
+x[c(15, 3, 4)]
+```
+
+Affichez ses 10 premiers éléments. Idem dans l'ordre inverse.
+```{r}
+head(x, n=10)
+rev(x[1:10])
+```
+
+Affichez ses 10 derniers éléments.
+```{r}
+tail(x, n=10)
+```
+
+Transformez la variable Transmission (**am**) en un facteur (*as.factor*). Regardez à nouveau le résumé des données.
+```{r}
+mtcars$am <- as.factor(mtcars$am)
+summary(mtcars)
+```
+
+Affectez à $y$ le facteur Transmission.
+```{r}
+y <- mtcars$am
+```
+
+Créez un nouvel objet constitué de $x$ et $y$.
+```{r}
+m <- cbind(x, y)
+```
+
+Quel type d’objet a été crée ? Quelle est sa dimension ?
+```{r}
+class(m)
+dim(m)
+```
+
+Affichez la 12e ligne de cet objet.
+```{r}
+m[12,]
+```
+
+Affichez les 8 premières lignes de cet objet.
+```{r}
+m[1:8,]
+```
+
+Affichez la 2e colonne de l’objet.
+```{r}
+m[,2]
+```
+
+Affichez les consommations des véhicules à transmission automatique.
+```{r}
+m[,1][m[,2]==2]
+```
+
+Créez un vecteur contenant les consommations moyennes pour les véhicules selon leur type detransmission.
+```{r}
+cMoyenne <- by(m[,1], m[,2], mean)
+```
+
+Effectuer le même calcul (de consommations moyennes pour les véhicules selon leur type detransmission) sur le data frame **mtcars** et donner les types des objets obtenus :
+ + en utilisant la fonction __subset__.
+ + en utilisant la fonction __by__. *(déjà fait)*
+ + en utilisant la fonction __aggregate__.
+```{r}
+aggregate(m[,1], list(m[,2]), mean)
+```
+```{r}
+c(mean(subset(m[,1], m[,2]==1)), mean(subset(m[,1], m[,2]==2)))
+```
+
+Créez un vecteur contenant les écarts types associés au consommations moyennes des véhicules en fonction de leur type de transmission.
+```{r}
+cEcartType <- by(m[,1], m[,2], sd)
+```
+
+Résumez les informations obtenues sur la consommation.
+```{r}
+as.list(as.data.frame(cbind(cMoyenne,cEcartType)))
+```
+
+# Chargement de jeux de données externes.
+## Importation simple.
+Importez le jeu de données __cancerprostate__.
+```{r}
+cancerprostate <- read.table("donnees/cancerprostate.txt", header=T,sep=";")
+str(cancerprostate)
+```
+
+Modifier votre importation afin que les variables soient d’un mode approprié.
+```{r}
+cancerprostate <- read.table("donnees/cancerprostate.txt", header=T, sep=";",
+                             colClasses = c("integer","numeric","factor","factor","factor","factor","numeric"))
+str(cancerprostate)
+```
+
+Impotez le jeu de données __test1__.
+```{r}
+test1 <- read.table("donnees/test1.csv", header=T, sep=",")
+names(test1)
+```
+Les deux dernières colonnes n'avaient pas de libellés, remplacés par "X" et "X.1". <br>
+Importez le jeu de données __test2__. Y a-t-il de données manquantes ? Si oui, combien ?
+```{r}
+test2 <- read.table("donnees/test2.csv", header=T, sep=",")
+sum(is.na(test2))
+```
+
+Extraire le data frame ne contenant pas de données manquantes.
+```{r}
+test2 <- na.omit(test2)
+```
+
+## Fusion de jeux de données
+Les données d’intérêts peuvent parfois être contenues dans plusieurs jeux de données séparés.<br>
+
+Importez les jeux de données __etat1__ et __etat2__.
+```{r}
+etat1 <- read.table("donnees/etat1.csv", header = T, sep = ";")
+etat2 <- read.table("donnees/etat2.csv", header = T, sep = ",")
+```
+
+Les dimensions des jeux de données.
+```{r}
+c(dim(etat1), dim(etat2))
+```
+
+Fusion avec __cbind()__.
+```{r}
+cbind(etat1, etat2)
+```
+
+Fusion avec __merge()__.
+```{r}
+etat <- merge(etat1, etat2) #  ,by = "etat"
+```
+
+__merge()__ est plus approprié en fusionnant les données de mêmes individus.<br>
+Que se passe-t-il si les individus diffèrent entre les 2 jeux de données ?
+```{r}
+etat2$etat[1] <- NA # Alabama
+merge(etat1, etat2)
+```
+La ligne avec *Alabama* ne figure pas dans la fusion.<br>
+
+Création et manipulation de facteurs.<br>
+À l’aide de la fonction __cut__, créez un facteur __Richesse__ séparant les états selon leur revenu moyen (**Income**) : Pauvre (inférieur ou égal à 4000), Aisé (entre 4001 et 5000) et Riche(supérieurs ou égal à 5001). Vérifiez si le résultat contient des _NA_.
+```{r}
+Richesse <- cut(etat$Income, breaks = c(0, 4000, 5000, Inf),
+                include.lowest = T, labels = c("Pauvre", "Aisé", "Riche"))
+
+sum(is.na(Richesse))
+```
+
+Effectuez le découpage de la variable __Income__ cette fois-ci en 5 niveaux d’effectifs comparables(utilisez la fonction **quantile**).
+```{r}
+etat$income <- cut(etat$Income, breaks = quantile(etat$Income, probs=c(0:5/5)),
+                   include.lowest = T, labels = c("R1", "R2", "R3", "R4", "R5"))
+```
+
+Pour fusionneR deux niveaux d’un vecteur (en cas de groupes à effectifs trop faibles parexemple), on peut renommer les niveaux des 2 classes à fusionner avec le même nom. Fusionnez les classes *R1* et *R2* ainsi que les classes *R3* et *R4* dans l’exemple.
+```{r}
+levels(etat$income) <- c("R1", "R1", "R3", "R3", "R5")
+```
+
+## Variables au format Date
+Importez le jeu de données **bladder**. Décrivez brièvement ce dernier.
+```{r}
+bladder <- read.table("donnees/bladder.txt", header=F, sep = "\t")
+```
+
+Contient-il des données manquantes ?<br>
+La dernière colonne est complètement vide, donc les 57 lignes contiennent au moins une donnée vide.
+```{r}
+sum(is.na(bladder))
+```
+
+Prenez quelques variables au hasard et effectuez leur résumé et un boxplot de leurs valeurs (fonction graphique __boxplot__). Que remarquez-vous ?
+```{r}
+summary(bladder[,1:3])
+boxplot(bladder[,1:3])
+```
+
+On a pris les 3 premières valables. On remarque d'après le résumé et les boxplot que les données se concentrent autour de 0 (Max et Med) avec des valeurs abérantes où Min = -500.<br>
+
+
+Importez de nouveau le jeu de données en spécifiant les valeurs à considérer comme données manquantes **NA**.
+```{r}
+bladder <- read.table("donnees/bladder.txt", header = F, sep = "\t", na.strings = -500)
+```
+
+Remplacer les données manquantes par la moyenne de la variable en question.
+```{r}
+bladder <- apply(bladder, 2, FUN=function(x){replace(x, is.na(x), mean(x, na.rm=TRUE) )})
+
