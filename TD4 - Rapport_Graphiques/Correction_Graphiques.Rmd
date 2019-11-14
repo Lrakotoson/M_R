@@ -1,0 +1,558 @@
+---
+title: "Rapports et graphiques avec R"
+output:
+  pdf_document:
+    fig_height: 4
+    fig_width: 6
+  html_document:
+    fig_height: 4
+    fig_width: 6
+  html_notebook:
+    fig_height: 4
+    fig_width: 6
+  word_document: default
+---
+\newcommand{\code}[1]{\texttt{#1}}
+
+```{r}
+library(knitr)
+knitr::opts_chunk$set(error = TRUE, comment = NA)
+```
+# Premier exercice RNotebook
+2.
+```{r echo=TRUE, eval=TRUE}
+#Ajouter comment=NA comme option si c'est pas fait avant
+x <- matrix(c(1:4), nrow = 2, ncol = 2 ) #  Création d'une matrice
+print(x) # Affichage de x
+
+```
+3.
+
+```{r echo=FALSE}
+x <- matrix(c(1:4), nrow = 2, ncol = 2 )
+print(x)
+```
+4.
+```{r eval=FALSE}
+x <- matrix(c(1:4), nrow = 2, ncol = 2 )
+print(x)
+```
+
+
+5.
+```{r}
+#si on n'utilise pas l'option error=TRUE, la compilation du document ne fonctionne pas
+print(UnObjet)
+```
+
+7.
+```{r}
+x=seq(-pi,pi, length.out = 100)
+y=sin(x)
+plot(x,y)
+```
+
+Graphique plus petit:
+
+
+```{r fig.height=3}
+x=seq(-pi,pi, length.out = 100)
+y=sin(x)
+plot(x,y)
+```
+
+8. Extraction de code:
+```{r}
+library(knitr) # il faut utiliser ce package 
+purl(file.choose()) # choose "ExempleRnotebook.rmd" 
+#-> cree un fischier script .R avec toutes les commandes R du fischier choisi
+```
+
+
+# Représentation graphique simple
+
+## Tracé d'une fonction
+
+1. Commençons par créer deux vecteurs, x et y, contenant les valeurs de $x$, et la valeur associée du sinus
+```{r echo=FALSE}
+x <- seq(-pi, pi, length.out = 50) # Création du vecteur de valeurs
+y <- sin(x)
+```
+
+La fonction \code{plot} est la fonction de base pour effectuer des graphiques
+
+```{r plot}
+plot(x, y)# Tracé simple de y en fonction de x
+```
+
+2. Pour effectuer un tracé en ligne, on utilise l'argument \code{type}. Il existe trois types de base *"p"* pour *"points"*, *"l" (lines)* et *"b" (both)*.
+
+```{r}
+plot(x, y, type = "l")# type = "l" pour "line"
+```
+
+```{r plottypeb}
+plot(x, y, type = "b", cex = 0.2)# type = "b" pour "both" (points and lines)
+```
+
+Pour mieux visualiser:
+
+```{r}
+x2=seq(-pi,pi, length.out = 20)
+y2=sin(x2)
+plot(x2,y2,type="b", cex=0.002)
+```
+
+
+Une autre option pour avoir de lignes et points sur le même graphe:
+
+```{r}
+
+plot(x,y,type="o", main = "Graphe de la fonction sinus", cex=0.5)
+```
+
+
+3. L'argument **main** prend une chaîne de caractère pour en faire un titre
+```{r plotmain}
+plot(x, y, type = "l", main = "Graphe de la fonction sinus")#Ajout d'un titre
+```
+
+4. Une alternative est la fonction **curve** qui cette fois prend une *fonction* comme premier argument
+```{r curve}
+# Comme toujours, voir help(curve) !!
+curve(expr = sin, from = -pi, to = pi, n = 100, main = "Graphe de la fonction sinus")
+```
+
+
+## Tracé de deux fonctions
+
+1. Pour tracer deux fonctions, on trace la première comme plus haut, la deuxième avec la fonction **lines** ou **points**
+```{r PlotLines}
+plot(x = x, y = sin(x), main = "Graphe de sinus et cosinus")# Titre commun aux deux courbes!
+lines(x = x, y = cos(x))
+```
+
+2. Les arguments **col** et **lty** (comme **linetype**) permettent d'habiller le graphique
+```{r ColLty}
+# lty = 1 ligne pleine "solid" (default), = 2 segments "dashed", = 3 pointillés "dotted"
+plot(x = x, y = sin(x), main = "Graphe de sinus et cosinus", type= "l", lty = 3)
+lines(x = x, y = cos(x), col = "red")
+```
+
+3. La fonction **legend** permet d'ajouter une légende au graphe.
+```{r legend}
+plot(x = x, y = sin(x), main = "Graphe de sinus et cosinus", type= "l", lty = 3)
+lines(x = x, y = cos(x), col = "red")
+# Voir help(legend), il y a beaucoup d'options possibles!
+legend(x = -pi, y = 1,# Coordonnées de placement, alternative: "topleft"/"bottom"/"top"/"bottomright"...
+       legend = c("Sinus", "Cosinus"),# Texte de la légende
+       lty = c(3, 1),# L'ordre des types de lignes, doit correspondre à l'argument legend
+       col = c("black", "red"))# Couleur des lignes ou points, attention à l'ordre
+```
+
+```{r}
+plot(x, sin(x), main = "Graphe de sinus et cosinus", type= "l", lty = 3)
+lines(x, cos(x), col = "red")
+legend("topleft", #position de la legende
+       legend = c("Sinus","Cosinus"), #text de la legende
+       lty = c(3,1), # L'ordre des types de lignes, doit correspondre à l'argument legend
+        col = c("black", "red"))# Couleur des lignes ou points, attention à l'ordre
+
+```
+
+## Variable quantitative continue
+
+
+On commence par importer les données.
+
+```{r eval=FALSE}
+etat2=read.table("donnees/etat2.csv", sep=",", header = TRUE) #!a personaliser le chemin
+summary(etat2)# Toujours vérifier l'importation
+```
+
+```{r echo=FALSE}
+setwd("~/Documents/cursuri+Td/2018-2019/TD-R/Application/donnees")
+etat2=read.table("etat2.csv", sep=",", header = TRUE)
+```
+
+1. On utlise la fonction **hist** pour tracer un histogramme.
+```{r}
+Income <- etat2$Income# Stockage de la vairbale Income dans un objet (pas obligatoire)
+hist(x = Income)# Il existe des arguments par défaut!
+```
+
+2. En étudiant **help(hist)** on peut voir qu'il existe plusieurs arguments pour la fonction **hist**.  Option \code{breaks}:
+```{r}
+MyBreaks <- seq(3000, 7000, by = 1000)# Analogue aux "breaks" de la fonction cut
+hist(x = Income, breaks = MyBreaks,include.lowest = 1)
+```
+
+3.  Pour visualiser la probabilité empirique (ou un pourcentage de l'effectif par classe), il faut passer par une étape intermédiaire:
+
+```{r}
+MyHist = hist(x = Income, breaks = MyBreaks, plot = F)#on stocke en memoire la histogramme
+#(le resultat est une liste)
+MyHist$counts <- MyHist$counts / sum(MyHist$counts)# On renormalise les comptages
+plot(MyHist,ylab = 'Probabilité empirique')
+```
+
+4. Pour representer en ordonnée la densité, on peut utiliser l'option \code{probability=TRUE} or \code{freq=FALSE}. Dans ce cas la histogramme a une aire totale $=1$.
+```{r}
+hist(x = Income, breaks = MyBreaks, probability = T)
+```
+R permet d'obtenir facilement des estimateurs empiriques de la densité. Ces estimateurs sont loin d'être uniques, il ne faut pas les prendre pour argent comptant! On les obtient avec la fonction **density**. Si on veut les comparer avec l'histogramme, il faut bien mettre l'argument **prob = TRUE**.
+
+
+```{r}
+hist(x = Income, breaks = MyBreaks, prob = T, 
+     main ="Histogramme et densité empirique", #la maniere la plus simple pour changer le titre
+     xlab = "Revenu", ylab = "Densité empirique", 
+     ylim = c(0, 7 * 10^(-4)))# ylim permet d'ajuster les limites du graphes
+lines(density(Income))# On ajoute le résultat de density grâce à lines
+```
+5. Remarque: cette fonction est plus utile pour des illustrations n'ayant pas un titre par default. Elle a plusieurs parametres et options (voir \code{?title}).
+
+```{r}
+hist(x = Income, breaks = MyBreaks, prob = T, main ="",
+     xlab = "Revenu", ylab = "Densité empirique", 
+     ylim = c(0, 7 * 10^(-4)))
+lines(density(Income))
+title(main="Histogramme et densité empirique",col.main=4,cex.main=1.75,font.main=4) 
+```
+6. Il est aussi possible de faire des boites à moustache:
+```{r}
+#voir help(boxplot)
+boxplot(Income, ylab="Revenu",col="lightblue")
+```
+
+7. Pour visualiser plusieurs graphiques sur la même fenêtre, il est pratique d'utiliser la fonction **par**. Cette fonction permet de faire la majorité des réglages visuels, voir **help(par)**
+```{r}
+par(mfrow = c(1, 2))# Fenêtre avec 1 ligne et 2 colonnes
+hist(Income, main ="Histogramme", ylab = "Effectifs", col ="lightblue", xlab = "Revenu")
+boxplot(Income, main = "Boxplot", ylab = "Revenu", col = "lightgreen")
+```
+
+## Variable qualitative ou quantitative discrète
+
+```{r}
+Richesse <- cut(x = Income, breaks = c(0, 4000, 5000, Inf), labels = c("Pauvre", "Aise", "Riche")) 
+plot(Richesse, ylab="Effectifs",col=0:2) #on peut egalement utiliser barplot()
+legend("topright",legend = levels(Richesse),fill = 0:2)
+
+```
+
+```{r}
+Richesse <- cut(x = Income, breaks = c(0, 4000, 5000, Inf), labels = c("Pauvre", "Aise", "Riche"))
+barplot(table(Richesse), ylab = "Effectifs",
+        legend.text = levels(Richesse), col = 2:4) 
+#Diagramme en baton pour les effectifs. Voir help(barplot)
+```
+
+# Représentation de plusieurs variables
+
+## Variables quantitatives/qualitatives
+
+1. On charge le jeu de données R **USCereal**
+```{r}
+library(MASS)
+data(UScereal)
+summary(UScereal)
+```
+
+Ce jeu de données décrit les compositions et certaines caractéristiques de céréales américaines, 65 individus (lignes) sont observés, et on décrit 11 variables pour ces individus. 
+Voir **help(UScereal)**.
+
+2. La colonne **shelf** est qualitative, il s'agit de l'étagère sur laquelle est disposée la céréale. Pour représenter les boxplots d'une variable en fonction d'une autre, il on peut utiliser la fonction boxplot, avec comme premier argument une expression `V1 ~ V2`, qui se lit "V1 en fonction de V2".
+
+Calories en fonction de l'étagère:
+```{r}
+Etagere <- as.factor(UScereal$shelf) # Ce n'est pas obligatoire de le transformer en facteur
+Calories <- UScereal$calories
+boxplot(Calories ~ Etagere, ylab = "Calories (number/portion)", 
+        names = paste("Etagère ", levels(Etagere)),
+        main = "Calories par type d'étagère", col=2:4)
+```
+
+Quantite de matière grasse:
+```{r}
+MatGrasses <- UScereal$fat
+boxplot(MatGrasses ~ Etagere, ylab = "Matières grasses (g/portion)", 
+        names = paste("Etagère ", levels(Etagere)),
+        main = "Matières grasses par type d'étagère", col = c("lightblue", "lightgreen", "lightgray"))
+
+```
+
+La répartition des calories et des matières grasses ne semble pas la même selon le type d'étagère. L'étagère 3 semble compter plus de calories, l'étagère 1 moins de matière grasse.
+
+
+
+## Variables quantitatives
+
+1. On peut représenter le nuage de point grâce à la fonction **plot**
+```{r}
+Fibre <- UScereal$fibre
+Potassium <- UScereal$potassium
+plot(x = Fibre, y = Potassium, main = "Potassium en fonction des fibres",
+     xlab = "Fibres (g/portion)", ylab = "Potassium (g)", type = "p", pch = 20, col ="gray")
+```
+
+ ou simplement:
+
+```{r}
+plot( Potassium~Fibre, main = "Potassium en fonction des fibres", 
+      xlab = "Fibres (g/portion)", ylab = "Potassium (g)", col ="darkgray")
+```
+ 
+
+
+2. Pour tracer une droite d'équation connnue, on utilise la fonction **abline**
+
+```{r echo=-1}
+plot(x = Fibre, y = Potassium, main = "Potassium en fonction des fibres", 
+     xlab = "Fibres (g/portion)", ylab = "Potassium (g)", col ="darkgray")
+abline(a=49.5,b=28.3,lwd=2,col="red") # attention, c'est la droite y = bx+a
+legend("bottomright",legend = expression(Droite: y==28.3*x+49.5),lwd=2,col="red") 
+#expression() permet de rajouter des formules
+```
+
+3. Le centre de gravité correspond à la version géométrique de la moyenne
+```{r echo=-(1:2)}
+plot(x = Fibre, y = Potassium, main = "Potassium en  fonction des fibres",
+     xlab = "Fibres (g/portion)", ylab = "Potassium (g/portion)", type = "p", pch = 20, col ="gray")
+abline(a = 49.5, b = 28.3, col = "red", lwd = 2)# lwd comme "line width"
+XG <- mean(Fibre)# Coordonnée X de G
+YG <- mean(Potassium)# Coordonnée Y de G
+# Pour voir differents options de pch voir help(points)
+points(XG, YG, pch = 3, col ="blue", cex = 1, lwd = 2)# pch: forme; cex: taille; lwd: epaisseur
+text(x = XG, y = YG, labels = "G",# x et y: position; labels: texte
+     pos = 1, col = "blue",# pos: position (1: bas 2: gauche, 3: haut, 4: droite)
+     font = 2)# font: police (1 normal, 2 gras, 3 italique)
+```
+
+4. On veut représenter toutes les colonnes *quantitatives*, (dans notre cas, les colonnes de type *double*). La première étape est donc de sélectionner ces colonnes, l'autre de tracer grâce à la fonction **pairs** le *data.frame* correspondant.
+
+```{r fig.height=8, fig.width=10}
+Quantitative=lapply(UScereal, typeof)=="double" # un vect. logique identifiant les variables de type double 
+# Remarque: si on fait la même chose avec apply, le data frame est traité comme une matrice et donc 
+#apply(UScereal, 2,typeof) donne seulement le type character. On peut aussi utiliser sapply(), par exemple:
+#Quantitative=sapply(UScereal, is.double)
+
+DataQ=UScereal[,Quantitative] #selectionner les var quantitatives
+pairs(DataQ)
+```
+
+
+On peut avoir un aperçu emirique de différentes corrélation (notamment de la variable potassium avec les autres).
+
+5. Representation des données EuStockMarkets:
+
+```{r}
+matplot(time(EuStockMarkets),EuStockMarkets,xlab = "Année",ylab = "Prix actions", 
+        main="EuStockMarkets evolution",col=rainbow(4),cex=0.3)
+# EuStockMarkets est une "Time series", time #donne les temps
+legend("topleft",legend = colnames(EuStockMarkets), lwd = 3 ,col = rainbow(4))
+```
+
+# Graphiques en 3 dimensions
+
+1. On peut programmer des fonctions grâce à la fonction **function**
+```{r}
+f <- function(x, y){# f sera une fonction R prenant deux arguments, x et y
+  a <- sqrt(x^2 + y ^2)# Variable créée seulement dans la fonction
+  return(10 * sin (a) / a)# La dernière ligne est le résultat. 
+}
+```
+
+2. Création de x et y
+```{r}
+x <- y <- seq(-10, 10, length.out = 200)
+```
+
+3. 
+```{r}
+z=f(x,y) #Attention avec cette commande length(z)=200 et non pas 200 * 200 !
+dim(z)
+# La bonne commande:
+z <- outer(X = x, Y = y, FUN = f)
+dim(z)
+```
+
+4-5. Graphique avec \code{persp()}.
+```{r fig.width=8, fig.height=10}
+persp(x = x, y = y, z = z, xlab = "Abscisse", ylab = "Ordonnée", zlab = "Côte", border = NA, 
+      col = rainbow(n = 200), main ="Fonction 'Chapeau Mexicain'", phi = -10, theta = 20,d=3)
+
+```
+
+```{r fig.width=8, fig.height=10}
+x1<-y1<-seq(-10,10,length.out = 100);
+z1=outer(x1,y1,f)
+persp(x = x1, y = y1, z = z1, xlab = "Abscisse", ylab = "Ordonnée", zlab = "Côte", 
+      border = "blue", col = "red", main ="Fonction 'Chapeau Mexicain'", phi = 10, theta = -20,d=3)
+
+```
+6. Représentation avec ***contour()*** et ***image()***.
+```{r fig.height=8, fig.width=10}
+contour(x, y, z, 
+        xlab = "x", ylab = "y",  main = "Lignes de niveau",
+        levels = c(-2, 0, 4, 8),# Niveaux à tracer
+        labels = c("Fond", "Ligne du 0", "Pente", "Sommet"), labcex = 1 )# Voir aide
+```
+
+```{r}
+contour(x,y,z,
+        nlevels =10, # nombre de niveaux a representer
+        col=rainbow(10),  #couleurs de niveaux
+        main="Courbes de niveau",lwd=2)
+```
+
+
+
+
+
+```{r fig.height=8, fig.width=10}
+image(x, y, z, 
+      xlab = "x", ylab = "y",  main = "Heat map", col = heat.colors(5), #Peu de couleurs, aspect grossier
+      breaks = c(-2.2, -2, 0, 4, 8, 10))  
+```
+```{r fig.height=8, fig.width=10}
+image(x, y, z, 
+      xlab = "x", ylab = "y",  main = "Heat map", col = heat.colors(30)) #Beaucoup de couleurs, aspect lisse
+```
+
+Représentation avec ***filled.contour()***:
+
+```{r}
+ filled.contour(x,y,z, nlevels =10, col=heat.colors(13), main="Courbes de niveau- Heat map")
+```
+
+Q.S.
+```{r}
+library(lattice)
+Sucre <- UScereal$sugars
+cloud(Calories~MatGrasses+Sucre,type=c('p','h')) #le type 'h' trace une ligne de chaque point au plan X0Y
+```
+
+
+# Graphes multiples
+1-2.
+```{r}
+par(mfrow = c(1, 3))# 1 ligne, 3 colonnes
+plot(UScereal$mfr,UScereal$sodium,xlab="producteur",ylab="quantite sodium",ylim=c(0,400), 
+     col=heat.colors(nlevels(UScereal$mfr)), main="Sodium par producteur");
+plot(UScereal$sodium ~ UScereal$sugars, xlab = "Sucre (g/portion)", pch = 20, col = "gray",
+     cex = 2,
+     ylab = "Sodium (mg/portion)", main = "Sodium contre sucre")
+hist(UScereal$sodium, col = "lightblue", main = "Distribution du sodium", 
+     xlab = "Sodium (mg/portion)", ylab = "Effectifs")
+```
+
+3. La fonction layout permet d'avoir une fenêtre graphique non régulière. On lui spécifie par une matrice la strucure de la fenêtre. Ainsi, la matrice $\begin{matrix}1 & 1\\2 &3\end{matrix}$ nous dit que la moitié supérieure de la fenêtre sera réservée à la zone 1, la moitié inférieure gauche à la zone 2, la moitié inférieure droite à la zone 3.
+```{r}
+MonDecoupage <- matrix(c(1, 1, 2, 3), nrow = 2, ncol = 2, byrow = T)
+print(MonDecoupage)
+layout(mat = MonDecoupage)
+boxplot(UScereal$sodium ~ UScereal$mfr, 
+        xlab = "", ylab = "",main = "",# On spécifie qu'aucun axe n'est rempli
+        ylim = c(0, 400), col=heat.colors(length(levels(UScereal$mfr))))
+plot(UScereal$sodium ~ UScereal$sugars,  pch = 20, col = "gray", cex = 2,
+     xlab = "", ylab = "", main = "")# On spécifie qu'aucun axe n'est rempli
+hist(UScereal$sodium, col = "lightblue", 
+     xlab = "", ylab = "", main = "") # On spécifie qu'aucun axe n'est rempli
+  
+```
+On peut egalement ne pas afficher une image dans une partie de la fenetre:
+```{r}
+layout(mat = matrix(c(1, 0, 2, 3), nrow = 2, ncol = 2, byrow = T))
+boxplot(UScereal$sodium ~ UScereal$mfr, 
+        xlab = "", ylab = "",main = "",# On spécifie qu'aucun axe n'est rempli
+        ylim = c(0, 400), col=heat.colors(length(levels(UScereal$mfr))))
+plot(UScereal$sodium ~ UScereal$sugars,  pch = 20, col = "gray", cex = 2,
+     xlab = "", ylab = "", main = "")# On spécifie qu'aucun axe n'est rempli
+hist(UScereal$sodium, col = "lightblue", 
+     xlab = "", ylab = "", main = "") # On spécifie qu'aucun axe n'est rempli
+  
+```
+
+
+4. Pour ajuster les marges, on utilise à nouveau la fonction **par** avec l'argument **mar = c(MargeBas, MargeGauche, MargeHaut, MargeDroite)**
+```{r}
+par(mar = c(2, 2, 0.1, 0.1))
+layout(mat = MonDecoupage)
+boxplot(UScereal$sodium ~ UScereal$mfr, 
+        xlab = "", ylab = "",main = "",# On spécifie qu'aucun axe n'est rempli
+        ylim = c(0, 400), col=heat.colors(length(levels(UScereal$mfr))))
+plot(UScereal$sodium ~ UScereal$sugars,  pch = 20, col = "gray", cex = 2,
+     xlab = "", ylab = "", main = "")# On spécifie qu'aucun axe n'est rempli
+hist(UScereal$sodium, col = "lightblue", 
+     xlab = "", ylab = "", main = "") # On spécifie qu'aucun axe n'est rempli
+```
+
+5. L'argument **oma** spécifie des marges extérieures au graphe, il fonctionne comme l'argument **mar**. Ici, on ne  veut pas de marges extérieures en bas, à gauche et à droite, donc on les met à 0.
+```{r}
+par(mar = c(2, 2, 0.1, 0.1), oma = c(0, 0, 2, 0))
+layout(mat = MonDecoupage)
+boxplot(UScereal$sodium ~ UScereal$mfr, 
+        xlab = "", ylab = "",main = "",# On spécifie qu'aucun axe n'est rempli
+        ylim = c(0, 400), col=heat.colors(length(levels(UScereal$mfr))))
+plot(UScereal$sodium ~ UScereal$sugars,  pch = 20, col = "gray", cex = 2,
+     xlab = "", ylab = "", main = "")# On spécifie qu'aucun axe n'est rempli
+hist(UScereal$sodium, col = "lightblue", 
+     xlab = "", ylab = "", main = "") # On spécifie qu'aucun axe n'est rempli
+mtext(outer = TRUE, side = 3, text = "Le sodium dans les céréales", font = 2, line = 0.5)
+```
+
+# Sauvegarde des graphiques
+
+```{r eval=FALSE}
+# EN PDF
+pdf("MonGraphique.pdf")# ATTENTION A PRECISER l'EXTENSION
+par(mar = c(2, 2, 0.1, 0.1), oma = c(0, 0, 2, 0))
+layout(mat = MonDecoupage)
+boxplot(UScereal$sodium ~ UScereal$mfr, 
+        xlab = "", ylab = "",main = "",# On spécifie qu'aucun axe n'est rempli
+        ylim = c(0, 400), col = 2:7)
+plot(UScereal$sodium ~ UScereal$sugars,  pch = 20, col = "gray", cex = 2,
+     xlab = "", ylab = "", main = "")# On spécifie qu'aucun axe n'est rempli
+hist(UScereal$sodium, col = "lightblue", 
+     xlab = "", ylab = "", main = "", # On spécifie qu'aucun axe n'est rempli
+     breaks = seq(0, 800, length.out = 5), include.lowest = T)
+mtext(outer = TRUE, side = 3, text = "Le sodium dans les céréales", font = 2, line = 0.5)
+dev.off()
+```
+
+
+```{r eval=FALSE}
+#EN JPEG
+jpeg("MonGraphique.jpeg", width = 800, height = 800)# Possibilité de régler la taille
+par(mar = c(2, 2, 0.1, 0.1), oma = c(0, 0, 2, 0))
+layout(mat = MonDecoupage)
+boxplot(UScereal$sodium ~ UScereal$mfr, 
+        xlab = "", ylab = "",main = "",# On spécifie qu'aucun axe n'est rempli
+        ylim = c(0, 400), col = 2:7)
+plot(UScereal$sodium ~ UScereal$sugars,  pch = 20, col = "gray", cex = 2,
+     xlab = "", ylab = "", main = "")# On spécifie qu'aucun axe n'est rempli
+hist(UScereal$sodium, col = "lightblue", 
+     xlab = "", ylab = "", main = "", # On spécifie qu'aucun axe n'est rempli
+     breaks = seq(0, 800, length.out = 5), include.lowest = T)
+mtext(outer = TRUE, side = 3, text = "Le sodium dans les céréales", font = 2, line = 0.5)
+dev.off()
+
+```
+```{r eval=FALSE}
+# En POSTCRIPT maintenant
+postscript("MonGraphique.eps",horizontal = FALSE) #on peut changer l'orientation
+par(mar = c(2, 2, 0.1, 0.1), oma = c(0, 0, 2, 0))
+layout(mat = MonDecoupage)
+boxplot(UScereal$sodium ~ UScereal$mfr, 
+        xlab = "", ylab = "",main = "",# On spécifie qu'aucun axe n'est rempli
+        ylim = c(0, 400), col = 2:7)
+plot(UScereal$sodium ~ UScereal$sugars,  pch = 20, col = "gray", cex = 2,
+     xlab = "", ylab = "", main = "")# On spécifie qu'aucun axe n'est rempli
+hist(UScereal$sodium, col = "lightblue", 
+     xlab = "", ylab = "", main = "", # On spécifie qu'aucun axe n'est rempli
+     breaks = seq(0, 800, length.out = 5), include.lowest = T)
+mtext(outer = TRUE, side = 3, text = "Le sodium dans les céréales", font = 2, line = 0.5)
+dev.off()
+```
+
