@@ -1,8 +1,9 @@
+# -*- coding: utf-8 -*-
 rm(list = ls()) #enlever les variables gardées en memoire
 
-#######################
+# ######################
 # 1. Jeu de donnees R
-#######################
+# ######################
 
 #1.
 data(mtcars)
@@ -81,9 +82,9 @@ ConsoRes <- list(Automatique = cbind(ConsoMoy,ConsoSd)[1,], Manuelle=cbind(Conso
 
 
 
-###########################
+# ##########################
 # 2.1. Importation simple
-###########################
+# ##########################
 
 #1.
 Cancer = read.table("cancerprostate.txt",header=TRUE) 
@@ -180,9 +181,9 @@ nameslev       = paste("R",1:5,sep="")
 levels(Etat$richesse2) = c("R1","R1","R2","R2","R3") #fusionner deux niveaux
 summary(Etat$richesse2)
 
-###############################
+# ##############################
 # 2.3 Variables au format Date
-###############################
+# ##############################
 
 #1.
 readLines('ski.csv',5)
@@ -197,9 +198,9 @@ summary(ski2); summary(ski)
 
 t=Sys.time(); ski  = read.table("ski.csv",header=TRUE,sep="|",skip=2); Sys.time()-t
 
-################################
+# ###############################
 # 2.4  Donnees manquantes
-################################
+# ###############################
 
 Bladder = read.table("bladder.txt")
 names(Bladder)
@@ -261,9 +262,9 @@ View(Database_webmaster)
 
 
 
-#############################
-## 2.6 Importation robuste
-#############################
+# ############################
+# # 2.6 Importation robuste
+# ############################
 
 Data        = read.table("donnees.csv",header=TRUE,sep=";",dec=",") #renvoie un avertisment
 DataChar    = scan("donnees.csv",what="char",sep=";")
@@ -311,9 +312,9 @@ A = load("Bladder.Rdata")
 dim(A)
 A
 
-#############################
-## 4. Donnees Accidents
-#############################
+# ############################
+# # 4. Donnees Accidents
+# ############################
 
 #1.
 caract = read.csv("https://www.data.gouv.fr/s/resources/base-de-donnees-accidents-corporels-de-la-circulation/20170915-153739/caracteristiques_2016.csv",
@@ -361,7 +362,7 @@ tab.grav[1:5,]
 
 colnames(tab.grav) = c("indemne","tues","hospitalise","leger") # pas necessaire si usagers est transformé en amont en factor
 tab.grav$Num_Acc   = as.numeric(row.names(tab.grav)) #si on veut sauvegarder NumAcc
-  
+
 # 8.
 Accidents=merge(merge(caract,lieux), tab.grav) 
 Accidents[1:5,]
