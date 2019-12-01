@@ -1,0 +1,93 @@
+---
+jupyter:
+  jupytext:
+    formats: ipynb,Rmd
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.1'
+      jupytext_version: 1.2.4
+  kernelspec:
+    display_name: R
+    language: R
+    name: ir
+---
+
+# Structure de contôle
+## Les conditions
+Créer une condition permettant d’afficher sur la console si un entier est pair ou impair
+
+**AVEC if..else**
+
+```{r}
+n <- sample(1:100, 1)
+if (n%%2 == 0) {
+    cat(n, 'est pair')
+} else {
+    cat(n, 'est impair')
+}
+```
+
+**AVEC ifelse**
+
+```{r}
+ifelse (n%%2 == 0,
+        paste(n, 'est pair'),
+        paste(n, 'est impair')
+       )
+```
+
+**AVEC switch**
+
+```{r}
+switch(n%%2+1,
+       print(paste(n, 'est pair')),
+       print(paste(n, 'est impair'))
+      )
+```
+
+Créer une condition permettant d’afficher sur la console si un entier est un carré ou non
+
+```{r}
+if (sqrt(n) == floor(sqrt(n))) {
+    cat(n, 'est le carré de', sqrt(n))
+} else {
+    cat(n, "n'est pas un carré")
+}
+```
+
+Créer une condition permettant d’afficher sur la console si un entier est le carré d’un nombre impair multiple de 3.
+
+```{r}
+if (sqrt(n) == floor(sqrt(n)) &&
+    sqrt(n)%%2 != 0 &&
+    sqrt(n)%%3 == 0
+   ) {
+    cat(n, "est le carré de", sqrt(n), "impair et mutliple de 3")
+} else {
+    cat(n, "ne réponds pas aux conditions")
+}
+```
+
+## Les boucles
+### Boucle for
+Le nombre $e$ peut être approché grâce à la limite suivante :
+$$e = lim_{n \to \infty} (1 + \frac{1}{n})^n$$
+À l’aide d’une boucle **for**, calculer les approximations successives obtenues pour n entre 1 et 50. Représenter les résultats obtenus sur un graphe, en matérialisant la valeur cible par une ligne rouge pointillée.
+
+```{r}
+e = 2
+for (i in 2:50){
+    e = c(e, (1 + 1/i)^i)
+}
+
+plot(1:50, e,
+     ylim = c(1,3))
+abline(exp(1), 0,
+       col = "red",
+       lty = 3)
+```
+
+```{r}
+
+```

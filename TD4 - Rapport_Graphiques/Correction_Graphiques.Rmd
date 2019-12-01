@@ -39,12 +39,6 @@ print(x)
 ```
 
 
-5.
-```{r}
-#si on n'utilise pas l'option error=TRUE, la compilation du document ne fonctionne pas
-print(UnObjet)
-```
-
 7.
 ```{r}
 x=seq(-pi,pi, length.out = 100)
@@ -166,13 +160,8 @@ legend("topleft", #position de la legende
 On commence par importer les données.
 
 ```{r eval=FALSE}
-etat2=read.table("donnees/etat2.csv", sep=",", header = TRUE) #!a personaliser le chemin
+etat2=read.table("../TD3 - Importation/donnees/etat2.csv", sep=",", header = TRUE) #!a personaliser le chemin
 summary(etat2)# Toujours vérifier l'importation
-```
-
-```{r echo=FALSE}
-setwd("~/Documents/cursuri+Td/2018-2019/TD-R/Application/donnees")
-etat2=read.table("etat2.csv", sep=",", header = TRUE)
 ```
 
 1. On utlise la fonction **hist** pour tracer un histogramme.
