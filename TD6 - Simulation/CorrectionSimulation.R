@@ -1,6 +1,7 @@
-############### 1. La roulette
+# -*- coding: utf-8 -*-
+# ############## 1. La roulette
 
-##### 1.1. Roulette américaine
+# #### 1.1. Roulette américaine
 
 Bet <- function(p){
   Res <- runif(1)
@@ -9,7 +10,7 @@ Bet <- function(p){
   }else{
     return(-1)
   }
-  
+
 }
 
 
@@ -28,9 +29,9 @@ EngBet <- function(pr,pv){ #pr proba de tirer rouge, pv proba de tirer 0(vert)
 
 }
 
-######## 2. Simulation du gain cumulé 
+# ####### 2. Simulation du gain cumulé 
 
-#### 2.1 Le joueur persévérant
+# ### 2.1 Le joueur persévérant
 
 #1.
 JoueurPerseverant <- function(p, Nmax = 10000){
@@ -45,8 +46,8 @@ JoueurPerseverant <- function(p, Nmax = 10000){
   return(S_n)
 }
 
-#2.
-#En regardant les questions on voit qu'on n'a pas besoin de connaître toute la trajectoire de S_n
+# 2.
+# En regardant les questions on voit qu'on n'a pas besoin de connaître toute la trajectoire de S_n
 # On peut ne garder que la valeur minimale, le nombre de paris et la valeur finale
 
 
@@ -125,7 +126,7 @@ probas=sapply(x, ProbaSucces)
 plot(x,probas,type = 'b',xlab = "Probabilité de gagner un pari",ylab = "Probabilité de succes de la strategie ")
 abline(v=18/38,col="red")
 
-############## Stratégie de Martingale
+# ############# Stratégie de Martingale
 
 #1.
 # Simulation de la stratégie
@@ -163,7 +164,7 @@ for (i in 2:4) {
 
 
 
-#### Remarque : Si on connaît le nombre de paris effectués par le joueur (ou la dernière somme pariée), 
+# ### Remarque : Si on connaît le nombre de paris effectués par le joueur (ou la dernière somme pariée), 
 # on peut reconstituer la trajectoire du profit cumulé. On peut donc aussi travailler avec la fonction suivante :
 
 martingale2 <- function(p){
@@ -220,9 +221,9 @@ ExpectedMinVal <- function(p, MC=10^6){
 ExpectedMinVal(18/38)
 ExpectedMinVal(1/2)
 
-#On voit bien que 2^{E[X]} != E[2^X] !
+# On voit bien que 2^{E[X]} != E[2^X] !
 
-#4. Mmax est déjà pris en compte (avec +infini comme valeur par défaut) pour la fonction martingale.
+# 4. Mmax est déjà pris en compte (avec +infini comme valeur par défaut) pour la fonction martingale.
 
 # Pour la deuxième fonction on peut par exemple renvoyer une valeur aberrante à la place du nombre de paris effectués
 # si le joueur s'arrête avant de gagner
