@@ -1,0 +1,82 @@
+---
+jupyter:
+  jupytext:
+    formats: ipynb,Rmd
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.1'
+      jupytext_version: 1.2.4
+  kernelspec:
+    display_name: R
+    language: R
+    name: ir
+---
+
+# Econométrie
+Les facteurs de la variation de la consommation des ménages sur un aspect macro-économique
+___
+On suppose que le taux de croissance de la consommation des ménages du dépenddu taux de croissance des revenus, du taux d'épargne, du taux de croissance du PIB, du taux de chômage et d'emploi, du taux des impôts par rapport au PIB et du taux d’inflation.
+
+Cette spécifiaction se traduit par:
+$$ \textrm{CONSO} \sim \beta_0 + \textrm{CHOM}\, \beta_1 + \textrm{EMPLOI}\, \beta_2 + \textrm{EPARGNE}\, \beta_3 + \textrm{IMPOT}\, \beta_4 + \textrm{INFL}\, \beta_5 + \textrm{PIB}\, \beta_6 + \textrm{REVENU}\, \beta_7$$
+
+Nous analyserons les données de 48 pays en 2015.
+
+```{r}
+chomage <- read.csv("DP_chomage.csv", encoding = "UTF-8")[, c(1, 7)]
+names(chomage) <- c("PAYS", "CHOM")
+
+conso <- read.csv("DP_conso.csv", encoding = "UTF-8")[, c(1, 7)]
+names(conso) <- c("PAYS", "CONSO")
+
+emploi <- read.csv("DP_emploi.csv", encoding = "UTF-8")[, c(1, 7)]
+names(emploi) <- c("PAYS", "EMPLOI")
+
+epargne <- read.csv("DP_epargne_revenu.csv", encoding = "UTF-8")[, c(1, 7)]
+names(epargne) <- c("PAYS", "EPARGNE")
+
+impot <- read.csv("DP_impot_PIB.csv", encoding = "UTF-8")[, c(1, 7)]
+names(impot) <- c("PAYS", "IMPOT")
+
+inflation <- read.csv("DP_inflation_IPC.csv", encoding = "UTF-8")[, c(1, 7)]
+names(inflation) <- c("PAYS", "INFL")
+
+pib <- read.csv("DP_PIB.csv", encoding = "UTF-8")[, c(1, 7)]
+names(pib) <- c("PAYS", "PIB")
+
+revenu <- read.csv("DP_revenu.csv", encoding = "UTF-8")[, c(1, 7)]
+names(revenu) <- c("PAYS", "REVENU")
+
+data <- Reduce(function(x, y) merge(x, y), list(chomage, conso, emploi, epargne, 
+    impot, inflation, pib, revenu))
+```
+
+```{r}
+summary(data)
+```
+
+```{r}
+cor(data[,2:9])
+```
+
+```{r}
+model1 <- lm(CONSO~., data = data[,2:9])
+summary(model1)
+```
+
+```{r}
+model2 <- lm(CONSO~EPARGNE+INFL+REVENU, data = data)
+summary(model2)
+```
+
+```{r}
+anova(model1, model2)
+```
+
+```{r}
+plot(CONSO~REVENU, data = data,
+     ylim = c(0, max(REVENU)),
+     xlim = c(0, max(CONSO))
+    )
+```
