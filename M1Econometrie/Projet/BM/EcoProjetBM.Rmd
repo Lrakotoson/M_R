@@ -1,0 +1,86 @@
+---
+output:
+  html_document:
+    df_print: paged
+jupyter:
+  jupytext:
+    formats: ipynb,Rmd
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.1'
+      jupytext_version: 1.2.4
+  kernelspec:
+    display_name: R
+    language: R
+    name: ir
+---
+
+<!-- #region -->
+# Econométrie
+Les facteurs de la variation de la consommation des ménages sur un aspect macro-économique
+
+_______
+
+On suppose que le taux de croissance de la consommation des ménages dépend du taux de la croissance du chômage, du taux d'épargne, du taux d’inflation, du taux de croissance du PIB et du taux de revenu brut.
+
+Cette spécifiaction se traduit par:
+$$ \textrm{CONSO} \sim \beta_0 + \textrm{CHOM}\, \beta_1 + \textrm{EPARGNE}\, \beta_2 + \textrm{INFL}\, \beta_3 + \textrm{PIB}\, \beta_4 + \textrm{REVENU}\, \beta_5$$
+
+Nous analyserons les données de 92 pays sur la croissance de 2015 par rapport à 2014, dont la variable dépendante, CONSO, est le taux de croissance de consommation des ménages, avec les variables exogènes suivantes:
+
+- CHOM: croissance du taux de chômage
+- EPARGNE: croissance du taux d'épargne par revenu
+- INFL: croissance de l'inflation mesurée par l'indice des prix à la consommation
+- PIB: taux de croissance du PIB par habitant
+- REVENU: taux de croissance des revenus par habitant
+
+Avec $\beta_0$ qui exprime la croissance de la consommation quand ces variables exogènes ne varient pas. On peut l'interpréter comme la *consommation incompressible* des ménages.
+
+Les données brutes, séparées, proviennent de la base de données de la [banque mondiale](https://donnees.banquemondiale.org/).
+Elles ont été fusionnées et prétraitées en amont pour pouvoir se concentrer sur l'analyse dans ce notebook.
+
+
+## Description des données
+Les variables sont *globalement* centrées.  
+Les variances des taux de croissance de la consommation, de l'inflation, du PIB et du revenu ne sont pas grandes entre les 92 pays. Le chômage a une croissance généralement négative, ce qui va dans le sens de la décroissance du taux de chômage mondial depuis 2010.
+<!-- #endregion -->
+
+```{r echo=FALSE, fig.align='center'}
+source("pretraitement.R")
+boxplot(data,
+        outline = F,
+        main = "Répartition des variables",
+        ylab = "Pourcentage",
+        col = 2:7
+       )
+```
+
+```{r echo=FALSE}
+data.frame(cor(data))
+```
+
+```{r}
+plot(data)
+```
+
+```{r}
+model1 <- lm(CONSO~., data = data)
+summary(model1)
+```
+
+```{r}
+model2 <- lm(CONSO~EPARGNE+INFL+REVENU, data = data)
+summary(model2)
+```
+
+```{r}
+anova(model1, model2)
+```
+
+```{r}
+plot(CONSO~REVENU, data = data,
+     ylim = c(-2, 8),
+     xlim = c(-2, max(CONSO))
+    )
+```

@@ -22,6 +22,11 @@ Cette spécifiaction se traduit par:
 $$ \textrm{CONSO} \sim \beta_0 + \textrm{CHOM}\, \beta_1 + \textrm{EMPLOI}\, \beta_2 + \textrm{EPARGNE}\, \beta_3 + \textrm{IMPOT}\, \beta_4 + \textrm{INFL}\, \beta_5 + \textrm{PIB}\, \beta_6 + \textrm{REVENU}\, \beta_7$$
 
 Nous analyserons les données de 48 pays en 2015.
+```{r}
+t <- list.files()[7]
+source(t)
+```
+
 
 ```{r}
 chomage <- read.csv("DP_chomage.csv", encoding = "UTF-8")[, c(1, 7)]
