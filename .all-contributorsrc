@@ -1,0 +1,25 @@
+{
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "contributors": [
+    {
+      "login": "Dyl-M",
+      "name": "Dylan Monfret",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/57560342?v=4",
+      "profile": "https://github.com/Dyl-M",
+      "contributions": [
+        "code",
+        "review"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "projectName": "M1R",
+  "projectOwner": "Lrakotoson",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "skipCi": true
+}
