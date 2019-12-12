@@ -1,0 +1,25 @@
+{
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "contributors": [
+    {
+      "login": "Lrakotoson",
+      "name": "Loïc Rakotoson",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/41545040?v=4",
+      "profile": "https://loicrakotoson.com",
+      "contributions": [
+        "code",
+        "projectManagement"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "projectName": "M1R",
+  "projectOwner": "Lrakotoson",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "skipCi": true
+}
