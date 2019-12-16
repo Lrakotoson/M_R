@@ -1,0 +1,152 @@
+---
+jupyter:
+  jupytext:
+    formats: ipynb,Rmd
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.1'
+      jupytext_version: 1.2.4
+  kernelspec:
+    display_name: R
+    language: R
+    name: ir
+---
+
+```{r}
+library(AER)
+library(tseries)
+library(car)
+library(sandwich)
+library(lmtest)
+library(gmm)
+library(systemfit)
+library(dynlm)
+```
+
+- `revr_pop`: revenu réel par tête CAD Dollars
+- `pr_fr`: prix réel du fromage 
+- `pr_lait`: prix réel du lait
+- `pr_beurre`: prix réel du beurre
+- `prod_kgpc`: Production - Consommation 1000 tonnes
+- `vaches_pc`: nombre de vaches par personne
+
+```{r}
+FROM <- read.table("Fromage_Simplifie.csv",
+                   head = TRUE,
+                   sep = ";"
+                  )
+head(FROM)
+```
+
+```{r}
+FROMT <- ts(data = FROM,
+            start = 1990,
+            end = 2016,
+            frequency = 1,
+            deltat = 1
+           )
+
+ts.plot(FROMT[, "lnprod_kgpc"],
+        main = "Evolution de la production - consommation de fromage en log ",
+        col = "blue"
+       )
+```
+
+```{r}
+ts.plot(FROMT[, "lnpr_fr"],
+        main = "Evolution du prix du fromage en log ",
+        col = "blue"
+       )
+```
+
+```{r}
+summary(FROMT)
+cor(FROMT)
+```
+
+**Equations de comportement FSM**
+
+```{r}
+EQD <- lnprod_kgpc ~ lnpr_fr + lnpr_beurre + lnrevr_pop
+EQO <- lnprod_kgpc ~ lnpr_fr + lnpr_lait + lnvaches_pc  
+```
+
+**Equation equilibre  : production = consommation**
+
+```{r}
+instruments <- ~ lnpr_beurre + lnrevr_pop + lnpr_lait + lnvaches_pc 
+```
+
+**Estimation de la forme reduite du modèle avec la fonction `lm`**
+
+```{r}
+EQ1_FRM <- lm(lnprod_kgpc ~ lnpr_beurre + lnrevr_pop + lnpr_lait + lnvaches_pc,
+              data = FROMT
+             )
+summary(EQ1_FRM)
+```
+
+```{r}
+EQ2_FRM <- lm(lnpr_fr ~ lnpr_beurre + lnrevr_pop + lnpr_lait + lnvaches_pc,
+              data = FROMT
+             )
+summary(EQ2_FRM)
+```
+
+**Estimation de la forme reduite du modèle avec la fonction `systemfit`**
+
+```{r}
+EQ1_FRM1 <- lnprod_kgpc ~ lnpr_beurre + lnrevr_pop + lnpr_lait + lnvaches_pc
+EQ2_FRM1 <- lnpr_fr ~ lnpr_beurre + lnrevr_pop + lnpr_lait + lnvaches_pc
+
+SystemFRM <- list(EQ1_FRM1, EQ2_FRM1)
+FRM_MCO <- systemfit(SystemFRM, "OLS", data = FROMT, maxit = 100)
+summary(FRM_MCO, residCov = FALSE, equations = FALSE)
+```
+
+**Estimation des équations de la FSM avec les DMC avec la fonction `ivreg`**
+
+```{r}
+EQ1_DMC = ivreg(lnprod_kgpc ~ lnpr_fr + lnpr_beurre + lnrevr_pop |
+                lnpr_beurre + lnrevr_pop + lnpr_lait + lnvaches_pc,
+                data = FROMT
+               )
+summary(EQ1_DMC, diagnostics = TRUE)
+```
+
+```{r}
+EQ2_DMC = ivreg(lnprod_kgpc ~ lnpr_fr + lnpr_lait + lnvaches_pc |
+                lnpr_beurre + lnrevr_pop + lnpr_lait + lnvaches_pc,
+                data = FROMT
+               )
+summary(EQ2_DMC, diagnostics = TRUE)
+```
+
+**Estimation de la FSM avec system `fit`**
+
+```{r}
+SystemFSM <- list(EQD, EQO)
+model_DMC <- systemfit(SystemFSM, "2SLS", inst = instruments, data = FROMT, maxit = 100)
+summary(model_DMC, residCov = FALSE, equations = FALSE)
+```
+
+___
+**Obtenir les valeurs estimées**
+
+```{r}
+fiteqd <- fitted(model_DMC$eq[[1]])
+fiteqo <- fitted(model_DMC$eq[[2]])
+
+tsfiteqd <- ts(fiteqd, start = 1990, end = 2016, frequency = 1, deltat = 1)
+tsfiteqo <- ts(fiteqo, start = 1990, end = 2016, frequency = 1, deltat = 1)
+
+ts.plot(FROMT[, "lnprod_kgpc"],
+        tsfiteqd, tsfiteqo,
+        col = 1:3
+       )
+
+legend("topleft",
+       c("lnq_obs", "lnq_d", "lnq_o"), bty = "n", col = 1:3, lty = rep(1,3)
+      )
+```
