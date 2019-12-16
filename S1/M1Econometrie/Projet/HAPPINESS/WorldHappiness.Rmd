@@ -1,0 +1,44 @@
+---
+jupyter:
+  jupytext:
+    formats: ipynb,Rmd
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.1'
+      jupytext_version: 1.2.4
+  kernelspec:
+    display_name: R
+    language: R
+    name: ir
+---
+
+```{r}
+h2018 <- read.csv("happiness2018.csv",
+                  header = T,
+                  sep = ",",
+                  colClasses = c()
+                    encoding = "utf-8"
+                 )
+```
+
+```{r}
+colnames(h2018) <- c("Classement", "Pays", "Score", "PIB_habitant", "Support_social", 
+    "Esper_vie", "Liberte_choix_vie", "Generosite", "Confiance")
+```
+
+```{r}
+dim(h2018)
+```
+
+```{r}
+mod1 <- lm(Score ~., data = h2018[,3:8])
+```
+
+```{r}
+summary(mod1)
+```
+
+```{r}
+str(h2018)
+```
