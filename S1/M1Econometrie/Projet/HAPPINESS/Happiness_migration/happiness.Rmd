@@ -1,0 +1,81 @@
+---
+jupyter:
+  jupytext:
+    formats: ipynb,Rmd
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.1'
+      jupytext_version: 1.2.4
+  kernelspec:
+    display_name: R
+    language: R
+    name: ir
+---
+
+```{r}
+brut <- read.csv("brut.csv",
+                 sep = ";",
+                 header = T,
+                 encoding = "UTF-8",
+                 dec = ","
+                )
+```
+
+```{r}
+brut <- aggregate(brut[, 3:19], list(brut$Country), mean, na.rm = T)
+```
+
+Modele 1: brut
+
+```{r}
+plot(log(brut$GDP_PPP), brut$Life_Ladder)
+```
+
+```{r}
+mod1 <- lm(Life_Ladder~., data = brut[,2:18])
+summary(mod1)
+```
+
+```{r}
+boxplot(brut[,c(4,6:18)], na.rm = T)
+```
+
+```{r}
+cor(na.omit(brut[,2:18]))
+```
+
+<!-- #region -->
+On garde:
+- Les variables fortement corrélés à Y (Life_ladder)
+- Parmis ceux corrélées entre elles, uniquement la plus corrélée à Y
+
+
+Donc on supprime:
+- `Democratic_Quality` pour garder `Delivery_Quality`
+- `GINI 2000-16` pour garder `GINI household`
+- Les `Trust_people` pour garder `Trust_people_2005-2009`
+
+
+On effectue une régression sur les variables restantes
+
+
+**MODELE 2**
+<!-- #endregion -->
+
+```{r}
+donnees2 <- brut[,-c(12,14,16,18)]
+```
+
+```{r}
+mod2 <- lm(Life_Ladder~., data = donnees2[,2:14])
+summary(mod2)
+```
+
+```{r}
+cor(na.omit(donnees2[,2:14]))
+```
+
+```{r}
+plot(mod2$residuals)
+```
