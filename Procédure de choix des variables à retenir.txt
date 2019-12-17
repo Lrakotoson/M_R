@@ -1,0 +1,9 @@
+1. Régression simple. On conserve, quoi qu'il arrive toutes variables significatives au seuil de 5%
+
+2. Calcul des corrélations entre toutes les variables (à expliquer & explicatives)
+	
+	2.a. On repère les variables faiblement corrélées à la variable à expliquer -> elles sont à supprimer.
+	2.b. On repère les variables explicaives fortement corrélées entres elles -> on les sépare dans des modèles distincts SAUF si elles sont corélées à une variables
+	     supprimées précédement.
+
+3. Do it again.
