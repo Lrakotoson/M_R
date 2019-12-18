@@ -20,10 +20,34 @@ brut <- read.csv("brut.csv",
                  encoding = "UTF-8",
                  dec = ","
                 )
+
+region <- read.csv("region.csv",
+                   sep = ";",
+                   header = T,
+                   encoding = "UTF-8"
+                  )
+
+citizenship <- read.csv("locally_foreign.csv",
+                        sep = ";",
+                        header = T,
+                        encoding = "UTF-8"
+                       )
 ```
 
 ```{r}
-brut <- aggregate(brut[, 3:19], list(brut$Country), mean, na.rm = T)
+brut <- merge(region,
+              merge(citizenship,
+                    aggregate(brut[, 3:19], list(brut$Country), mean, na.rm = T),
+                    by.x = "Country", by.y = "Group.1"),
+              by = "Country")
+```
+
+```{r}
+levels(brut$Region)
+```
+
+```{r}
+head(brut)
 ```
 
 Modele 1: brut

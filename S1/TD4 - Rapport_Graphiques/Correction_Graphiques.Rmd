@@ -57,8 +57,8 @@ plot(x,y)
 
 8. Extraction de code:
 ```{r}
-library(knitr) # il faut utiliser ce package 
-purl(file.choose()) # choose "ExempleRnotebook.rmd" 
+#library(knitr) # il faut utiliser ce package 
+#purl(file.choose()) # choose "ExempleRnotebook.rmd" 
 #-> cree un fischier script .R avec toutes les commandes R du fischier choisi
 ```
 
