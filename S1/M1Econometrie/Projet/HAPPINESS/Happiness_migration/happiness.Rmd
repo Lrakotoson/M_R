@@ -5,6 +5,9 @@ author:
 - name: Dylan Monfret
 output:
   html_document:
+    theme: spacelab
+    highlight: tango
+    number_sections: TRUE
     df_print: paged
     code_folding: hide
 jupyter:
@@ -61,6 +64,12 @@ Nous utilisons les données à jour des 4 dernières années pour construire nos
 
 ---
 Libraries utilisées
+```
+PerformanceAnalytics
+ggplot2
+gridExtra
+reshape
+```
 <!-- #endregion -->
 
 ```{r message=FALSE}
@@ -194,6 +203,7 @@ ggplot(data) +
 # Modélisation
 ## Modèle 1: modèle linéaire général
 Nous effectuons une régression sur un modèle linéaire sur toutes nos variables explicatives de façon brute.
+$$\textrm{Life_Ladder} \sim \textrm{GDP_PPP} + \textrm{Social_support} + \textrm{HALE_birth} + ... + \textrm{Trust_people_WVS_10_14}$$
 
 ```{r}
 mod1 <- lm(Life_Ladder~., data = data[,7:length(data)])
@@ -207,6 +217,7 @@ En s'appuyant sur l'analyse descriptive précédente, entre `GINI 2000-16` et `G
 ## Modèle 2: modèle sur les qualités et GINI
 L'analyse descriptive a conclut que `Democratic_quality` et `Delivery_quality` sont corrélées entre elles et significativement corrélées aux 8 premières variables endogènes.  
 On pose comme nouveau modèle `Life_Ladder` expliquée par ces deux variables et l'indice de `GINI` gardée.
+$$\textrm{Life_Ladder} \sim \textrm{Democratic_Quality} + \textrm{Delivery_Quality} + \textrm{GINI_household}$$
 
 ```{r}
 mod2 <- lm(Life_Ladder ~ Democratic_Quality + Delivery_Quality + GINI_household,
@@ -221,6 +232,7 @@ En effet, la part de variance expliquée part ce modèle est assez faible.
 Ajustons sur les 8 premières variables exogènes et `GINI`.  
 En se basant sur l'analyse descriptive, nous utiliserons le logarithme naturel du PIB par habitant.  
 `Freedom` et `Corruption` seront utilisées au lieu de `Confidence_government`.
+$$\textrm{Life_Ladder} \sim log(\textrm{GDP_PPP}) + \textrm{Social_support} + \textrm{HALE_birth} + \textrm{Freedom} + \\ \textrm{Generosity} + \textrm{Corruption} + \textrm{Positive_affect} + \textrm{Negative_affect} + \textrm{GINI_household}$$
 
 ```{r}
 mod3 <- lm(Life_Ladder ~ log(GDP_PPP) + Social_support + HALE_birth + Freedom + Generosity + Corruption + 
@@ -235,6 +247,7 @@ Le `Negative_affect` n'est pas significative non plus, l'impact de la tristesse,
 
 ## Modèle 4: optimisation sur les variables significatives
 Nous retirons les variables qui ne sont pas significatives au niveau $\alpha$ = 10% dans le 3e modèle.
+$$\textrm{Life_Ladder} \sim log(\textrm{GDP_PPP}) + \textrm{Social_support} +\\ \textrm{HALE_birth} + \textrm{Generosity} + \textrm{Positive_affect} + \textrm{GINI_household}$$
 
 ```{r}
 mod4 <- lm(Life_Ladder ~ log(GDP_PPP) + Social_support + HALE_birth + Generosity +
