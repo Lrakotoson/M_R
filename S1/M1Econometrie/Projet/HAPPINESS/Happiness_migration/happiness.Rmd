@@ -103,7 +103,9 @@ data <- merge(region,
 head(data)
 ```
 
-Visualisons les distributions mondiale et régionales de l'évaluation `Life_Ladder` moyenne des 4 dernières années.
+## Distribution du score
+Visualisons les **distributions mondiale et régionales** de l'évaluation `Life_Ladder` moyenne des 4 dernières années.  
+En effet, le score peut aussi dépendre de la région du monde où les répondants vivent. On remarque que les scores sont tous supérieurs à 5 en Amérique latine, en Europe Occidentale.
 
 ```{r fig.height=12, fig.width=12, message=FALSE, warning=FALSE}
 world <- ggplot(data) + aes(x = Life_Ladder) + geom_histogram(color = "red", fill = "orange", 
@@ -127,12 +129,44 @@ grid.arrange(world, region[[1]],
              )
 ```
 
+Visualisons la **distribution en fonction de l'origine** de `Life_Ladder`.  
+La répartition des scores est confondues entre les personnes de souche `Locally_born` et celles non originaires du pays `Foreign_born`. Dans la suite, nous considérerons uniquement `Life_Ladder` donc.
+
+```{r fig.width=12, message=FALSE, warning=FALSE}
+ggplot(melt(data[,c(3,6)]), aes(x = value)) +
+    geom_histogram(aes(color = variable, fill = variable),
+                   position = "identity",
+                   bins = 30, alpha = 0.4) +
+    scale_color_manual(values = c("red", "blue4")) +
+    scale_fill_manual(values = c("orange", "deepskyblue")) +
+    scale_x_continuous(name = "Life Ladder",
+                       limits = c(0, 10)) + ylab("") +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    labs(title = "Distribution du score\nen fonction de l'origine")
+```
+
+## Matrice de corrélation des variables
+Visualisons la **matrice de corrélation** entre les variables.
+
+La distribution de chacun des variables figure sur la diagonale. Les nuages de points avec les courbes de tendance, sous la diagonale. Les coefficients de corrélation de Pearson avec les niveaux de significativité, sur la partie supérieure.  
+Signif. codes:  0 '\*\*\*' 0.001 '\*\*' 0.01 '\*' 0.05 '.' 0.1 ' ' 1
+
+- Les 8 premières variables endogènes sont significativement corrélées avec `Life_Ladder`.
+- `Confidence_government` n'est pas corrélée avec la variable à expliquer, toutefois elle est significativement corrélée avec `Freedom` et `Corruption`.
+- Le nuage de points de `Democratic_quality` et `Delivery_quality` démontre un accroissement simultané des deux paramètres et donc d'une forte corrélation positive entre elles. De plus, elles sont significativement corrélées avec la variables à expliquer et les 8 premières variables endogènes.
+- Les deux variables de `GINI` possèdent sensiblement la même distribution et sont significativement corrélées. `GINI_household` est la plus corrélée à la variable à expliquer.
+- Les trois variables de `Trust_People` sont distribuées de la même manière et sont fortement corrélées entre elles. `Trust_People_WVS_05_09` est la plus corrélée à `Life_Ladder`.
+
 ```{r fig.height=12, fig.width=12}
 chart.Correlation(data[,7:length(data)],
-                  histogram = T,
-                  ylab = colnames(data[,7:length(data)])
-                 )
+                  histogram = T)
 ```
+
+## Répartition des variables de sondage
+Visualisons la répartition des variables explicatives obtenues par sondage.  
+Les interprétations de la matrice de corrélation s'appliquent à cette représentation.  
+Les variables `Democratic_Quality` et `Delivery_Quality` sont sensiblement réparties de la même manière.  
+Lors de l'optimisation de nos modèles, nous choisirons parmis les variables semblablement réparties (`GINI` et `Trust`), celles qui sont les plus corrélées à `Life_Ladder`.
 
 ```{r fig.height=8, fig.width=12, message=FALSE, warning=FALSE}
 ggplot(melt(data[, c(9, 11:length(data))]),
@@ -140,14 +174,20 @@ ggplot(melt(data[, c(9, 11:length(data))]),
     geom_boxplot(color = "red", fill = "orange", alpha = 0.2) +
     theme(axis.text.x = element_text(angle = 90, hjust = 1),
           plot.title = element_text(hjust = 0.5)) +
-    labs(title = "Distribution des variables explicatives binaires",
+    labs(title = "Distribution des variables explicatives de sondage",
          x = "", y = "")
 ```
 
-```{r}
+## Nuage de points et tendance
+Dans la matrice de corrélation précédente, on remarque une tendance exponentielle entre `Life_Ladder`~`GDP_PPP`.  
+L'utilisation du logarithme naturel de `GDP_PPP` correspond beaucoup mieux aux données de `Life_Ladder`.
+
+```{r fig.width=12, message=FALSE, warning=FALSE}
 ggplot(data) +
     aes(x = log(GDP_PPP), y = Life_Ladder) +
-    geom_point(color = "red")
+    geom_point(color = "red") +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    labs(title = "Score en fonction du\nlogarithme du PIB par habitant")
 ```
 
 Modele 1: brut
