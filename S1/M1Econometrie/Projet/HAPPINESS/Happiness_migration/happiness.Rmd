@@ -1,4 +1,11 @@
 ---
+title: "Mesure du bonheur"
+author:
+- name: Loic Rakotoson
+- name: Dylan Monfret
+output:
+  html_document:
+    df_print: paged
 jupyter:
   jupytext:
     formats: ipynb,Rmd
@@ -12,6 +19,53 @@ jupyter:
     language: R
     name: ir
 ---
+
+<!-- #region -->
+# Introduction
+Nous basons notre étude sur le rapport de publié par le [World Happiness Report](https://worldhappiness.report) sur le bonheur.  
+Les scores obtenus sont obtenus par les enquêtes de **Gallup**, et nous disposons directement de la moyenne pour chaque pays pour chaque année.
+
+- `Life_Ladder`: La **variable à expliquer**. Un score obtenu en demandant aux répondants d'évaluer leur vie sur une échelle de 0 à 10, où 0 est la pire vie possible et 10 l'extrême opposé.
+- `Foreign_born`: La note moyenne donnée par les personnes qui ne sont pas originaires du pays.
+- `Locally_born`: La note moyenne donnée par les personnes de souche.
+- `Whisker.high` et `low`: Les notes maximale et minimale.
+
+
+
+Nous utilisons les données à jour des 4 dernières années pour construire nos données pour l'analyse, ils s'agiront de nos **variables endogènes**. Nos données brutes proviennent de:
+
+- **Banque Mondiale**:
+    - `GDP_PPP`: Moyenne du PIB par habitant à parité de pouvoir d'achat (PPA) corrigée en dollars internationaux constants de 2011, entre 2015 et 2018 *(2013 - 2016 dans le rapport du WHR)*.
+    - `GINI 02-18`: Moyenne de l'indice de GINI de 2002 à 2018 *(2000 - 2016 dans le rapport du WHR)*.
+- **Organisation Mondiale de la Santé**:  
+    - `HALE_birth`: Espérance de vie en bonne santé à la naissance pour chaque pays, données de l'OMS de 2012. Les données manquantes ont été complétées par les données de la banque mondiale pour la même année.  
+- **Gallup World Poll**:  
+    - `Social_support`: Moyenne nationale des réponses binaires (0 ou 1) à la question "Si vous aviez des problèmes, avez-vous des parents ou des amis sur lesquels vous pouvez compter pour vous aider quand vous en avez besoin ou non ?"  
+    - `Freedom`: Moyenne nationale des réponses binaires à la question "Êtes-vous satisfait ou insatisfait de votre liberté de choisir ce que vous faites de votre vie ?  
+    - `Generosity`: Résidu de la régression de la moyenne nationale des réponses à la question " Avez-vous donné de l'argent à un organisme de bienfaisance au cours du dernier mois ?" sur le PIB par habitant.  
+    - `Corruption`: Moyenne des réponses binaires à deux questions:  
+        - "La corruption est-elle répandue dans tout le gouvernement ou non ?"  
+        - "La corruption est-elle répandue dans les entreprises ou non ?"  
+    - `Positive_affect` ( resp. `Negative_affect`): Moyenne des mesures de l'effet des jours précédents l'enquête pour le bonheur, le rire et le plaisir (resp. l'inquiétude, la tristesse et la colère).  
+    - `Confidence_government`: Moyenne nationale des réponses binaires à la question "Faîtes-vous confiance en votre gouvernement ?"  
+    - `GINI_household_income_Gallup`: Mesure de l'indice de GINI pour les ménages du pays en 2017  
+    - `Trust_People_Gallup`: Moyenne nationale des réponses binaires à la question "Faîtes-vous confiance à un inconnu ?"  
+- **European Social Survey**:  
+    - `Democratic_Quality`: Moyenne nationale de la mesure de la qualité de la démocratie sur une échelle de 0 à 10, ramenée à une échelle de -5 à +5  
+    - `Delivery_Quality`: Moyenne nationale de la mesure de la prestation du gouvernement sur une échelle de 0 à 10, ramenée à une échelle de -5 à +5  
+- **World Value Survey**:  
+    - `Trust_people_WVS` pour `05_09` et `10_14`: Moyenne nationale des réponses binaires en 2005-2009, puis en 2010-2014, à la question "Faîtes-vous confiance à un inconnu ?"  
+- **World Happiness Report**:  
+    - `Region`: Régions utilisées par WHR pour leur analyse
+
+---
+Libraries utilisées
+<!-- #endregion -->
+
+```{r message=FALSE}
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(PerformanceAnalytics, ggplot2, gridExtra, reshape)
+```
 
 ```{r}
 brut <- read.csv("brut.csv",
@@ -30,43 +84,77 @@ region <- read.csv("region.csv",
 citizenship <- read.csv("locally_foreign.csv",
                         sep = ";",
                         header = T,
-                        encoding = "UTF-8"
+                        encoding = "UTF-8",
+                        dec = ","
                        )
 ```
 
+# Statistique descriptive
+Dans notre table d'analyse, nous avons pour chaque individu (Pays), ses statistiques obtenues grâce au prétraitement expliqué précédemment.  
+Dans cette section, nous analyserons la distribution des variables au sein des individus, la corrélation entre elles.
+
 ```{r}
-brut <- merge(region,
+data <- merge(region,
               merge(citizenship,
                     aggregate(brut[, 3:19], list(brut$Country), mean, na.rm = T),
                     by.x = "Country", by.y = "Group.1"),
               by = "Country")
+
+head(data)
+```
+
+Visualisons les distributions mondiale et régionales de l'évaluation `Life_Ladder` moyenne des 4 dernières années.
+
+```{r fig.height=12, fig.width=12, message=FALSE, warning=FALSE}
+world <- ggplot(data) + aes(x = Life_Ladder) + geom_histogram(color = "red", fill = "orange", 
+    alpha = 0.2) + scale_x_continuous(name = "World", limits = c(0, 10)) + ylab("")
+
+region <- vector("list", length = 10)
+for (i in 1:length(levels(data$Region))) {
+    region[[i]] <- ggplot(data[data$Region == levels(data$Region)[i], ]) +
+                    aes(x = Life_Ladder) + 
+                    geom_histogram(color = "red", fill = "orange", alpha = 0.2) +
+                    scale_x_continuous(name = levels(data$Region)[i],
+                                       limits = c(0, 10)) + ylab("")
+}
+
+grid.arrange(world, region[[1]],
+             region[[2]], region[[3]], region[[4]],
+             region[[5]], region[[6]], region[[7]],
+             region[[8]], region[[9]], region[[10]],
+             ncol = 3, nrow = 4,
+             layout_matrix = matrix(c(rep(1,2),2:11), ncol = 3, byrow = T)
+             )
+```
+
+```{r fig.height=12, fig.width=12}
+chart.Correlation(data[,7:length(data)],
+                  histogram = T,
+                  ylab = colnames(data[,7:length(data)])
+                 )
+```
+
+```{r fig.height=8, fig.width=12, message=FALSE, warning=FALSE}
+ggplot(melt(data[, c(9, 11:length(data))]),
+       aes(x = variable, y = value)) +
+    geom_boxplot(color = "red", fill = "orange", alpha = 0.2) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1),
+          plot.title = element_text(hjust = 0.5)) +
+    labs(title = "Distribution des variables explicatives binaires",
+         x = "", y = "")
 ```
 
 ```{r}
-levels(brut$Region)
-```
-
-```{r}
-head(brut)
+ggplot(data) +
+    aes(x = log(GDP_PPP), y = Life_Ladder) +
+    geom_point(color = "red")
 ```
 
 Modele 1: brut
 
 ```{r}
-plot(log(brut$GDP_PPP), brut$Life_Ladder)
-```
-
-```{r}
 mod1 <- lm(Life_Ladder~., data = brut[,2:18])
 summary(mod1)
-```
-
-```{r}
-boxplot(brut[,c(4,6:18)], na.rm = T)
-```
-
-```{r}
-cor(na.omit(brut[,2:18]))
 ```
 
 <!-- #region -->
@@ -94,10 +182,6 @@ donnees2 <- brut[,-c(12,14,16,18)]
 ```{r}
 mod2 <- lm(Life_Ladder~., data = donnees2[,2:14])
 summary(mod2)
-```
-
-```{r}
-cor(na.omit(donnees2[,2:14]))
 ```
 
 ```{r}

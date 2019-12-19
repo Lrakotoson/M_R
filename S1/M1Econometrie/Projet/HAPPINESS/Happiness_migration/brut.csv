@@ -1,4 +1,4 @@
-Country;Year;Life_Ladder;GDP_PPP;Social_support;HALE_birth;Freedom;Generosity;Corruption;Positive_affect;Negative_affect;Confidence_government;Democratic_Quality;Delivery_Quality;GINI_2000_16_WB;GINI_household_income_Gallup;Trust_People_Gallup;Trust_people_WVS_05_09;Trust_people_WVS_10_14
+Country;Year;Life_Ladder;GDP_PPP;Social_support;HALE_birth;Freedom;Generosity;Corruption;Positive_affect;Negative_affect;Confidence_government;Democratic_Quality;Delivery_Quality;GINI_02_18_WB;GINI_household_income_Gallup;Trust_People_Gallup;Trust_people_WVS_05_09;Trust_people_WVS_10_14
 Afghanistan;2008;3,723589897;1298,143187;0,450662315;50,79999924;0,718114316;0,177888572;0,88168633;0,517637193;0,25819549;0,61207211;-1,929689646;-1,655084372;;;;;
 Afghanistan;2009;4,401778221;1531,173671;0,55230844;51,20000076;0,678896368;0,200178429;0,850035429;0,583925605;0,23709242;0,611545205;-2,044092655;-1,635024786;;0,441905767;0,286315262;;
 Afghanistan;2010;4,75838089;1614,254675;0,539075196;51,59999847;0,60012722;0,13435255;0,706766069;0,61826545;0,275323808;0,299357414;-1,991810083;-1,617176056;;0,327318162;0,275832713;;
