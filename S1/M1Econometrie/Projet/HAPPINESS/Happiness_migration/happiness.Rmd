@@ -6,6 +6,7 @@ author:
 output:
   html_document:
     df_print: paged
+    code_folding: hide
 jupyter:
   jupytext:
     formats: ipynb,Rmd
@@ -190,40 +191,57 @@ ggplot(data) +
     labs(title = "Score en fonction du\nlogarithme du PIB par habitant")
 ```
 
-Modele 1: brut
+# Modélisation
+## Modèle 1: modèle linéaire général
+Nous effectuons une régression sur un modèle linéaire sur toutes nos variables explicatives de façon brute.
 
 ```{r}
-mod1 <- lm(Life_Ladder~., data = brut[,2:18])
+mod1 <- lm(Life_Ladder~., data = data[,7:length(data)])
 summary(mod1)
 ```
 
-<!-- #region -->
-On garde:
-- Les variables fortement corrélés à Y (Life_ladder)
-- Parmis ceux corrélées entre elles, uniquement la plus corrélée à Y
+Ce modèle est globalement valide mais aucun coefficient n'est significatif comme attendu.  
+Il faut noter que les variables `Trust` possèdent un nombre important de valeurs manquantes. Nous ne les garderons pas.  
+En s'appuyant sur l'analyse descriptive précédente, entre `GINI 2000-16` et `GINI household` fortement corrélées nous garderon la dernière car mieux corrélée à la variable à expliquer.
 
-
-Donc on supprime:
-- `Democratic_Quality` pour garder `Delivery_Quality`
-- `GINI 2000-16` pour garder `GINI household`
-- Les `Trust_people` pour garder `Trust_people_2005-2009`
-
-
-On effectue une régression sur les variables restantes
-
-
-**MODELE 2**
-<!-- #endregion -->
+## Modèle 2: modèle sur les qualités et GINI
+L'analyse descriptive a conclut que `Democratic_quality` et `Delivery_quality` sont corrélées entre elles et significativement corrélées aux 8 premières variables endogènes.  
+On pose comme nouveau modèle `Life_Ladder` expliquée par ces deux variables et l'indice de `GINI` gardée.
 
 ```{r}
-donnees2 <- brut[,-c(12,14,16,18)]
-```
-
-```{r}
-mod2 <- lm(Life_Ladder~., data = donnees2[,2:14])
+mod2 <- lm(Life_Ladder ~ Democratic_Quality + Delivery_Quality + GINI_household,
+           data = data)
 summary(mod2)
 ```
 
+Ce 2e modèle est globalement valide et toutes les varibles sont significatives à l'exception de `Democratic_Quality`, avec un R2 ajusté de 0.65.  
+En effet, la part de variance expliquée part ce modèle est assez faible.
+
+## Modèle 3: modèle sur les 8 variables et GINI
+Ajustons sur les 8 premières variables exogènes et `GINI`.  
+En se basant sur l'analyse descriptive, nous utiliserons le logarithme naturel du PIB par habitant.  
+`Freedom` et `Corruption` seront utilisées au lieu de `Confidence_government`.
+
 ```{r}
-plot(mod2$residuals)
+mod3 <- lm(Life_Ladder ~ log(GDP_PPP) + Social_support + HALE_birth + Freedom + Generosity + Corruption + 
+    Positive_affect + Negative_affect + GINI_household,
+           data = data)
+summary(mod3)
 ```
+
+Ce 3e modèle est globalement significatif avec un R2 ajusté de 0.90. La part de variance expliquée est nettement plus élevée par rapport au modèle précédent.  
+`Freedom` et `Corruption` ne sont pas significatives au niveau $\alpha$ = 10%. La corruption dans les institutions et la liberté de choix de vie n'influent que très peu sur le bonheur subjectif.  
+Le `Negative_affect` n'est pas significative non plus, l'impact de la tristesse, de l'inquiétude et de la colère est éphémère sur le bonheur subjectif.
+
+## Modèle 4: optimisation sur les variables significatives
+Nous retirons les variables qui ne sont pas significatives au niveau $\alpha$ = 10% dans le 3e modèle.
+
+```{r}
+mod4 <- lm(Life_Ladder ~ log(GDP_PPP) + Social_support + HALE_birth + Generosity +
+           Positive_affect + GINI_household,
+           data = data)
+summary(mod4)
+```
+
+Notre modèle optimisé est donc naturellement valide. Toutes les variables sont significatives au niveau $\alpha$ = 5%.  
+La déletion des 3 variables non significatives n'a pas baissé le R2, qui est toujours de 0.90
