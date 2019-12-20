@@ -1,7 +1,7 @@
 ---
 title: "Mesure du bonheur"
 author:
-- name: Loic Rakotoson
+- name: Loïc Rakotoson
 - name: Dylan Monfret
 output:
   html_document:
@@ -69,12 +69,13 @@ PerformanceAnalytics
 ggplot2
 gridExtra
 reshape
+AER
 ```
 <!-- #endregion -->
 
 ```{r message=FALSE}
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(PerformanceAnalytics, ggplot2, gridExtra, reshape)
+pacman::p_load(PerformanceAnalytics, ggplot2, gridExtra, reshape, AER)
 ```
 
 ```{r}
@@ -258,3 +259,17 @@ summary(mod4)
 
 Notre modèle optimisé est donc naturellement valide. Toutes les variables sont significatives au niveau $\alpha$ = 5%.  
 La déletion des 3 variables non significatives n'a pas baissé le R2, qui est toujours de 0.90
+
+## Modèle 5: endogénéité
+Cette forte valeur de R2 peut cacher un problème d'endogénéité.
+
+```{r}
+iv <- ivreg(Life_Ladder ~ log(GDP_PPP) + Social_support + HALE_birth + 
+    Generosity + Positive_affect + GINI_household | Social_support + HALE_birth + 
+    Generosity + Positive_affect + GINI_household + Freedom + Negative_affect + Corruption, data = data)
+summary(iv, diagnostics = T)
+```
+
+- `Weak instruments`: on rejette $H_0$: "*les instruments sont tous nuls*", il existe au moins un instrument fort
+- `Wu-Hausman`: on rejette au niveau $\alpha$=10% $H_0$ qui suppose que `log(GDP_PPP)` n'est pas corrélée avec le terme d'erreur, ce qui indique qu'elle est marginalement endogène.
+- `Sargan`: on ne rejette pas l'hypothèse nulle, ce qui signifie que les instruments supplémentaires sont valides (ne sont pas corrélés avec le terme d'erreur)
