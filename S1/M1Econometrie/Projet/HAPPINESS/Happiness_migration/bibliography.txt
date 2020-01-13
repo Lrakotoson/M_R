@@ -1,0 +1,6 @@
+- [World Happiness Report 2018](https://s3.amazonaws.com/happiness-report/2018/WHR_web.pdf), Chapitre 2. WHR. 2018.
+- [Corruption, fiscalité et croissance économique dans les pays en développement.](https://tel.archives-ouvertes.fr/tel-00486440/document) Gbewopo A. 2007.
+- [Peut-on mesurer le bonheur? Reflexion sur les indicateurs de bien être.](http://ses.ens-lyon.fr/articles/peut-on-mesurer-le-bonheur-reflexions-sur-les-indicateurs-de-bien-etre-47517) Le-Merrer P., Fraisse-D'Olimpio S. 2008.
+- [Tracking the World's Happiness](https://www.gallup.com/analytics/247355/gallup-world-happiness-report.aspx). Gallup.
+- [Subjective Measures of Well-Being A Philosophical Examination.](http://d-scholarship.pitt.edu/9197/) Angner, E. 2005.
+- [The Selection of Pay Referents: Potential Patterns and Impacts on Life Satisfaction.](https://www.diw.de/documents/publikationen/73/diw_01.c.363878.de/diw_sp0333.pdf) Schneider, S.M. 2010.
