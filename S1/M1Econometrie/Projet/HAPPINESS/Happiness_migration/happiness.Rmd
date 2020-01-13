@@ -5,11 +5,11 @@ author:
 - name: Dylan Monfret
 output:
   html_document:
-    theme: spacelab
-    highlight: tango
-    number_sections: TRUE
-    df_print: paged
     code_folding: hide
+    df_print: paged
+    highlight: tango
+    number_sections: yes
+    theme: spacelab
 jupyter:
   jupytext:
     formats: ipynb,Rmd
@@ -36,7 +36,7 @@ Les scores obtenus sont obtenus par les enquêtes de **Gallup**, et nous disposo
 
 
 
-Nous utilisons les données à jour des 4 dernières années pour construire nos données pour l'analyse, ils s'agiront de nos **variables endogènes**. Nos données brutes proviennent de:
+Nous utilisons les données à jour des 4 dernières années pour construire nos données pour l'analyse, ils s'agiront de nos **variables exogènes**. Nos données brutes proviennent de:
 
 - **Banque Mondiale**:
     - `GDP_PPP`: Moyenne du PIB par habitant à parité de pouvoir d'achat (PPA) corrigée en dollars internationaux constants de 2011, entre 2015 et 2018 *(2013 - 2016 dans le rapport du WHR)*.
@@ -260,16 +260,26 @@ summary(mod4)
 Notre modèle optimisé est donc naturellement valide. Toutes les variables sont significatives au niveau $\alpha$ = 5%.  
 La déletion des 3 variables non significatives n'a pas baissé le R2, qui est toujours de 0.90
 
-## Modèle 5: endogénéité
-Cette forte valeur de R2 peut cacher un problème d'endogénéité.
+## Modèle 5: endogénéité de GDP
+Cette forte valeur de R2 peut cacher un problème d'endogénéité.  
+En effet, la qualité du gouvernement et la corruption minent souvent une économie et touche directement le PIB par habitant qui, quand il est faible, explique un score élevé dans les effets négatifs.  
+Nous prendrons donc `Delivery_Quality`, `Corruption` et `Negative_affect` comme instruments.
 
 ```{r}
-iv <- ivreg(Life_Ladder ~ log(GDP_PPP) + Social_support + HALE_birth + 
-    Generosity + Positive_affect + GINI_household | Social_support + HALE_birth + 
-    Generosity + Positive_affect + GINI_household + Freedom + Negative_affect + Corruption, data = data)
+iv <- ivreg(Life_Ladder ~ log(GDP_PPP) + Social_support + HALE_birth + Generosity + 
+    Positive_affect + GINI_household | . - log(GDP_PPP) + Delivery_Quality + Corruption + 
+    Negative_affect, data = data)
 summary(iv, diagnostics = T)
 ```
 
 - `Weak instruments`: on rejette $H_0$: "*les instruments sont tous nuls*", il existe au moins un instrument fort
 - `Wu-Hausman`: on rejette au niveau $\alpha$=10% $H_0$ qui suppose que `log(GDP_PPP)` n'est pas corrélée avec le terme d'erreur, ce qui indique qu'elle est marginalement endogène.
-- `Sargan`: on ne rejette pas l'hypothèse nulle, ce qui signifie que les instruments supplémentaires sont valides (ne sont pas corrélés avec le terme d'erreur)
+- `Sargan`: on ne rejette pas l'hypothèse nulle, ce qui signifie que les instruments supplémentaires sont valides (ne sont pas corrélés avec le terme d'erreur).
+
+Dans ce modèle, le PIB par habitant est marginalement endogène. En effet, la variable est dépend des instruments qui étaient capturés par $\varepsilon$. `Social_support` et `HALE_birth` ne sont plus significatives, et le R2 n'a que peu diminué.  
+Comme à $\alpha$ 0.05 il n'y a pas de problème d'endogénéité, on garde alors l'estimation des MCO du modèle 4 qui est meilleure.
+
+# Conclusion
+
+___
+# Bibliographie
