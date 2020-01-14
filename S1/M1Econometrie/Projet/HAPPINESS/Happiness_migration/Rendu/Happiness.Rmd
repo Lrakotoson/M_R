@@ -303,6 +303,11 @@ iv <- ivreg(Life_Ladder ~ log(GDP_PPP) + Social_support + HALE_birth + Generosit
 summary(iv, diagnostics = T)
 ```
 
+```{r, echo=FALSE}
+save.image()
+```
+
+
 - `Weak instruments`: on rejette $H_0$: "*les instruments sont tous nuls*", il existe au moins un instrument fort
 - `Wu-Hausman`: on rejette au niveau $\alpha$=10% $H_0$ qui suppose que `log(GDP_PPP)` n'est pas corrélée avec le terme d'erreur, ce qui indique qu'elle est marginalement endogène.
 - `Sargan`: on ne rejette pas l'hypothèse nulle, ce qui signifie que les instruments supplémentaires sont valides (ne sont pas corrélés avec le terme d'erreur).
