@@ -1,16 +1,19 @@
 ---
-title: "Mesure du bonheur"
+title: "Projet de Semestre : Mesure du bonheur"
+subtitle: "Master MAS Rennes - Econométrie"
 author:
 - name: Loïc Rakotoson
 - name: Dylan Monfret
 output:
   html_document:
     code_folding: hide
-    df_print: paged
-    highlight: tango
-    number_sections: yes
     theme: spacelab
-jupyter:
+    highlight: tango
+    df_print: paged
+    number_sections: yes
+    css: style_projet.css
+---
+<!-- jupyter:
   jupytext:
     formats: ipynb,Rmd
     text_representation:
@@ -21,32 +24,43 @@ jupyter:
   kernelspec:
     display_name: R
     language: R
-    name: ir
----
+    name: ir -->
 
 <!-- #region -->
 # Introduction
-Nous basons notre étude sur le rapport de publié par le [World Happiness Report](https://worldhappiness.report) sur le bonheur.  
-Les scores obtenus sont obtenus par les enquêtes de **Gallup**, et nous disposons directement de la moyenne pour chaque pays pour chaque année.
+
+## Présentation du projet
+
+Ce projet est réalisé dans le cadre du cours d'Econométrie, prévu au premier semestre du Master Mathématiques Appliqués, Statistique de Rennes.
+
+**Sujet :** A partir de travaux économique / sociologique existant et à l'aide du cours, expliquez à l'aide du cours et de documentation un phénomène, une variable ou concept économique / sociologique avec données.
+
+Pour notre étude, nous nous sommes tournez vers la question du **bonheur** après avoir découvert la notion de "BNB (Bonheur National Brut)", indice utilisé par le Bouthan pour mesurer le bonheur et le bien-être de la population. C'est une approche assez spécial et qui se révèle plus spirituelle qu'autre chose concernant ce pays boudhiste, mais le concept de "mesure du bonheur" est intéressant, intriguant et nous ne sommes pas les seuls à y avoir songer.
+
+Puisqu'il existe des travaux, des rapport sur le bonheur, et c'est ce qui nous a servit de base de travail pour ce projet. Avec les moyens dont nous disposons, nous allons donc essayer de répondre à la problématique suivante :
+
+<center>**_Quels sont les éléments qui expliquent le bonheur ?_**</center>
+
+## Introduction des variables
+
+Nous basons notre étude sur le rapport de publié par le [World Happiness Report](https://worldhappiness.report) sur le bonheur. Les scores obtenus sont obtenus par les enquêtes de **Gallup**, entreprise de conseil et de sondage, et nous disposons directement de la moyenne pour chaque pays pour chaque année.
 
 - `Life_Ladder`: La **variable à expliquer**. Un score obtenu en demandant aux répondants d'évaluer leur vie sur une échelle de 0 à 10, où 0 est la pire vie possible et 10 l'extrême opposé.
 - `Foreign_born`: La note moyenne donnée par les personnes qui ne sont pas originaires du pays.
 - `Locally_born`: La note moyenne donnée par les personnes de souche.
 - `Whisker.high` et `low`: Les notes maximale et minimale.
 
-
-
 Nous utilisons les données à jour des 4 dernières années pour construire nos données pour l'analyse, ils s'agiront de nos **variables exogènes**. Nos données brutes proviennent de:
 
-- **Banque Mondiale**:
+- **La Banque Mondiale**:
     - `GDP_PPP`: Moyenne du PIB par habitant à parité de pouvoir d'achat (PPA) corrigée en dollars internationaux constants de 2011, entre 2015 et 2018 *(2013 - 2016 dans le rapport du WHR)*.
     - `GINI 02-18`: Moyenne de l'indice de GINI de 2002 à 2018 *(2000 - 2016 dans le rapport du WHR)*.
-- **Organisation Mondiale de la Santé**:  
+- **L'Organisation Mondiale de la Santé**:  
     - `HALE_birth`: Espérance de vie en bonne santé à la naissance pour chaque pays, données de l'OMS de 2012. Les données manquantes ont été complétées par les données de la banque mondiale pour la même année.  
 - **Gallup World Poll**:  
     - `Social_support`: Moyenne nationale des réponses binaires (0 ou 1) à la question "Si vous aviez des problèmes, avez-vous des parents ou des amis sur lesquels vous pouvez compter pour vous aider quand vous en avez besoin ou non ?"  
     - `Freedom`: Moyenne nationale des réponses binaires à la question "Êtes-vous satisfait ou insatisfait de votre liberté de choisir ce que vous faites de votre vie ?  
-    - `Generosity`: Résidu de la régression de la moyenne nationale des réponses à la question " Avez-vous donné de l'argent à un organisme de bienfaisance au cours du dernier mois ?" sur le PIB par habitant.  
+    - `Generosity`: Résidu de la régression de la moyenne nationale des réponses à la question "Avez-vous donné de l'argent à un organisme de bienfaisance au cours du dernier mois ?" sur le PIB par habitant.  
     - `Corruption`: Moyenne des réponses binaires à deux questions:  
         - "La corruption est-elle répandue dans tout le gouvernement ou non ?"  
         - "La corruption est-elle répandue dans les entreprises ou non ?"  
@@ -101,8 +115,8 @@ citizenship <- read.csv("locally_foreign.csv",
 ```
 
 # Statistique descriptive
-Dans notre table d'analyse, nous avons pour chaque individu (Pays), ses statistiques obtenues grâce au prétraitement expliqué précédemment.  
-Dans cette section, nous analyserons la distribution des variables au sein des individus, la corrélation entre elles.
+
+Dans notre table d'analyse, nous avons pour chaque individu (Pays), ses statistiques obtenues grâce au prétraitement expliqué précédemment. Dans cette section, nous allors donc analyser la distribution des variables au sein des individus, la corrélation entre elles.
 
 ```{r}
 data <- merge(region,
@@ -115,7 +129,9 @@ head(data)
 ```
 
 ## Distribution du score
+
 Visualisons les **distributions mondiale et régionales** de l'évaluation `Life_Ladder` moyenne des 4 dernières années.  
+
 En effet, le score peut aussi dépendre de la région du monde où les répondants vivent. On remarque que les scores sont tous supérieurs à 5 en Amérique latine, en Europe Occidentale.
 
 ```{r fig.height=12, fig.width=12, message=FALSE, warning=FALSE}
@@ -141,7 +157,7 @@ grid.arrange(world, region[[1]],
 ```
 
 Visualisons la **distribution en fonction de l'origine** de `Life_Ladder`.  
-La répartition des scores est confondues entre les personnes de souche `Locally_born` et celles non originaires du pays `Foreign_born`. Dans la suite, nous considérerons uniquement `Life_Ladder` donc.
+La répartition des scores est confondues entre les personnes "de souche" `Locally_born` et celles non originaires du pays `Foreign_born`. Dans la suite, nous considérerons uniquement `Life_Ladder` donc.
 
 ```{r fig.width=12, message=FALSE, warning=FALSE}
 ggplot(melt(data[,c(3,6)]), aes(x = value)) +
@@ -157,9 +173,11 @@ ggplot(melt(data[,c(3,6)]), aes(x = value)) +
 ```
 
 ## Matrice de corrélation des variables
+
 Visualisons la **matrice de corrélation** entre les variables.
 
 La distribution de chacun des variables figure sur la diagonale. Les nuages de points avec les courbes de tendance, sous la diagonale. Les coefficients de corrélation de Pearson avec les niveaux de significativité, sur la partie supérieure.  
+
 Signif. codes:  0 '\*\*\*' 0.001 '\*\*' 0.01 '\*' 0.05 '.' 0.1 ' ' 1
 
 - Les 8 premières variables endogènes sont significativement corrélées avec `Life_Ladder`.
@@ -174,6 +192,7 @@ chart.Correlation(data[,7:length(data)],
 ```
 
 ## Répartition des variables de sondage
+
 Visualisons la répartition des variables explicatives obtenues par sondage.  
 Les interprétations de la matrice de corrélation s'appliquent à cette représentation.  
 Les variables `Democratic_Quality` et `Delivery_Quality` sont sensiblement réparties de la même manière.  
@@ -190,6 +209,7 @@ ggplot(melt(data[, c(9, 11:length(data))]),
 ```
 
 ## Nuage de points et tendance
+
 Dans la matrice de corrélation précédente, on remarque une tendance exponentielle entre `Life_Ladder`~`GDP_PPP`.  
 L'utilisation du logarithme naturel de `GDP_PPP` correspond beaucoup mieux aux données de `Life_Ladder`.
 
@@ -202,7 +222,9 @@ ggplot(data) +
 ```
 
 # Modélisation
-## Modèle 1: modèle linéaire général
+
+## Modèle 1 : modèle linéaire général
+
 Nous effectuons une régression sur un modèle linéaire sur toutes nos variables explicatives de façon brute.
 $$\textrm{Life_Ladder} \sim \textrm{GDP_PPP} + \textrm{Social_support} + \textrm{HALE_birth} + ... + \textrm{Trust_people_WVS_10_14}$$
 
@@ -212,7 +234,7 @@ summary(mod1)
 ```
 
 Ce modèle est globalement valide mais aucun coefficient n'est significatif comme attendu.  
-Il faut noter que les variables `Trust` possèdent un nombre important de valeurs manquantes. Nous ne les garderons pas.  
+Il faut noter que les variables `Trust` possèdent un nombre important de valeurs manquantes. Nous ne les garderons donc pas.  
 En s'appuyant sur l'analyse descriptive précédente, entre `GINI 2000-16` et `GINI household` fortement corrélées nous garderon la dernière car mieux corrélée à la variable à expliquer.
 
 ## Modèle 2: modèle sur les qualités et GINI
@@ -226,14 +248,15 @@ mod2 <- lm(Life_Ladder ~ Democratic_Quality + Delivery_Quality + GINI_household,
 summary(mod2)
 ```
 
-Ce 2e modèle est globalement valide et toutes les varibles sont significatives à l'exception de `Democratic_Quality`, avec un R2 ajusté de 0.65.  
+Ce 2e modèle est globalement valide et toutes les varibles sont significatives à l'exception de `Democratic_Quality`, avec un $R^2$ ajusté de 0.65.  
 En effet, la part de variance expliquée part ce modèle est assez faible.
 
-## Modèle 3: modèle sur les 8 variables et GINI
+## Modèle 3 : modèle sur les 8 variables et GINI
+
 Ajustons sur les 8 premières variables exogènes et `GINI`.  
 En se basant sur l'analyse descriptive, nous utiliserons le logarithme naturel du PIB par habitant.  
 `Freedom` et `Corruption` seront utilisées au lieu de `Confidence_government`.
-$$\textrm{Life_Ladder} \sim log(\textrm{GDP_PPP}) + \textrm{Social_support} + \textrm{HALE_birth} + \textrm{Freedom} + \\ \textrm{Generosity} + \textrm{Corruption} + \textrm{Positive_affect} + \textrm{Negative_affect} + \textrm{GINI_household}$$
+$$\textrm{Life_Ladder} \sim \log(\textrm{GDP_PPP}) + \textrm{Social_support} + \textrm{HALE_birth} + \textrm{Freedom} + \\ \textrm{Generosity} + \textrm{Corruption} + \textrm{Positive_affect} + \textrm{Negative_affect} + \textrm{GINI_household}$$
 
 ```{r}
 mod3 <- lm(Life_Ladder ~ log(GDP_PPP) + Social_support + HALE_birth + Freedom + Generosity + Corruption + 
@@ -242,13 +265,14 @@ mod3 <- lm(Life_Ladder ~ log(GDP_PPP) + Social_support + HALE_birth + Freedom + 
 summary(mod3)
 ```
 
-Ce 3e modèle est globalement significatif avec un R2 ajusté de 0.90. La part de variance expliquée est nettement plus élevée par rapport au modèle précédent.  
+Ce 3e modèle est globalement significatif avec un $R^2$ ajusté de 0.90. La part de variance expliquée est nettement plus élevée par rapport au modèle précédent.  
 `Freedom` et `Corruption` ne sont pas significatives au niveau $\alpha$ = 10%. La corruption dans les institutions et la liberté de choix de vie n'influent que très peu sur le bonheur subjectif.  
 Le `Negative_affect` n'est pas significative non plus, l'impact de la tristesse, de l'inquiétude et de la colère est éphémère sur le bonheur subjectif.
 
-## Modèle 4: optimisation sur les variables significatives
+## Modèle 4 : optimisation sur les variables significatives
+
 Nous retirons les variables qui ne sont pas significatives au niveau $\alpha$ = 10% dans le 3e modèle.
-$$\textrm{Life_Ladder} \sim log(\textrm{GDP_PPP}) + \textrm{Social_support} +\\ \textrm{HALE_birth} + \textrm{Generosity} + \textrm{Positive_affect} + \textrm{GINI_household}$$
+$$\textrm{Life_Ladder} \sim \log(\textrm{GDP_PPP}) + \textrm{Social_support} +\\ \textrm{HALE_birth} + \textrm{Generosity} + \textrm{Positive_affect} + \textrm{GINI_household}$$
 
 ```{r}
 mod4 <- lm(Life_Ladder ~ log(GDP_PPP) + Social_support + HALE_birth + Generosity +
@@ -258,10 +282,11 @@ summary(mod4)
 ```
 
 Notre modèle optimisé est donc naturellement valide. Toutes les variables sont significatives au niveau $\alpha$ = 5%.  
-La déletion des 3 variables non significatives n'a pas baissé le R2, qui est toujours de 0.90
+La déletion des 3 variables non significatives n'a pas baissé le $R^2$, qui est toujours de 0.90
 
-## Modèle 5: endogénéité de GDP
-Cette forte valeur de R2 peut cacher un problème d'endogénéité.  
+## Modèle 5 : endogénéité de GDP
+
+Cette forte valeur de $R^2$ peut cacher un problème d'endogénéité.  
 En effet, la qualité du gouvernement et la corruption minent souvent une économie et touche directement le PIB par habitant qui, quand il est faible, explique un score élevé dans les effets négatifs.  
 Nous prendrons donc `Delivery_Quality`, `Corruption` et `Negative_affect` comme instruments.
 
@@ -276,10 +301,55 @@ summary(iv, diagnostics = T)
 - `Wu-Hausman`: on rejette au niveau $\alpha$=10% $H_0$ qui suppose que `log(GDP_PPP)` n'est pas corrélée avec le terme d'erreur, ce qui indique qu'elle est marginalement endogène.
 - `Sargan`: on ne rejette pas l'hypothèse nulle, ce qui signifie que les instruments supplémentaires sont valides (ne sont pas corrélés avec le terme d'erreur).
 
-Dans ce modèle, le PIB par habitant est marginalement endogène. En effet, la variable est dépend des instruments qui étaient capturés par $\varepsilon$. `Social_support` et `HALE_birth` ne sont plus significatives, et le R2 n'a que peu diminué.  
+Dans ce modèle, le PIB par habitant est marginalement endogène. En effet, la variable est dépend des instruments qui étaient capturés par $\varepsilon$. `Social_support` et `HALE_birth` ne sont plus significatives, et le $R^2$ n'a que peu diminué.  
 Comme à $\alpha$ 0.05 il n'y a pas de problème d'endogénéité, on garde alors l'estimation des MCO du modèle 4 qui est meilleure.
 
 # Conclusion
 
+## Le modèle retenu : vulgarisation & exploitation possible
+
+Pour expliqer les scores `Life_Ladder` de chaque pays, nous avons fait le choix de retenir le quatrième modèle que nous avons conçu. Il reste des plus satisfaisant dans le cadre d'une régression linéaire multiple. Il est fort probable qu'un modèle plus élaboré puisse être conçu en passant par une régression logistique, ou en travaillant avec des données de type panel, mais nous sortirions alors du cadre du cours.
+
+Dans sa version simplifié, on pourrait exprimé le bonheur général d'un pays de cette manière :
+
+$$\textrm{"Niveau de bonheur d'un pays"} = 
+\\ \alpha \times \textrm{"Richesse du pays"} + 
+\\ \beta \times \textrm{"Aide reçu en cas de besoin"} +
+\\ \gamma \times \textrm{"Espérance de vie dans le pays"} +
+\\ \delta \times \textrm{"Générosité générale du pays (dons aux associations)"} +
+\\ \theta \times \textrm{"Emotion positive"} + 
+\\ \eta \times \textrm{"Ecart de salaire homme / femme"}$$
+
+Si certain élément sont quantifiables avec une méthodologie pour les mesures bien spécifiée (PIB, espérance de vie par exemple), toutes les variables relevant des émotions vont être issues de sondages, puisqu'il est logiquement difficile de poser une méthodologie sur la mesure des émotions. C'est un biais qu'il ne faut pas oublier si l'on souhaite exploiter ce modèle.
+
+Cela dit, le modèle ne présente rien d'illogique, rien de très surprenant en fait concernant le bonheur des individus. Puisqe par exemple il n'est pas surprenant qu'un individu vivant dans un pays développé soit plus heureux qu'un autre individu vivant dans un pays du Sud. Ce qui le rend intéressant c'est très certainement la manière dont ont peut exploiter une tel raisonnement.
+
+Ces variables qui touchent à beaucoup d'élément caractérisant nos sociétés : la richesse, la santé, la justice, etc. Nous y avons vu alors une possible exploitation d'ordre **sociologique**, mais très certainement aussi **politique**, avec un présupposé imporant cela dit : _**"un citoyen heureux dans sont pays est très certainement un citoyen satisfait de la manière dont sont pays est dirigé"**_. Si l'on reprend les variables concervées, voilà ce que l'on purrrait en déduire :
+
+- Garantir la richesse d'un pays c'est garantir sa stabilité, sa prospérité, c'est garantir un cadre de vie acceptable pour ses habitants. En ce sens, les gouvernements de pays en recherche de croissance serait sur la bonne voie : avec des populations qui ne cessent d'augmenter, accroitre la richesse du pays serait une clé de la solution pour continuer de garantir un cadre de vie sain.
+- L'espérance de vie (en bonne santé) est corrélée à la capacité d'un pays à soigner c'est habitant. Des citoyens en bonne santé impliquerait alors des citoyens plus heureux, où du moins qui peuvent vivre une vie longue sans souffrance particulière.
+- Les écarts salariaux sont témoins de la justice et de l'engament pour les droits des femmes dont font preuve les institutions. Les écarts de salaires à poste et qualification égales entre hommes et femmes est un assez bon indicateur de progressisme d'un pays faire plus de justice sociale, permettant notamment au femme d'aspirer à une meilleur vie de manière général.
+- Ensuite un pays qui favorise l'entraide entre citoyen, où le don de soit, la générosité sont des valeurs ancrés dans l'éducation de ces citoyens est plus propice au bonheur ambiant. Si l'on prends le raisonnement de manière inversé, on n'imagine mal par exemple qu'un pays puisse fonctionner si les citooyens ne présente aucune solidarité (même désintéressé, même pour leur entourage).
+- Et enfin il y a tous ce qui concerne le ressenti de la population, les "émotions positives" : c'est une information bien plus complexe à quantifier mais elle traduit directement le "bonheur ambiant" au sein d'un pays.
+
+## Critique & ouverture 
+
+L'année 2020 est une année d'élection municipale en France, présidentielle aux Etats-Unis. Si _**"un citoyen heureux dans sont pays est un citoyen satisfait de la manière dont sont pays est dirigé"**_, la clé de la popularité, la voie vers la réélection pour les maires et présidents sortants réside peut-être dans le bonheur que peuvent ressentir les habitants de la commune, du pays.
+
+Ce modèle, ce raisonnement est criticable mais peut constituer une première approche, une première mesure de la satisfaction des citoyens, du "bonheur globale", et peut-être de manière plus précise qu'un sondage avec une simple question comme "Êtes-vous heureux, oui ou non ?". Qui plus est, nous avons essayer d'expliquer le résultats d'un sondage avec des données extérieur, mais nous sommes loin d'être complet sur la question.
+
+L'idée de quantification du bonheur est de toute manière déjà une problématique en elle même. Peut-on sérieusement quantifier le bonheur et affirmer que la réponse se trouve du côté des mathématique ou de l'économie ? On peut essayer de se rapporter à un modèle comme nous avons pu le faire, alors qu'en vérité la question doit être explorer plus en détails, par le biais d'autre discipline : la démographie, la philosophie, la psychologie, la sociologie...
+
+Donc à la question **"_Quels sont les éléments qui expliquent le bonheur ?_"**, nous pouvons répondre avec notre modèle qu'il s'explique par un cadre de vie le plus favorable possible sur les plan économique, de la justice et de la santé, couplé à une éducation et un climat général d'entraidre et de bienveillance.
+
+Cela étant dit, notre modèle n'apporte qu'une partie de la réponse à une question bien plus vaste encore : **"Peut-on raisonablement mesurer le bonheur global d'un pays ?"**. Ce n'est pas une mauvaise chose en soit, à vrai dire cela peut s'avérer encore plus intéressant. Il faudrait "juste" apporter dfes éléments de réflexion supplémentaires issus d'autres disciplines, avec certainement une approche de la question bien diférente.
+
 ___
 # Bibliographie
+
+> - [World Happiness Report 2018](https://s3.amazonaws.com/happiness-report/2018/WHR_web.pdf), Chapitre 2. WHR. 2018.
+- [Corruption, fiscalité et croissance économique dans les pays en développement.](https://tel.archives-ouvertes.fr/tel-00486440/document) Gbewopo A. 2007.
+- [Peut-on mesurer le bonheur? Reflexion sur les indicateurs de bien être.](http://ses.ens-lyon.fr/articles/peut-on-mesurer-le-bonheur-reflexions-sur-les-indicateurs-de-bien-etre-47517) Le-Merrer P., Fraisse-D'Olimpio S. 2008.
+- [Tracking the World's Happiness](https://www.gallup.com/analytics/247355/gallup-world-happiness-report.aspx). Gallup.
+- [Subjective Measures of Well-Being A Philosophical Examination.](http://d-scholarship.pitt.edu/9197/) Angner, E. 2005.
+- [The Selection of Pay Referents: Potential Patterns and Impacts on Life Satisfaction.](https://www.diw.de/documents/publikationen/73/diw_01.c.363878.de/diw_sp0333.pdf) Schneider, S.M. 2010.
