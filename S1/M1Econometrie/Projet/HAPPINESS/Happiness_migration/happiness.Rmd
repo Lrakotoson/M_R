@@ -12,8 +12,7 @@ output:
     df_print: paged
     number_sections: yes
     css: style_projet.css
----
-<!-- jupyter:
+jupyter:
   jupytext:
     formats: ipynb,Rmd
     text_representation:
@@ -24,9 +23,9 @@ output:
   kernelspec:
     display_name: R
     language: R
-    name: ir -->
+    name: ir
+---
 
-<!-- #region -->
 # Introduction
 
 ## Présentation du projet
@@ -85,7 +84,6 @@ gridExtra
 reshape
 AER
 ```
-<!-- #endregion -->
 
 ```{r message=FALSE}
 if (!require("pacman")) install.packages("pacman")
@@ -180,7 +178,7 @@ La distribution de chacun des variables figure sur la diagonale. Les nuages de p
 
 Signif. codes:  0 '\*\*\*' 0.001 '\*\*' 0.01 '\*' 0.05 '.' 0.1 ' ' 1
 
-- Les 8 premières variables endogènes sont significativement corrélées avec `Life_Ladder`.
+- Les 8 premières variables exogènes sont significativement corrélées avec `Life_Ladder`.
 - `Confidence_government` n'est pas corrélée avec la variable à expliquer, toutefois elle est significativement corrélée avec `Freedom` et `Corruption`.
 - Le nuage de points de `Democratic_quality` et `Delivery_quality` démontre un accroissement simultané des deux paramètres et donc d'une forte corrélation positive entre elles. De plus, elles sont significativement corrélées avec la variables à expliquer et les 8 premières variables endogènes.
 - Les deux variables de `GINI` possèdent sensiblement la même distribution et sont significativement corrélées. `GINI_household` est la plus corrélée à la variable à expliquer.
@@ -301,7 +299,7 @@ summary(iv, diagnostics = T)
 - `Wu-Hausman`: on rejette au niveau $\alpha$=10% $H_0$ qui suppose que `log(GDP_PPP)` n'est pas corrélée avec le terme d'erreur, ce qui indique qu'elle est marginalement endogène.
 - `Sargan`: on ne rejette pas l'hypothèse nulle, ce qui signifie que les instruments supplémentaires sont valides (ne sont pas corrélés avec le terme d'erreur).
 
-Dans ce modèle, le PIB par habitant est marginalement endogène. En effet, la variable est dépend des instruments qui étaient capturés par $\varepsilon$. `Social_support` et `HALE_birth` ne sont plus significatives, et le $R^2$ n'a que peu diminué.  
+Dans ce modèle, le PIB par habitant est marginalement endogène. En effet, la variable dépend des instruments qui étaient capturés par $\varepsilon$. `Social_support` et `HALE_birth` ne sont plus significatives, et le $R^2$ n'a que peu diminué.  
 Comme à $\alpha$ 0.05 il n'y a pas de problème d'endogénéité, on garde alors l'estimation des MCO du modèle 4 qui est meilleure.
 
 # Conclusion
