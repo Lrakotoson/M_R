@@ -138,7 +138,7 @@ library(tidyverse)
 set.seed(1234)
 diamonds2 <- diamonds[sample(nrow(diamonds),5000),] 
 summary(diamonds2)
-help(diamonds)
+#help(diamonds)
 ```
 
 Pour un jeu de données considéré, un graphe **ggplot** est défini à partir de **couches**. Il faut a minima spécifier :
@@ -455,23 +455,46 @@ p+theme_bw()
 
 ```{r}
 X <- seq(-2*pi,2*pi,by=0.001)
-sinus <- data.frame(X, sin(X))
-cosinus <- data.frame(X, cos(X))
+sinus <- data.frame("x" = X, "sin" = sin(X))
+cosinus <- data.frame("x" = X, "cos" = cos(X))
 ```
 
 ```{r}
-
+ggplot(cosinus) + aes(x = X) +
+geom_line(aes(y=cos), color = "blue") +
+geom_line(data = sinus, aes(y=sin), color = "red")
 ```
 
 2. Faire la même chose avec un jeu de données et deux appels à la fonction **geom_line**.
 
+```{r}
+data <- tibble(X, "sin" = sin(X), "cos" = cos(X))
+```
+
+```{r}
+ggplot(data) + aes(x = X) +
+geom_line(aes(y = cos), color = "blue") +
+geom_line(aes(y = sin), color = "red")
+```
 
 3. Faire la même chose avec un jeu de données et un seul appel à **geom_line**. On pourra utiliser la fonction **gather** du **tidyverse**.
+
+```{r}
+data <- data %>%
+gather(key = "func", value = "y", cos, sin)
+```
+
+```{r}
+ggplot(data) + aes(x = X, y = y, color = func) + geom_line()
+```
 
 4. Tracer les deux fonctions sur deux fenêtres graphiques (utiliser **facet_wrap**).
 
 5. Faire la même chose avec **grid.arrange** du package **gridExtra**.
 
+```{r}
+ggplot(data)+aes(x=X,y=y)+geom_line()+facet_wrap(~func)
+```
 
 ### Exercice 9
 
