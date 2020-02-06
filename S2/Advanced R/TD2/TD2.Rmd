@@ -1,0 +1,97 @@
+---
+jupyter:
+  jupytext:
+    formats: ipynb,Rmd
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.1'
+      jupytext_version: 1.2.4
+  kernelspec:
+    display_name: R
+    language: R
+    name: ir
+---
+
+```{r}
+library(tidyverse)
+```
+
+# Les tournois majeurs au tennis en 2013
+1. Lire fichier csv
+
+```{r}
+tournois <- read_csv("../DATA/FrenchOpen-men-2013.csv")
+```
+
+```{r}
+summary(tournois)
+```
+
+```{r}
+tournois %>%
+select(Player1) %>%
+distinct() #ou unique() mais plus lent
+```
+
+```{r}
+tournois %>%
+filter(Player1 == "Roger Federer" | Player2 == "Roger Federer")
+```
+
+```{r}
+tournois %>%
+filter(Round == max(Round) - 1) %>%
+select(Player1, Player2)
+
+```
+
+```{r}
+tournois %>%
+mutate(Points = TPW.1 + TPW.2) %>%
+summarise(mean(Points))
+```
+
+```{r}
+tournois %>%
+group_by(Round) %>%
+mutate(ACE = ACE.1 + ACE.2) %>%
+summarise(min = min(ACE.1, ACE.2),
+          max = max(ACE.1, ACE.2),
+          mean = mean(ACE))
+```
+
+```{r}
+tournois %>%
+summarise(DBF = sum(DBF.1 + DBF.2, na.rm = T))
+```
+
+```{r}
+tournois %>%
+mutate(DBF = DBF.1 + DBF.2) %>%
+ggplot() +
+aes(x = DBF) +
+geom_histogram(binwidth=1)
+```
+
+```{r}
+tournois %>%
+group_by(Round) %>% 
+summarise(DBF = mean(DBF.1 + DBF.2, na.rm = T))  %>% 
+ggplot() + aes(x = Round, y = DBF) + geom_line()
+```
+
+```{r}
+test <- tournois  %>% 
+select(FSP.1, FSP.2, Result) %>%
+gather(key = "FSP", value = "value", -Result)
+
+grid.arrange(ggplot(test) + aes(y = value) + geom_boxplot() + facet_grid(~FSP),
+             ggplot(test) + aes(x = Result) + geom_bar(),
+             nrow = 2, ncol = 1,
+             layout_matrix = matrix((1:2), ncol = 1, byrow = T))
+```
+
+```{r}
+
+```
