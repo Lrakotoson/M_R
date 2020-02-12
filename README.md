@@ -6,7 +6,7 @@
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 Master MAS, R
-## Contributors ✨
+# Contributors ✨
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
 
@@ -25,3 +25,14 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
+
+<hr>
+
+# Table of projects
+Next, the list of projects *(redirection link)* with the participation of the contributors on this respository.  
+- [Happiness Word Report](https://github.com/Lrakotoson/M1R/tree/master/S1/M1Econometrie/Projet/HAPPINESS/Happiness_migration)
+- [Coronavirus Dashboard](https://github.com/Lrakotoson/M1R/tree/master/S2/Data%20Visualization/Coronavirus)
+
+# License 🚩
+GNU GENERAL PUBLIC LICENSE  
+[GPL-3.0](https://github.com/Lrakotoson/M1R/blob/master/LICENSE)
