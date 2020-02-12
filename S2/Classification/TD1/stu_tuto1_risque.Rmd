@@ -1,0 +1,235 @@
+---
+title: "TD1"
+jupyter:
+  jupytext:
+    formats: ipynb,Rmd
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.1'
+      jupytext_version: 1.2.4
+  kernelspec:
+    display_name: R
+    language: R
+    name: ir
+---
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+theme_set(theme_classic(base_size=12))
+```
+
+
+## Exercice 1
+
+On cherche à expliquer une variable binaire $Y$ par deux variables quantitatives $X_1$ et $X_2$ à l'aide du jeu de données suivant
+
+```{r}
+n <- 2000
+set.seed(12345)
+X1 <- runif(n)
+set.seed(5678)
+X2 <- runif(n)
+set.seed(9012)
+R1 <- X1<=0.25
+R2 <- (X1>0.25 & X2>=0.75)
+R3 <- (X1>0.25 & X2<0.75)
+Y <- rep(0,n)
+Y[R1] <- rbinom(sum(R1),1,0.25)
+Y[R2] <- rbinom(sum(R2),1,0.25)
+Y[R3] <- rbinom(sum(R3),1,0.75)
+donnees <- data.frame(X1,X2,Y)
+donnees$Y <- as.factor(donnees$Y)
+indapp <- 1:1500
+dapp <- donnees[indapp,] # train set
+dtest <- donnees[-indapp,] # test set
+```
+
+On remarque que $X$ suit une loi uniforme sur le carré $[0,1]^2$. $Y|X=x$ suit une loi de Bernoulli de paramètre
+  * 0.25 si $x_1\leq 0.25$ ou $x_1>0.25$ et $x_2\geq 0.75$.
+  * 0.75 sinon.
+  
+On déduit que la règle de Bayes est donnée par 
+
+$$g^\star(x)=\left\{
+\begin{array}{ll}
+0 & \text{si }x_1\leq 0.25 \text{ ou }(x_1>0.25\text{ et }x_2\geq 0.75)\\
+1 & \text{sinon.}
+\end{array}\right.$$
+
+L'erreur de Bayes vaut $L^\star=0.25$.
+
+1. Représenter le nuage de points $X_2$ en fonction de $X_1$ en utilisant une couleur différente selon $Y$.
+
+```{r}
+ggplot(donnees) +
+aes(x = X1, y = X2, color = Y) +
+geom_point()
+```
+
+2. Charger le package *class* et ajuster la règle des 3 plus proches voisins sur les données d'apprentissage (fonction **knn**). Estimer la probabilité d'erreur de cette règle en utilisant l'échantillon test.
+```{r}
+library(class)
+```
+
+```{r}
+knn3 <- knn(dapp[,1:2], dtest[,1:2], cl=dapp$Y, k=3)
+mean(knn3 != dtest$Y)
+```
+
+3. On souhaite maintenant choisir $k$ dans le vecteur `seq(1, 100, by = 2)`.  
+Calculer, pour chaque valeur de 𝑘, l'erreur de classification avec la même technique que dans la question précédente. Quelle valeur de 𝑘 choisissez vous ?
+```{r}
+k_cand <- seq(1,100,by=2)
+grid <- data.frame(k = k_cand, error = rep(0, length(k_cand)))
+for (k in k_cand){
+    clf <- knn(dapp[,1:2], dtest[,1:2], cl=dapp$Y, k=k)
+    error <- mean(clf != dtest$Y)
+    grid[grid$k == k,] = c(k, error)    
+}
+grid  %>% 
+filter(error == min(error))
+```
+4. On souhaite maintenant calculer l'erreur de la règle des 3 plus proches voisins avec de la validation croisée 10 blocs. Cette méthode nécessite de partitionner l'échantillon en 10 parties, on peut utiliser la fonction **createFolds** du package **caret**.
+
+```{r message=FALSE, warning=FALSE}
+library(caret)
+K <- 10
+kfolds <- createFolds(1:nrow(donnees),k=K)
+```
+
+On créé ensuite une fonction qui permet de calculer l'erreur pour une valeur de $k$ donnée :
+
+```{r}
+err_cv <- function(k){
+  erreur_bloc <- rep(0,K)
+  for (j in 1:K){
+    train <- donnees[kfolds[[j]],]
+    test <- donnees[-kfolds[[j]],]
+    prev <- knn(train[,1:2],test[,1:2],cl=train$Y,k=k)
+    erreur_bloc[j] <- mean(prev!=test$Y)
+  }
+  return(mean(erreur_bloc))
+}
+
+```
+
+Calculer, pour chaque valeur de $k$, l'erreur de classification avec cette technique de validation croisée. Quelle valeur de $k$ choisissez-vous ?
+
+```{r}
+error <- rep(0, length(k_cand))
+i <- 1
+for (k in k_cand){
+    error[i] <- err_cv(k)
+    i <- i+1
+}
+paste("k:", k_cand[which.min(error)], "| error:", min(error))
+```
+
+## Exercice 2
+
+On souhaite ici refaire le même travail que dans l'exercice précédent avec le package **caret**.
+
+1. Expliquer les sorties des commandes suivantes
+```{r message=FALSE, warning=FALSE}
+ctrl1 <- trainControl(method="LGOCV",number=1,index=list(1:1500))
+KK <- data.frame(k=k_cand)
+ee1 <- train(Y~.,data=donnees,method="knn",trControl=ctrl1,tuneGrid=KK)
+ee1
+```
+
+
+```{r}
+plot(ee1)
+```
+
+2. Utiliser **caret** pour sélectionner $k$ par validation croisée. On pourra regarder l'aide de la fonction **trainControl**.
+
+```{r}
+ctrl2 <- trainControl(method = "repeatedcv", repeats = 2)
+ee2 <- train(Y~.,data=donnees,method="knn",trControl=ctrl2,tuneGrid=KK)
+ee2
+```
+
+```{r}
+plot(ee2)
+```
+
+3. En utilisant l'option **index** dans **trainControl**, retrouver les résultats de l'exercice précédent pour la validation croisée 10 blocs.
+
+
+
+**Remarque** : les algorithmes de validation croisée peuvent se révéler couteux en temps de calcul. Il est souvent pertinent d'utiliser des techniques de calcul parallèle pour ce type de méthode. La fonction train de caret permet de faire cela relativement simplement en utilisant des packages tels que **doMC** (pour mac) ou **doParallel** (pour win)
+
+```{r message=FALSE, warning=FALSE}
+library(doParallel)
+detectCores()
+```
+
+```{r message=FALSE, warning=FALSE}
+cl <- makePSOCKcluster(1)
+registerDoParallel(cl)
+system.time(eee <- train(Y~.,data=donnees,method="knn",trControl=ctrl2,tuneGrid=KK))
+stopCluster(cl)
+```
+
+
+```{r message=FALSE, warning=FALSE}
+cl <- makePSOCKcluster(5)
+registerDoParallel(cl)
+system.time(eee <- train(Y~.,data=donnees,method="knn",trControl=ctrl2,tuneGrid=KK))
+stopCluster(cl)
+```
+
+
+## Exercice 3
+
+On considère 3 scores qui ont été calculés sur 100 individus. Le tableau suivant fournit les valeurs de score ainsi que les groupes observés pour chaque individu.
+
+```{r}
+set.seed(1234)
+S1 <- runif(100)
+S2 <- runif(100)
+S3 <- S1
+S3[sample(100,25)] <- runif(25)
+Y <- rep(0,n)
+Y[S1>0.5] <- 1
+df <- data.frame(S1,S2,S3,Y=as.factor(Y))
+```
+
+On peut visualiser les notes de score et les groupes avec
+
+```{r}
+df1 <- df %>% gather(key="Score",value="value",-Y)
+ggplot(df1)+aes(x=value,y=Score,color=Y)+geom_point()
+```
+
+1. Tracer la courbe ROC de $S_1$ avec la fonction **roc** du package **pROC**.
+
+```{r}
+library(pROC)
+plot(roc(df$Y, df$S1))
+```
+
+2. Ajouter les courbes ROC de $S_2$ et $S_3$. On pourra utiliser l'option **add=TRUE**.
+
+```{r}
+plot(roc(df$Y, df$S2), add = T, col = "red")
+```
+
+3. Calculer les AUC des trois scores (fonction **auc**).
+
+
+**Remarque** : on peut obtenir les courbes ROC et AUC en utilisant les outils du **tidyverse** (**ggplot** et **dplyr**).
+
+```{r message=FALSE, warning=FALSE}
+df1 <- df %>% gather(key="Score",value="value",-Y)
+df1$Y <- df1$Y %>% as.numeric()-1
+ggplot(df1)+aes(d=Y,m=value,color=Score)+geom_roc()
+```
+
+
+```{r message=FALSE, warning=FALSE}
+df1 %>% group_by(Score) %>% summarize(AUC=auc(Y,value)) %>%
+  arrange(desc(AUC)) %>% mutate(AUC=round(AUC,3))
+```
