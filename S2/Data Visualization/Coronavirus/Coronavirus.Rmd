@@ -8,9 +8,11 @@ output:
 
 ```{r setup, include=FALSE}
 library(flexdashboard)
+library(tidyverse)
+library(plotly)
 ```
 ```{r global, include=FALSE}
-source('scripts/data.R')
+source('scripts/global.R')
 ```
 
 Column {data-width=650}
@@ -19,7 +21,20 @@ Column {data-width=650}
 ### Chart A
 
 ```{r}
-DT::datatable(cas)
+p <- cas %>% 
+  plot_ly(
+    lat = ~Lat,
+    lon = ~Long,
+    marker = list(color = 'red'),
+    type = 'scattermapbox',
+    hovertext = cas[,"State"]) %>%
+  layout(
+    mapbox = list(
+      style = 'carto-positron',
+      zoom = 1.5)
+  )
+
+p
 ```
 
 Column {data-width=350}
@@ -28,7 +43,7 @@ Column {data-width=350}
 ### Chart B
 
 ```{r}
-
+DT::datatable(cas)
 ```
 
 ### Chart C
