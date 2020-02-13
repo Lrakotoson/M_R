@@ -12,6 +12,22 @@ clean <- function(data){
   return(data)
 }
   
-cas <- clean(cas)
-retablis <- clean(retablis)
-morts <- clean(morts)
+cas <<- clean(cas)
+retablis <<- clean(retablis)
+morts <<- clean(morts)
+
+latest <- function(){
+  data <- cas %>% 
+    rename(Cas = tail(names(.), 1)) %>% 
+    select(State, Country, Lat, Long, Cas) %>% 
+    left_join((retablis %>% 
+                 rename(Retablis = tail(names(.), 1)) %>% 
+                 select(State, Retablis))
+    ) %>% 
+    left_join((morts %>% 
+                 rename(Morts = tail(names(.), 1)) %>% 
+                 select(State, Morts)))
+  return(data)
+}
+
+  
