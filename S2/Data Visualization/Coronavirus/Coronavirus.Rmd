@@ -4,6 +4,7 @@ output:
   flexdashboard::flex_dashboard:
     orientation: columns
     vertical_layout: fill
+    theme: united
 ---
 
 ```{r setup, include=FALSE}
@@ -21,17 +22,18 @@ Column {data-width=650}
 ### Chart A
 
 ```{r}
-p <- cas %>% 
+p <- latest() %>% 
   plot_ly(
     lat = ~Lat,
     lon = ~Long,
-    marker = list(color = 'red'),
+    marker = list(color = 'red', size = ~log(Cas), sizeref=0.1, opacity=0.4),
     type = 'scattermapbox',
-    hovertext = cas[,"State"]) %>%
+    hovertext = ~State) %>%
   layout(
     mapbox = list(
       style = 'carto-positron',
-      zoom = 1.5)
+      zoom = 1.5,
+      center = list(lon = 12, lat= 30))
   )
 
 p
@@ -43,7 +45,7 @@ Column {data-width=350}
 ### Chart B
 
 ```{r}
-DT::datatable(cas)
+DT::datatable(latest() %>% select(-Country, -Lat, -Long))
 ```
 
 ### Chart C
