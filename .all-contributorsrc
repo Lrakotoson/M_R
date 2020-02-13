@@ -24,6 +24,28 @@
         "code",
         "test"
       ]
+    },
+    {
+      "login": "lenacoic",
+      "name": "lenacoic",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/50864921?v=4",
+      "profile": "https://github.com/lenacoic",
+      "contributions": [
+        "code",
+        "example",
+        "ideas"
+      ]
+    },
+    {
+      "login": "pycolson",
+      "name": "pycolson",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/60988565?v=4",
+      "profile": "https://github.com/pycolson",
+      "contributions": [
+        "code",
+        "ideas",
+        "example"
+      ]
     }
   ],
   "contributorsPerLine": 7,
