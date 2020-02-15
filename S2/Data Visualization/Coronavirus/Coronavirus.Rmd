@@ -1,10 +1,11 @@
 ---
-title: "Untitled"
+title: "Coronavirus"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
     vertical_layout: fill
     theme: united
+runtime: shiny
 ---
 
 ```{r setup, include=FALSE}
@@ -16,36 +17,49 @@ library(plotly)
 source('scripts/global.R')
 ```
 
+# Situation mondiale
+
 Column {data-width=650}
 -----------------------------------------------------------------------
 
-### Chart A
+### Nombre de cas
 
 ```{r}
-p <- latest() %>% 
-  plot_ly(
-    lat = ~Lat,
-    lon = ~Long,
-    marker = list(color = 'red', size = ~log(Cas), sizeref=0.1, opacity=0.4),
-    type = 'scattermapbox',
-    hovertext = ~State) %>%
-  layout(
-    mapbox = list(
-      style = 'carto-positron',
-      zoom = 1.5,
-      center = list(lon = 12, lat= 30))
-  )
+renderPlotly(
+  worldmap <- latest() %>% 
+    plot_ly(
+      lat = ~Lat,
+      lon = ~Long,
+      marker = list(color = 'red', size = ~log(Cas), sizeref=0.1, opacity=0.4),
+      type = 'scattermapbox',
+      hovertext = ~State) %>%
+    layout(
+      mapbox = list(
+        style = 'carto-positron',
+        zoom = 1.2,
+        center = list(lon = 18, lat= 35)),
+      margin = list(
+        l = 0, r = 0,
+        b = 0, t = 0,
+        pad = 0
+      )
+    )
+)
 
-p
 ```
 
 Column {data-width=350}
 -----------------------------------------------------------------------
 
-### Chart B
+### Données
 
 ```{r}
-DT::datatable(latest() %>% select(-Country, -Lat, -Long))
+DT::renderDT(
+  DT::datatable(
+    brief('Country'),
+    options = list(pageLength = 5)
+    )
+  )
 ```
 
 ### Chart C
