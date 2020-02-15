@@ -1,8 +1,8 @@
 library(tidyverse)
 
-cas <- read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/time_series/time_series_2019-ncov-Confirmed.csv')
-retablis <- read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/time_series/time_series_2019-ncov-Recovered.csv')
-morts <- read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/time_series/time_series_2019-ncov-Deaths.csv')
+T_cas <- read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/time_series/time_series_2019-ncov-Confirmed.csv')
+T_retablis <- read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/time_series/time_series_2019-ncov-Recovered.csv')
+T_morts <- read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/time_series/time_series_2019-ncov-Deaths.csv')
 
 
 clean <- function(data){
@@ -12,22 +12,51 @@ clean <- function(data){
   return(data)
 }
   
-cas <<- clean(cas)
-retablis <<- clean(retablis)
-morts <<- clean(morts)
+T_cas <<- clean(T_cas)
+T_retablis <<- clean(T_retablis)
+T_morts <<- clean(T_morts)
 
-latest <- function(){
-  data <- cas %>% 
+latest <- function(t = ncol(T_cas) - 4){
+  #' Retourne les données les plus récentes à l'instant t
+  #' t: temps, entier >= 1
+  
+  if (t > ncol(T_morts) - 4 | t > ncol(T_retablis) - 4){
+    t <- min(ncol(T_morts), ncol(T_retablis)) - 4
+  }
+  
+  data <- T_cas %>% 
+    select(1:4, t+4) %>% 
     rename(Cas = tail(names(.), 1)) %>% 
-    select(State, Country, Lat, Long, Cas) %>% 
-    left_join((retablis %>% 
-                 rename(Retablis = tail(names(.), 1)) %>% 
-                 select(State, Retablis))
+    left_join((T_retablis %>% 
+                 select(1, t+4) %>% 
+                 rename(Retablis = tail(names(.), 1))
+              )
     ) %>% 
-    left_join((morts %>% 
-                 rename(Morts = tail(names(.), 1)) %>% 
-                 select(State, Morts)))
+    left_join((T_morts %>% 
+                 select(1, t+4) %>% 
+                 rename(Morts = tail(names(.), 1))
+               )
+    )
   return(data)
 }
 
+brief <- function(group = NULL, t = ncol(T_cas) - 4){
+  #' Renvoie un résumé à un instant t
+  #' group: NULL ou 'Country'
+  #' t: temps, entier >= 1
   
+  if(is_empty(group)){
+    data <- latest(t) %>% 
+      mutate(group = 'Monde')
+    group <- 'group'
+  } else {
+    data <- latest(t) %>% 
+      rename('group' = group)
+  }
+  data <- data %>% 
+    group_by(group) %>% 
+    summarise(Cas = sum(Cas, na.rm = T),
+              Retablis = sum(Retablis, na.rm = T),
+              Morts = sum(Morts, na.rm = T))
+  return(data)
+}
