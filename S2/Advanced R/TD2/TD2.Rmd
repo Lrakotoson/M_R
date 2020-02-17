@@ -15,10 +15,13 @@ jupyter:
 
 ```{r}
 library(tidyverse)
+library(gridExtra)
 ```
 
 # Les tournois majeurs au tennis en 2013
-1. Lire fichier csv
+
+
+Lire le fichier csv contenant les informations sur le tournoi masculin de Roland-Garros. Inspecter le data-frame obtenu. En faire un tibble ou un data-table en fonction du package que vous utiliserez pour les manipulations.
 
 ```{r}
 tournois <- read_csv("../DATA/FrenchOpen-men-2013.csv")
@@ -28,16 +31,23 @@ tournois <- read_csv("../DATA/FrenchOpen-men-2013.csv")
 summary(tournois)
 ```
 
+Construire la liste des joueurs Player1
+
 ```{r}
 tournois %>%
 select(Player1) %>%
-distinct() #ou unique() mais plus lent
+distinct() %>% #ou unique() mais plus lent
+top_n(5) #les 5 premiers
 ```
+
+Afficher tous les matches de Roger Federer
 
 ```{r}
 tournois %>%
 filter(Player1 == "Roger Federer" | Player2 == "Roger Federer")
 ```
+
+Afficher le nom des demi-finalistes.
 
 ```{r}
 tournois %>%
@@ -46,11 +56,15 @@ select(Player1, Player2)
 
 ```
 
+Combien y a t-il eu de points disputés en moyenne par match ?
+
 ```{r}
 tournois %>%
 mutate(Points = TPW.1 + TPW.2) %>%
 summarise(mean(Points))
 ```
+
+On s’intéresse aux `aces`. Pour chaque tour afficher le plus petit nombre d’aces réalisé dans un match, le plus grand nombre et le nombre moyen.
 
 ```{r}
 tournois %>%
@@ -61,10 +75,14 @@ summarise(min = min(ACE.1, ACE.2),
           mean = mean(ACE))
 ```
 
+Combien y a t-il eu de doubles fautes au total dans le tournoi.
+
 ```{r}
 tournois %>%
 summarise(DBF = sum(DBF.1 + DBF.2, na.rm = T))
 ```
+
+Faire un histogramme du nombre de doubles fautes par match
 
 ```{r}
 tournois %>%
@@ -74,12 +92,16 @@ aes(x = DBF) +
 geom_histogram(binwidth=1)
 ```
 
+Représenter l’évolution du nombre moyen de doubles fautes par match au cours des différents tours
+
 ```{r}
 tournois %>%
 group_by(Round) %>% 
 summarise(DBF = mean(DBF.1 + DBF.2, na.rm = T))  %>% 
 ggplot() + aes(x = Round, y = DBF) + geom_line()
 ```
+
+Peut-on dire que le pourcentage de premier service a une influence sur le résultat ? On pourra faire uneboîte à moustaches ainsi qu’un test pour répondre à la question ?
 
 ```{r}
 test <- tournois  %>% 
@@ -90,8 +112,4 @@ grid.arrange(ggplot(test) + aes(y = value) + geom_boxplot() + facet_grid(~FSP),
              ggplot(test) + aes(x = Result) + geom_bar(),
              nrow = 2, ncol = 1,
              layout_matrix = matrix((1:2), ncol = 1, byrow = T))
-```
-
-```{r}
-
 ```
