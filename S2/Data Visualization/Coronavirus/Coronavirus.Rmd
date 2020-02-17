@@ -30,7 +30,7 @@ renderPlotly(
     plot_ly(
       lat = ~Lat,
       lon = ~Long,
-      marker = list(color = 'red', size = ~log(Cas), sizeref=0.1, opacity=0.4),
+      marker = list(color = 'red', size = ~log(1+Cas), sizeref=0.1, opacity=0.4),
       type = 'scattermapbox',
       hovertext = ~State) %>%
     layout(
@@ -50,6 +50,26 @@ renderPlotly(
 
 Column {data-width=350}
 -----------------------------------------------------------------------
+### Cas recencés
+
+```{r}
+cas_r <- brief()$Cas
+valueBox(cas_r, icon = "fa-procedures", color="danger")
+```
+
+### Taux de rétablissement
+
+```{r}
+retablis_r <- round(brief()$Retablis*100/brief()$Cas, 2)
+valueBox(paste(retablis_r, '%'), icon = "fa-plus", color="success")
+```
+
+### Taux de mortalité
+
+```{r}
+morts_r <- round(brief()$Morts*100/brief()$Cas, 2)
+valueBox(paste(morts_r, '%'), icon = "fa-dizzy", color="warning")
+```
 
 ### Données
 
@@ -60,11 +80,5 @@ DT::renderDT(
     options = list(pageLength = 5)
     )
   )
-```
-
-### Chart C
-
-```{r}
-
 ```
 
