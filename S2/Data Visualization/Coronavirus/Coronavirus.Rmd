@@ -32,7 +32,11 @@ renderPlotly(
       lon = ~Long,
       marker = list(color = 'red', size = ~log(1+Cas), sizeref=0.1, opacity=0.4),
       type = 'scattermapbox',
-      hovertext = ~State) %>%
+      text = ~State,
+      hovertemplate = paste(
+        "<b>%{text}</b><br><br>",
+        "Nombre de cas: %{marker.size:}"
+      )) %>%
     layout(
       mapbox = list(
         style = 'carto-positron',
