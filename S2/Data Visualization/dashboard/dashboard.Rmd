@@ -1,0 +1,134 @@
+---
+title: "Dashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    theme: flatly
+runtime: shiny
+---
+
+```{r setup}
+library(flexdashboard)
+library(tidyverse)
+library(rAmCharts)
+library(plotly)
+library(shiny)
+```
+```{r global}
+ozone <- read_delim("ozone.txt", " ") %>% select(-1)
+```
+
+# Statistique descriptive
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Données
+
+```{r}
+DT::renderDT(
+  DT::datatable(
+    as.data.frame(ozone)
+    )
+  )
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Nuage température
+
+```{r}
+renderPlot(ggplot(ozone) +
+             aes(x = T12, y = maxO3) +
+             geom_point() +
+             geom_smooth()
+           )
+```
+
+### Histogramme
+
+```{r}
+renderPlot(ggplot(ozone) +
+             aes(x = maxO3) +
+             geom_histogram()
+           )
+```
+
+
+# Modèle Complet
+```{r include=FALSE}
+mod1 <- lm(maxO3~., data = ozone)
+```
+
+Column
+-----------------------------------------------------------------------
+### Résumé
+```{r}
+DT::renderDT(
+  DT::datatable(
+    as.data.frame(summary(mod1)[4]),
+    options = list(pageLength = 15)
+  )
+)
+```
+
+Column
+-----------------------------------------------------------------------
+### Résidus studentisés
+```{r include=FALSE}
+residus <- ozone %>% 
+  select(maxO3) %>% 
+  bind_cols(as.data.frame(rstudent(mod1)))
+```
+```{r}
+renderPlot(
+  ggplot(residus) +
+    aes(x=maxO3, y=`rstudent(mod1)`) +
+    geom_point() +
+    geom_smooth()
+  )
+```
+
+# Choisir un modèle
+
+Inputs {.sidebar}
+-----------------------------------------------------------------------
+```{r}
+checkboxGroupInput("variables", label = h3("Checkbox group"), 
+    choices = list("T9" = "T9", "T12" = "T12", "T15" = "T15",
+                   "Ne9" = "Ne9", "Ne12" = "Ne12", "Ne15" = "Ne15",
+                   "Vx9" = "Vx9", "Vx12" = "Vx12", "Vx15" = "Vx15",
+                   "maxO3v" = "maxO3v", "vent" = "vent", "pluie" = "pluie"),
+    selected = "T9")
+```
+```{r include=FALSE}
+variables <- reactive({input$variables})
+table <- reactive({ozone %>% select("maxO3", variables())})
+mod2 <- reactive({lm(maxO3~., data = table())})
+residus <- reactive({ozone %>% 
+  select(maxO3) %>% 
+  bind_cols(as.data.frame(rstudent(mod2())))})
+```
+
+Column
+-----------------------------------------------------------------------
+```{r}
+renderDataTable({
+  as.data.frame(summary(mod2())[4])
+  })
+```
+
+
+Column
+-----------------------------------------------------------------------
+```{r}
+renderPlot(
+  ggplot(residus()) +
+    aes(x=maxO3, y=`rstudent(mod2)`) +
+    geom_point() +
+    geom_smooth()
+  )
+```
+
