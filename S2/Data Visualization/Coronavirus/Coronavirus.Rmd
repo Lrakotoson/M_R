@@ -3,7 +3,7 @@ title: "Coronavirus"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
-    vertical_layout: fill
+    vertical_layout: scroll
     theme: united
 runtime: shiny
 ---
@@ -83,7 +83,7 @@ valueBox(paste(morts_r, '%'), icon = "fa-dizzy", color="warning")
 DT::renderDT(
   DT::datatable(
     brief('Country'),
-    options = list(pageLength = 5)
+    options = list(pageLength = 4)
     )
   )
 ```
