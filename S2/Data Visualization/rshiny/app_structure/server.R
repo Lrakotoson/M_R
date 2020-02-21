@@ -3,7 +3,6 @@ library(rAmCharts)
 
 # Session
 
-
 # Define server logic required to draw a histogram
 shinyServer(function(input, output, session) {
   classe <- reactive(input$bins)
