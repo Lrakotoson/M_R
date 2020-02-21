@@ -1,9 +1,11 @@
 library(tidyverse)
+library(sp)
+library(rworldmap)
 
 T_cas <- read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv')
 T_retablis <- read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Recovered.csv')
 T_morts <- read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv')
-
+####################################################################
 
 clean <- function(data){
   data <- data %>% 
@@ -15,6 +17,21 @@ clean <- function(data){
 T_cas <<- clean(T_cas)
 T_retablis <<- clean(T_retablis)
 T_morts <<- clean(T_morts)
+####################################################################
+
+continent <- function(lon, lat){
+  #' Retourne le continent où se trouve le point
+  #' lon: Longitude, lat: Latitude
+  coord <- data.frame(lon = lon, lat = lat)
+  countriesSP <- getMap(resolution = 'low')
+  pointsSP <- SpatialPoints(coord,
+                            proj4string = CRS(proj4string(countriesSP))
+                            )  
+  indices <- over(pointsSP, countriesSP)
+  
+  return(indices$REGION)
+}
+####################################################################
 
 latest <- function(t = ncol(T_cas) - 4){
   #' Retourne les données les plus récentes à l'instant t
@@ -39,6 +56,7 @@ latest <- function(t = ncol(T_cas) - 4){
     )
   return(data)
 }
+####################################################################
 
 brief <- function(group = NULL, t = ncol(T_cas) - 4){
   #' Renvoie un résumé à un instant t
