@@ -53,14 +53,19 @@ latest <- function(t = ncol(T_cas) - 4){
                  select(1, t+4) %>% 
                  rename(Morts = tail(names(.), 1))
                )
-    )
+    ) %>% 
+    mutate(
+      Continent = continent(lon = `Long`, lat = `Lat`)
+    ) %>% 
+    select(1:2, Continent, everything())
+  
   return(data)
 }
 ####################################################################
 
 brief <- function(group = NULL, t = ncol(T_cas) - 4){
   #' Renvoie un résumé à un instant t
-  #' group: NULL ou 'Country'
+  #' group: NULL, 'Country' ou 'Continent'
   #' t: temps, entier >= 1
   
   if(is_empty(group)){
