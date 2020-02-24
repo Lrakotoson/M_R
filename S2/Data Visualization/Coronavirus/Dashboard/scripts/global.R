@@ -1,4 +1,5 @@
 library(tidyverse)
+library(tidyRSS)
 library(sp)
 library(rworldmap)
 
@@ -81,5 +82,20 @@ brief <- function(group = NULL, t = ncol(T_cas) - 4){
     summarise(Cas = sum(Cas, na.rm = T),
               Retablis = sum(Retablis, na.rm = T),
               Morts = sum(Morts, na.rm = T))
+  return(data)
+}
+####################################################################
+
+actus <- function(rows = 10){
+  #' Renvoie un tibble rowsx1 de liens html
+  #' rows: nombre de lignes à renvoyer, entier =< 100
+  
+  data <- tidyfeed("https://news.google.com/rss/search?q=coronavirus&hl=fr&gl=FR&ceid=FR:fr")
+  data <- data %>%
+    separate(item_title, c("title", "source"), " - ") %>% 
+    select(title, source, item_link) %>%
+    mutate(Actus = paste0("<a href='", item_link, "' target='_blank'>", title, "</a><em> - ",source,"<em>")) %>% 
+    select(Actus) %>% 
+    top_n(rows)
   return(data)
 }
