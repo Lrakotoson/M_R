@@ -3,7 +3,7 @@ title: "Coronavirus"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
-    vertical_layout: scroll
+    vertical_layout: fill
     theme: united
 runtime: shiny
 ---
@@ -63,28 +63,28 @@ cas_r <- brief()$Cas
 valueBox(cas_r, icon = "fa-procedures", color="danger")
 ```
 
-### Taux de rétablissement
+### Taux* de rétablissement
 
 ```{r}
 retablis_r <- round(brief()$Retablis*100/brief()$Cas, 2)
 valueBox(paste(retablis_r, '%'), icon = "fa-plus", color="success")
 ```
 
-### Taux de mortalité
+### Taux* de mortalité
 
 ```{r}
 morts_r <- round(brief()$Morts*100/brief()$Cas, 2)
 valueBox(paste(morts_r, '%'), icon = "fa-dizzy", color="warning")
 ```
 
-### Données par pays
+### Actus {.no-title}
 
 ```{r}
-DT::renderDT(
-  DT::datatable(
-    brief('Country'),
-    options = list(pageLength = 4)
-    )
-  )
+library(tidyRSS)
+data <- tidyfeed("https://news.google.com/rss/search?q=coronavirus&hl=fr&gl=FR&ceid=FR:fr")
+renderTable({
+  actus() %>% rename("A la une" = Actus)
+  },sanitize.text.function = function(x) x)
 ```
 
+>*Taux = nombre de rétablissements ou morts sur les cas recensés
