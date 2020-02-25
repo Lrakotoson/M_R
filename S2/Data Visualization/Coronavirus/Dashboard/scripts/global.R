@@ -1,5 +1,5 @@
 library(tidyverse)
-library(tidyRSS)
+library(xml2)
 library(sp)
 library(rworldmap)
 
@@ -90,8 +90,11 @@ actus <- function(rows = 10){
   #' Renvoie un tibble rowsx1 de liens html
   #' rows: nombre de lignes à renvoyer, entier =< 100
   
-  data <- tidyfeed("https://news.google.com/rss/search?q=coronavirus&hl=fr&gl=FR&ceid=FR:fr")
-  data <- data %>%
+  flux <- read_xml("https://news.google.com/rss/search?q=coronavirus&hl=fr&gl=FR&ceid=FR:fr")
+  item_title <- flux %>% xml_find_all("//item/title") %>% xml_text()
+  item_link <- flux %>% xml_find_all("//item/link") %>% xml_text()
+  
+  data <- tibble(item_title, item_link) %>%
     separate(item_title, c("title", "source"), " - ") %>% 
     select(title, source, item_link) %>%
     mutate(Actus = paste0("<a href='", item_link, "' target='_blank'>", title, "</a><em> - ",source,"<em>")) %>% 
