@@ -11,10 +11,21 @@ last <- tail(trie$dates, 1)
 
 
 # Define UI for application that draws a histogram
-ui <- fluidPage(
+ui <- fluidPage(    
+    tags$head(tags$link(rel = "stylesheet", type = "text/css", href = "bootstrap.min.css"),
+              tags$style(HTML("
+      @import url('//fonts.googleapis.com/css?family=Lobster|Cabin:400,700');
+      h1 {
+        font-family: 'Lobster', cursive;
+        font-weight: 500;
+        line-height: 1.1;
+        color: #BDBDBD;
+      }
+    "))
+              ),
     
     # Application title
-    titlePanel("Coronavirus"),
+    titlePanel(h1("Coronavirus",style = "color: #FF0000;")),
     
     # Sidebar with a slider input for number of bins 
     # Sidebar with a slider input for number of bins 
