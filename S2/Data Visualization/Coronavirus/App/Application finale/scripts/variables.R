@@ -27,3 +27,7 @@ library(data.table)
 
 trie <- setkey(as.data.table(data_sum),dates)
 trie <- as.data.frame(trie)
+
+france <- as.data.frame(geocodeGratuit("France"))
+italie <- as.data.frame(geocodeGratuit("Italie"))
+

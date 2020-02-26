@@ -44,14 +44,17 @@ ui <- fluidPage(
                          "Colonne :",
                          choices = colnames(data_sum)[2:4]
                          
-            ), 
+            ),
             sliderInput(inputId = "dateslider", label = "Choix de la date", 
                         min = first, 
                         max = last,
                         value = last, 
                         timeFormat = "%d/%m"
-            )
+            ),
+            
+            
         ),
+        
         # Show a plot of the generated distribution
         mainPanel(
             
@@ -70,11 +73,16 @@ ui <- fluidPage(
                         ),
                         tabPanel("Data",
                                  dataTableOutput("donnees")
+                        ),
+                        tabPanel("France",
+                                 plotlyOutput("francemap")
+                                 
+                        ),
+                        tabPanel("Italie",
+                                 plotlyOutput("italiemap")
+                                 
                         )
-                        
             )
             
-        )
-    )
-    
+        ))
 )
