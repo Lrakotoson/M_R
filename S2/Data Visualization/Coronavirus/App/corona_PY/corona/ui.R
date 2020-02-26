@@ -1,8 +1,12 @@
 library(shiny)
 library(DT)
 library(rAmCharts)
+library(plotly)
+library(flexdashboard)
+library(tidyverse)
 
 source("scripts/variables.R")
+source("scripts/global.R")
 
 
 # Define UI for application that draws a histogram
@@ -11,8 +15,6 @@ ui <- fluidPage(
     # Application title
     titlePanel("Coronavirus"),
     
-    # Sidebar with a slider input for number of bins 
-    # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
             textInput("titre",
@@ -21,14 +23,15 @@ ui <- fluidPage(
                       
             ),
             dateRangeInput("daterange1", "Période",
-                           start = head(trie$dates),
-                           end   = tail(trie$dates),
-                           min   = head(trie$dates),
-                           max = tail(trie$dates),
+                           start = head(trie$dates, 1),
+                           end   = tail(trie$dates, 1),
+                           min   = head(trie$dates, 1),
+                           max   = tail(trie$dates, 1),
                            language = "fr",
                            separator = "-", 
                            format = "dd/mm/yy"
             ),
+          
             colourpicker::colourInput("color",
                                       "Couleur :",
                                       value = "blue",
@@ -39,6 +42,12 @@ ui <- fluidPage(
                          "Colonne :",
                          choices = colnames(data_sum)[2:4]
                          
+            ),
+            sliderInput(inputId = "dateslider", label = "Choix de la date", 
+                        min = head(trie$dates, 1), 
+                        max = tail(trie$dates, 1),
+                        value = tail(trie$dates, 1), 
+                        timeFormat = "%d/%m"
             )
         ),
         # Show a plot of the generated distribution
@@ -48,6 +57,7 @@ ui <- fluidPage(
             tabsetPanel(type = "tabs",
                         tabPanel("Plot",
                                  amChartsOutput("distPlot"),
+                                 plotlyOutput("worldmap"),
                                  textOutput("classe")
                                  
                         ),

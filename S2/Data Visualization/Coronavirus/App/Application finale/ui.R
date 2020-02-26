@@ -21,10 +21,10 @@ ui <- fluidPage(
                       
             ),
             dateRangeInput("daterange1", "Période",
-                           start = head(trie$dates),
-                           end   = tail(trie$dates),
-                           min   = head(trie$dates),
-                           max = tail(trie$dates),
+                           start = head(trie$dates, 1),
+                           end   = tail(trie$dates, 1),
+                           min   = head(trie$dates, 1),
+                           max   = tail(trie$dates, 1),
                            language = "fr",
                            separator = "-", 
                            format = "dd/mm/yy"
@@ -39,6 +39,12 @@ ui <- fluidPage(
                          "Colonne :",
                          choices = colnames(data_sum)[2:4]
                          
+            ), 
+            sliderInput(inputId = "dateslider", label = "Choix de la date", 
+                        min = head(trie$dates, 1), 
+                        max = tail(trie$dates, 1),
+                        value = tail(trie$dates, 1), 
+                        timeFormat = "%d/%m"
             )
         ),
         # Show a plot of the generated distribution
@@ -48,6 +54,7 @@ ui <- fluidPage(
             tabsetPanel(type = "tabs",
                         tabPanel("Plot",
                                  amChartsOutput("distPlot"),
+                                 plotlyOutput("worldmap"),
                                  textOutput("classe")
                                  
                         ),
