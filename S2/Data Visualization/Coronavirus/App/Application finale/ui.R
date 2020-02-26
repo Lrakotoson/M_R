@@ -2,7 +2,12 @@ library(shiny)
 library(DT)
 library(rAmCharts)
 
+################################################
 source("scripts/variables.R")
+first <- head(trie$dates, 1)
+last <- tail(trie$dates, 1)
+
+################################################
 
 
 # Define UI for application that draws a histogram
@@ -21,13 +26,13 @@ ui <- fluidPage(
                       
             ),
             dateRangeInput("daterange1", "Période",
-                           start = head(trie$dates, 1),
-                           end   = tail(trie$dates, 1),
-                           min   = head(trie$dates, 1),
-                           max   = tail(trie$dates, 1),
+                           start = first,
+                           end   = last,
+                           min   = first,
+                           max   = last,
                            language = "fr",
                            separator = "-", 
-                           format = "dd/mm/yy"
+                           format = "dd/mm/yyyy"
             ),
             colourpicker::colourInput("color",
                                       "Couleur :",
@@ -41,9 +46,9 @@ ui <- fluidPage(
                          
             ), 
             sliderInput(inputId = "dateslider", label = "Choix de la date", 
-                        min = head(trie$dates, 1), 
-                        max = tail(trie$dates, 1),
-                        value = tail(trie$dates, 1), 
+                        min = first, 
+                        max = last,
+                        value = last, 
                         timeFormat = "%d/%m"
             )
         ),
