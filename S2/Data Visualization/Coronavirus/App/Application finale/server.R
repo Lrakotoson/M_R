@@ -1,8 +1,13 @@
 library(shiny)
 library(DT)
 library(rAmCharts)
-
+library(plotly)
+##########################################
 source("scripts/variables.R")
+#plotlyStyle <- "carto-positron"
+plotlyStyle <- "carto-darkmatter"
+ramChartStyle <- "dark"
+##########################################
 
 
 # Define server logic required to draw a histogram
@@ -17,7 +22,13 @@ server <- function(input, output) {
             select(dates, y = colonne) %>% 
             filter(dates>=input$daterange1[1] & dates<=input$daterange1[2])
         
-        amPlot(x = as.character(data$dates, format = "%d/%m"), data$y, type = "l", col = color, xlab = "", ylab = paste("Nombre de", colonne))
+        amPlot(x = as.character(data$dates, format = "%d/%m"), data$y,
+               type = "sl",
+               fill_alphas = 0.1,
+               col = color,
+               xlab = "",
+               ylab = paste("Nombre de", colonne),
+               theme = ramChartStyle)
     })
     
     output$worldmap <- renderPlotly(
@@ -36,7 +47,7 @@ server <- function(input, output) {
                 )) %>%
             layout(
                 mapbox = list(
-                    style = 'carto-positron',
+                    style = plotlyStyle,
                     zoom = 1.2,
                     center = list(lon = 18, lat= 35)),
                 margin = list(
@@ -61,7 +72,7 @@ server <- function(input, output) {
                 )) %>%
             layout(
                 mapbox = list(
-                    style = 'carto-positron',
+                    style = plotlyStyle,
                     zoom = 4.5,
                     center = list(lon = france$lon, lat= france$lat)),
                 margin = list(
@@ -87,7 +98,7 @@ server <- function(input, output) {
                 )) %>%
             layout(
                 mapbox = list(
-                    style = 'carto-positron',
+                    style = plotlyStyle,
                     zoom = 5,
                     center = list(lon = italie$lon, lat= italie$lat)),
                 margin = list(
