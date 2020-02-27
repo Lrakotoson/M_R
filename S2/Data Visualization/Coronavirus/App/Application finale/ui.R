@@ -1,6 +1,7 @@
 library(shiny)
 library(DT)
 library(rAmCharts)
+library(plotly)
 
 ################################################
 source("scripts/variables.R")
@@ -13,19 +14,20 @@ last <- tail(trie$dates, 1)
 # Define UI for application that draws a histogram
 ui <- fluidPage(    
     tags$head(tags$link(rel = "stylesheet", type = "text/css", href = "bootstrap.min.css"),
+              tags$title(HTML("Coronavirus")),
               tags$style(HTML("
       @import url('//fonts.googleapis.com/css?family=Lobster|Cabin:400,700');
       h1 {
         font-family: 'Lobster', cursive;
         font-weight: 500;
         line-height: 1.1;
-        color: #BDBDBD;
+        color: #FF0000;
       }
     "))
               ),
     
     # Application title
-    titlePanel(h1("Coronavirus",style = "color: #FF0000;")),
+    titlePanel(h1("Coronavirus")),
     
     # Sidebar with a slider input for number of bins 
     # Sidebar with a slider input for number of bins 
