@@ -81,8 +81,6 @@ ui <- fluidPage(
                         ),
                         
                         tabPanel("Summary",
-                                          # rajout d'une image avec img()
-                                          # elle doit etre dans www
                                           img(src = "photo.jpg", width = 450),
                                           tags$hr(),
                                  verbatimTextOutput("resume")
