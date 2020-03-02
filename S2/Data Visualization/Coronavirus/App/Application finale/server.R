@@ -28,8 +28,8 @@ server <- function(input, output) {
                fill_alphas = 0.1,
                col = color,
                xlab = "",
+               main=paste(input$titre,colonne),
                ylab = paste("Nombre de", colonne),color="black",
-               main= paste("Evolution du nombre de", colonne),color="red",
                theme = ramChartStyle)
     })
     
@@ -119,8 +119,11 @@ server <- function(input, output) {
     
     ####### Data #######
     output$donnees <- renderDataTable({datatable(
-        as.data.frame(data_sum)
-    )
+        data_sum)%>%formatStyle("cas"
+            ,color= "black")%>%formatStyle("mort",color= "black")%>%formatStyle("retablis",color= "black")%>%formatStyle("dates",color= "black")
+        
+    
+    
     })
 }
 
