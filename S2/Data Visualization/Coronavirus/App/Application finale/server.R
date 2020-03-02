@@ -21,13 +21,15 @@ server <- function(input, output) {
         data <- trie %>% 
             select(dates, y = colonne) %>% 
             filter(dates>=input$daterange1[1] & dates<=input$daterange1[2])
+      
         
         amPlot(x = as.character(data$dates, format = "%d/%m"), data$y,
                type = "sl",
                fill_alphas = 0.1,
                col = color,
                xlab = "",
-               ylab = paste("Nombre de", colonne),
+               ylab = paste("Nombre de", colonne),color="black",
+               main= paste("Evolution du nombre de", colonne),color="red",
                theme = ramChartStyle)
     })
     
