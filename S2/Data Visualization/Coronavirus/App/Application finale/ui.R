@@ -63,7 +63,7 @@ ui <- fluidPage(
                         max = last,
                         value = last, 
                         timeFormat = "%d/%m"
-            ),
+            )
             
             
         ),
