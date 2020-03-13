@@ -2,12 +2,12 @@ library(tidyverse)
 library(xml2)
 library(sp)
 library(rworldmap)
-library(xlsx)
+#library(xlsx)
 
 T_cas <- read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv')
 T_retablis <- read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Recovered.csv')
 T_morts <- read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv')
-T_france = read.xlsx("https://www.data.gouv.fr/fr/datasets/r/4150e586-4ebf-4b1d-b2e3-5646a8f8cf25", detectDates = TRUE)
+#T_france = read.xlsx("https://www.data.gouv.fr/fr/datasets/r/4150e586-4ebf-4b1d-b2e3-5646a8f8cf25", detectDates = TRUE)
 
 ####################################################################
 
