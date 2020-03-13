@@ -3,7 +3,7 @@ library(tidyverse)
 T_cas <- read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv')
 T_retablis <- read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Recovered.csv')
 T_morts <- read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv')
-
+####################################################################
 
 clean <- function(data){
   data <- data %>% 
@@ -15,6 +15,7 @@ clean <- function(data){
 T_cas <<- clean(T_cas)
 T_retablis <<- clean(T_retablis)
 T_morts <<- clean(T_morts)
+####################################################################
 
 latest <- function(t = ncol(T_cas) - 4){
   #' Retourne les données les plus récentes à l'instant t
@@ -37,37 +38,19 @@ latest <- function(t = ncol(T_cas) - 4){
                  rename(Morts = tail(names(.), 1))
     )
     )
-  return(data)
-}
-
-brief <- function(group = NULL, t = ncol(T_cas) - 4){
-  #' Renvoie un résumé à un instant t
-  #' group: NULL ou 'Country'
-  #' t: temps, entier >= 1
   
-  if(is_empty(group)){
-    data <- latest(t) %>% 
-      mutate(group = 'Monde')
-    group <- 'group'
-  } else {
-    data <- latest(t) %>% 
-      rename('group' = group)
-  }
-  data <- data %>% 
-    group_by(group) %>% 
-    summarise(Cas = sum(Cas, na.rm = T),
-              Retablis = sum(Retablis, na.rm = T),
-              Morts = sum(Morts, na.rm = T))
   return(data)
 }
-# pour recuperer les longitudes et latitudes de la france et de l'italie:
+####################################################################
+
+
 if (!(require(jsonlite))) install.packages("jsonlite")
 geocodeGratuit <- function(adresses) {
   # adresses est un vecteur contenant toutes les adresses sous forme de chaine de
   # caracteres
   nominatim_osm <- function(address = NULL) {
     ## details: http://wiki.openstreetmap.org/wiki/Nominatim fonction nominatim_osm
-    ## propos�e par D.Kisler
+    ## propos?e par D.Kisler
     if (suppressWarnings(is.null(address))) 
       return(data.frame())
     tryCatch(d <- jsonlite::fromJSON(gsub("\\@addr\\@", gsub("\\s+", "\\%20", 
