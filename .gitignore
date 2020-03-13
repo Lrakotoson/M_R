@@ -5,3 +5,4 @@
 .RData
 .Rhistory
 .DS_Store
+*.dcf
