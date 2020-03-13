@@ -7,6 +7,8 @@ source("scripts/variables.R")
 #plotlyStyle <- "carto-positron"
 plotlyStyle <- "carto-darkmatter"
 ramChartStyle <- "dark"
+first <- head(trie$dates, 1)
+last <- tail(trie$dates, 1)
 ##########################################
 
 
@@ -34,7 +36,7 @@ server <- function(input, output) {
     })
     
     output$worldmap <- renderPlotly({
-      rangeDate <- seq(first, last, by = "day")
+      rangeDate <- seq.Date(as.Date(first), as.Date(last), by = "day")
       releve <- match(as.Date(input$dateslider), rangeDate)
       worldmap <- map_evolution("World", releve, input$columns, F, T)
       worldmap

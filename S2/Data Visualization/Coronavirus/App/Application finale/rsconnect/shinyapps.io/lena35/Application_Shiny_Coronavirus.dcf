@@ -1,0 +1,12 @@
+name: Application_Shiny_Coronavirus
+title: Application_Shiny_Coronavirus
+username:
+account: lena35
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1945633
+bundleId: 2878535
+url: https://lena35.shinyapps.io/Application_Shiny_Coronavirus/
+when: 1584109587.3144
+asMultiple: FALSE
+asStatic: FALSE

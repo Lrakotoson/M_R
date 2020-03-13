@@ -38,6 +38,7 @@ latest <- function(t = ncol(T_cas) - 4){
                  rename(Morts = tail(names(.), 1))
     )
     )
+  #data <- data[which(!is.finite(data))] <- 0
   
   return(data)
 }
