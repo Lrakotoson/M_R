@@ -38,12 +38,7 @@ ui <- navbarPage(
                            separator = "-", 
                            format = "dd/mm/yyyy"
             ),
-            colourpicker::colourInput("color",
-                                      "Couleur :",
-                                      value = "purple",
-                                      showColour = c("both", "text", "background"),
-                                      palette = c("square", "limited")
-            ),
+
             radioButtons("columns",
                          "Colonne :",
                          choices = colnames(data_sum)[2:4]
@@ -69,6 +64,12 @@ ui <- navbarPage(
           ))),
   tabPanel(
     "Comparaisons",
+      colourpicker::colourInput("color",
+                                "Couleur :",
+                                value = "purple",
+                                showColour = c("both", "text", "background"),
+                                palette = c("square", "limited")
+      ),
     tabsetPanel(
       tabPanel("France",
                plotlyOutput("francemap")
