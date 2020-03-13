@@ -11,25 +11,17 @@ last <- tail(trie$dates, 1)
 ################################################
 
 # Define UI for application that draws a histogram
-ui <- fluidPage(    
-    tags$head(tags$link(rel = "stylesheet", type = "text/css", href = "bootstrap.min.css"),
-              tags$title(HTML("Coronavirus")),
-              tags$style(HTML("
-      @import url('//fonts.googleapis.com/css?family=Lobster|Cabin:400,700');
-      h1 {
-        font-family: 'Lobster', cursive;
-        font-weight: 500;
-        line-height: 1.1;
-        color: #FF0000;
-      }
-    "))
-              ),
-    
-    # Application title
-    titlePanel(h1("Coronavirus")),
-    
-    # Sidebar with a slider input for number of bins 
-    # Sidebar with a slider input for number of bins 
+ui <- navbarPage(
+  theme = "bootstrap.min.css",
+  title = h1("Coronavirus",
+             style = "font-family: 'Lobster', cursive; font-weight: 500; line-height: 1.1; color: #FF0000; margin:0;"
+             ),
+  selected = "Evolution",
+  tags$head(tags$style(HTML("@import url('//fonts.googleapis.com/css?family=Lobster|Cabin:400,700');"))),
+  
+  ##---------------------------EVOLUTION-----------------------------------##
+    tabPanel(
+    "Evolution",
     sidebarLayout(
         sidebarPanel(
             textInput("titre",
@@ -69,34 +61,36 @@ ui <- fluidPage(
         
         # Show a plot of the generated distribution
         mainPanel(
-            
-            # Output with tabsets
-            tabsetPanel(type = "tabs",
-                        tabPanel("Plot",
-                                 amChartsOutput("distPlot"),
-                                 plotlyOutput("worldmap"),
-                                 textOutput("classe")
-                                 
-                        ),
-                        
-                        tabPanel("Summary",
-                                          img(src = "photo.jpg", width = 450),
-                                          tags$hr(),
-                                 verbatimTextOutput("resume")
-                                 
-                        ),
-                        tabPanel("Data",
-                                 dataTableOutput("donnees")
-                        ),
-                        tabPanel("France",
-                                 plotlyOutput("francemap")
-                                 
-                        ),
-                        tabPanel("Italie",
-                                 plotlyOutput("italiemap")
-                                 
-                        )
-            )
-            
-        ))
+          amChartsOutput("distPlot"),
+          br(),hr(),br(),
+          plotlyOutput("worldmap"),
+          br(),hr(),
+          textOutput("classe")
+          ))),
+  tabPanel(
+    "Comparaisons",
+    tabsetPanel(
+      tabPanel("France",
+               plotlyOutput("francemap")
+               
+      ),
+      tabPanel("Italie",
+               plotlyOutput("italiemap")
+      )
+    )
+  ),
+  tabPanel(
+    "Données",
+    tabsetPanel(
+      tabPanel(
+        "Data",
+        dataTableOutput("donnees")
+    ),
+    tabPanel(
+      "Summary",
+      HTML('<center><img src="photo.jpg" style="width:450"></center><br><hr><br>'),
+      verbatimTextOutput("resume")
+      )
+  ))
+
 )

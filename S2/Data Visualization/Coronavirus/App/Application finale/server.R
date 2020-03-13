@@ -33,31 +33,13 @@ server <- function(input, output) {
                theme = ramChartStyle)
     })
     
-    output$worldmap <- renderPlotly(
-        worldmap <- latest() %>%
-            plot_ly(
-                lat = ~Lat,
-                lon = ~Long,
-                marker = list(color = 'red', size = ~log(1+Cas), sizeref=0.1, opacity=0.4),
-                type = 'scattermapbox',
-                text = ~State,
-                hovertext = ~Cas,
-                hovertemplate = paste(
-                    "<b>%{text}</b><br><br>",
-                    "Nombre de cas: %{hovertext}",
-                    "<extra></extra>"
-                )) %>%
-            layout(
-                mapbox = list(
-                    style = plotlyStyle,
-                    zoom = 1.2,
-                    center = list(lon = 18, lat= 35)),
-                margin = list(
-                    l = 0, r = 0,
-                    b = 0, t = 0,
-                    pad = 0
-                )
-            ))
+    output$worldmap <- renderPlotly({
+      rangeDate <- seq(first, last, by = "day")
+      releve <- match(as.Date(input$dateslider), rangeDate)
+      worldmap <- map_evolution("World", releve, input$columns, F, T)
+      worldmap
+      })
+    
     output$francemap <- renderPlotly(
         worldmap <- latest() %>%
             plot_ly(
@@ -111,16 +93,20 @@ server <- function(input, output) {
             ))
     
     
-    
     ####### Summary #######
     output$resume <- renderPrint({
         summary(data_sum)
     })
     
     ####### Data #######
-    output$donnees <- renderDataTable({datatable(
-        data_sum)%>%formatStyle("cas"
-            ,color= "black")%>%formatStyle("mort",color= "black")%>%formatStyle("retablis",color= "black")%>%formatStyle("dates",color= "black")
+    output$donnees <- renderDataTable({
+      datatable(data_sum,
+                options = list(pageLength = 25)
+                ) %>%
+        formatStyle("Cas",color= "black") %>%
+        formatStyle("Morts",color= "black") %>%
+        formatStyle("Retablis",color= "black") %>%
+        formatStyle("dates",color= "black")
         
     
     
