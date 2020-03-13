@@ -40,7 +40,7 @@ ui <- navbarPage(
             ),
             colourpicker::colourInput("color",
                                       "Couleur :",
-                                      value = "blue",
+                                      value = "purple",
                                       showColour = c("both", "text", "background"),
                                       palette = c("square", "limited")
             ),

@@ -28,10 +28,16 @@ server <- function(input, output) {
         amPlot(x = as.character(data$dates, format = "%d/%m"), data$y,
                type = "sl",
                fill_alphas = 0.1,
-               col = color,
+               col =   if (colonne == "Morts"){
+                 color <- "sandybrown"
+               } else if (colonne == "Retablis"){
+                 color <- "seagreen"
+               } else {
+                 color <- "red"
+               },
                xlab = "",
                main=paste(input$titre,colonne),
-               ylab = paste("Nombre de", colonne),color="black",
+               ylab = paste("Nombre de", colonne),color="white",
                theme = ramChartStyle)
     })
     
@@ -47,7 +53,7 @@ server <- function(input, output) {
             plot_ly(
                 lat = ~Lat,
                 lon = ~Long,
-                marker = list(color = 'red', size = ~log(1+Cas), sizeref=0.1, opacity=0.4),
+                marker = list(color = input$color, size = ~log(1+Cas), sizeref=0.1, opacity=0.4),
                 type = 'scattermapbox',
                 text = ~State,
                 hovertext = ~Cas,
@@ -73,7 +79,7 @@ server <- function(input, output) {
             plot_ly(
                 lat = ~Lat,
                 lon = ~Long,
-                marker = list(color = 'red', size = ~log(1+Cas), sizeref=0.1, opacity=0.4),
+                marker = list(color = input$color, size = ~log(1+Cas), sizeref=0.1, opacity=0.4),
                 type = 'scattermapbox',
                 text = ~State,
                 hovertext = ~Cas,
