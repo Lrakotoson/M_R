@@ -90,7 +90,8 @@ ui <- navbarPage(
     tabPanel(
       "Summary",
       HTML('<center><img src="photo.jpg" style="width:450"></center><br><hr><br>'),
-      verbatimTextOutput("resume")
+      verbatimTextOutput("resume"),
+      amChartsOutput("hist")
       )
   ))
 

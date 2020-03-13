@@ -99,6 +99,17 @@ server <- function(input, output) {
                     pad = 0
                 )
             ))
+    output$hist <- renderAmCharts({
+      colonne <- input$columns
+      color <- input$color
+      data <- trie %>% 
+        select(dates, y = colonne) %>% 
+        filter(dates>=input$daterange1[1] & dates<=input$daterange1[2])
+      
+      
+      amHist(x = data$y,theme = ramChartStyle,col="rainbow",main= paste("Nombre de",input$columns),xlab=input$columns)
+    })
+      
     
     
     ####### Summary #######
