@@ -54,14 +54,18 @@ head(actus())
 
 # COVID-19 Dashboard
 Le Dashboard permet de visualiser l'évolution du Coronavirus en temps réel dans l'espace et le temps.  
-Il contient deux onglets pour visualiser la situation mondiale et pour chaque région du globe.
+Il contient deux onglets pour visualiser la situation mondiale et pour chaque région du globe.  
+
+Nous l'avons mis en production directement le 25 Février 2020 face à l'urgence de la situation afin qu'on puisse s'informer et suivre l'évolution de la situation.
 
 ## Situation Mondiale
 Cette page est subdivisée en trois parties: l'évolution géographique, les dernières données et les actualités à la Une.
 
-<div align="center">
+<figure align="center">
 <img src="assets/SituationMondiale.png">
-</div>
+<figcaption align="right"> Capture écran du 01 Mars 2020 </figcaption>
+</figure>
+<br>
 
 ### Evolution géographique
 Nous voulons présenter la répartition géographique du nombre de cas dans le Monde avec les données les plus récentes.  
@@ -81,10 +85,31 @@ Cette section permet de suivre en temps réel les articles de presse et les dép
 ## Evolution Regionale
 Cette page permet d'analyser de façon plus précise chaque région du globe en fonction du temps.
 
-<div align="center">
+<figure align="center">
 <img src="assets/EvolutionRegionale.png">
-</div>
+<figcaption align="right"> Capture écran du 01 Mars 2020 </figcaption>
+</figure>
+<br>
 
+Elle est divisée en 4 parties:
+
+- **Situation géographique**: représentation de la répartition des Cas / Morts / Rétablis dans la région sélectionnée et au t-ème relevé de l'OMS.
+- **Nouvelles données**: évolution du nombre de nouveaux Cas / Morts / Rétablis dans la région sélectionnée.
+- **Evolution dans la région**: évolution des cumuls des Cas, Morts et Rétablis dans la région. Le curseur permet de zoomer sur une période précise.
+- **Taux**: évolution des taux de rétablissement et de létalité dans la région sélectionnée. Le curseur permet de zoomer pour se concentrer sur une période.
+
+La barre de contrôle permet de piloter l'analyse en spécifiant:
+
+- La région à analyser pour les 4 subdivisions
+- La situation à représenter sur les 2 subdivisions de la première ligne
+- Les données du t-ème relevé de l'OMS à représenter sur la carte
+- La représentation à l'échelle logarithmique ou non de l'évolution dans la région
+
+<hr>
+
+# Shiny App Analysis
+L'application Shiny permet d'effectuer l'analyse d'une des 3 situations dans une période donnée ainsi que la comparaison de la situation entre deux pays.  
+Elle contient alors 3 onglet en plus des données.
 
 <hr>
 
