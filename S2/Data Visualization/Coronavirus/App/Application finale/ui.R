@@ -66,7 +66,7 @@ ui <- navbarPage(
   tabPanel(
     "Comparaisons",
     fluidRow(
-      column(4,
+      column(3,
              selectInput(
                "Country1", "Pays A",
                c(brief("Country")$group, "Monde"),
@@ -83,30 +83,69 @@ ui <- navbarPage(
                max = last,
                value = c(first, last), 
                timeFormat = "%d/%m"
-             )
-      ),
-      column(5,
-             h3("Analyse des cas"),
-             helpText(
-               "Focus sur l'évolution du nombre de Cas.",
-               "L'échelle logarithmique permet de visualiser",
-               "de façon linéaire"
              ),
-             checkboxInput(
-               "Caslog", "Echelle logarithmique", value = F
-             ),
-             selectInput(
-               "Regresor",
-               "Régression",
-               c("Aucune", "Régression linéaire")
-             )
-      ),
-      column(3,
              colourpicker::colourInput("color",
                                        "Couleur :",
                                        value = "purple",
                                        showColour = c("both", "text", "background"),
                                        palette = c("square", "limited")
+             )
+      ),
+      column(3,
+             h3("Analyse Cas"),
+             checkboxInput(
+               "Caslog", "Echelle logarithmique nombre Cas", value = T
+             ),
+             selectInput(
+               "Casreg",
+               "Régression Cas",
+               c("Aucune" = 0,
+                 "Régression linéaire" = 1,
+                 "Régression poly 2" = 2,
+                 "Régression poly 3" = 3
+                 )
+             ),
+             textInput(
+               "Caspred",
+               "Nombre jours à prédire"
+             )
+      ),
+      column(3,
+             h3("Analyse Décès"),
+             checkboxInput(
+               "Mortslog", "Echelle logarithmique Mortalité", value = F
+             ),
+             selectInput(
+               "Mortsreg",
+               "Régression Mortalité",
+               c("Aucune" = 0,
+                 "Régression linéaire" = 1,
+                 "Régression poly 2" = 2,
+                 "Régression poly 3" = 3
+               )
+             ),
+             textInput(
+               "Mortspred",
+               "Nombre jours à prédire"
+             )
+      ),
+      column(3,
+             h3("Analyse Rétablis"),
+             checkboxInput(
+               "Retablislog", "Echelle logarithmique Retablis", value = F
+             ),
+             selectInput(
+               "Retablisreg",
+               "Régression Retablis",
+               c("Aucune" = 0,
+                 "Régression linéaire" = 1,
+                 "Régression poly 2" = 2,
+                 "Régression poly 3" = 3
+               )
+             ),
+             textInput(
+               "Retablispred",
+               "Nombre jours à prédire"
              )
       )
     ),hr(),br(),
@@ -122,7 +161,21 @@ ui <- navbarPage(
       tabPanel("Italie",
                plotlyOutput("italiemap")
       )
-    )
+    ),
+    fluidRow(
+      column(
+        6,
+        amChartsOutput("Compare_cas")
+      ),
+      column(
+        6,
+        amChartsOutput("Compare_morts")
+      ),
+      column(
+        6,
+        amChartsOutput("Compare_retablis")
+      )
+    ),
   ),
   tabPanel(
     "Données",
