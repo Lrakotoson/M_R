@@ -90,3 +90,50 @@ brief <- function(group = NULL, t = ncol(T_cas) - 4){
   return(data)
 }
 
+####################################################################
+
+compare_data <- function(situation, Country1, Country2, t1, t2 = ncol(T_cas)-4, logscale = F){
+  #' Renvoie un tible de la sitation de deux/un pays pour une periode
+  #' Situation: Cas/Morts/Retablis, str
+  #' Country1, Country2: Pays, str
+  #' t1, t2: entier t1<2
+  #' logscale: bool
+  
+  if (situation == "Retablis"){
+    data <- T_retablis
+  } else if (situation == "Morts"){
+    data <- T_morts
+  } else {
+    data <- T_cas
+  }
+  
+  data <- data %>%
+    filter(Country %in% c(Country1, Country2)) %>%
+    select(c(1:4, all_of(t1+4):all_of(t2+4))) %>%
+    group_by(Country)%>%
+    select(-c(1:4))%>%
+    summarise_all(funs(sum)) %>%
+    replace(is.na(.), 0) %>%
+    gather(key = Date, value = value, 2:ncol(.)) %>% 
+    spread_(key = names(.)[1],value = 'value') %>%
+    mutate(Date = as.Date(Date,format="%m/%d/%y")) %>%
+    arrange(Date)
+  
+  if (logscale){
+    data <- data%>%
+      rename(
+        Country1 = !!Country1,
+        Country2 = !!Country2
+      ) %>%
+      mutate(
+        Country1 = log(Country1+1),
+        Country2 = log(Country2+1)
+      ) %>%
+      rename(
+        !!Country1 := Country1,
+        !!Country2 := Country2
+      )
+  }
+  
+  return(data)
+}
