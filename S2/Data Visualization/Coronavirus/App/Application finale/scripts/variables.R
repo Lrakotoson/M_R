@@ -1,6 +1,9 @@
 source('scripts/global.R')
 library(tidyverse)
 library(rAmCharts)
+library(rjson)
+library(plotly)
+library(leaflet)
 
 T_cas_dates <- T_cas[-c(1,2,3,4)]
 sum_cas <- as.data.frame(apply(T_cas_dates, 2, sum))
@@ -117,5 +120,60 @@ map_evolution <- function(region, time, colonne, titre = T, main = F){
         pad = 0
       )
     )
+  return(plot)
+}
+#############################################################
+
+comparemap <- function(Country1, Country2 = "Monde", t = ncol(T_cas)){
+  #' Renvoie un leaflet du monde avec les pays sélectionnés
+  #' Country1, Country2: pays
+  #' t: temps, entier >= 1
+  
+  level_key <- c(
+    'Congo (Kinshasa)' = 'Democratic Republic of the Congo',
+    "Cote d'Ivoire" = "Ivory Coast",
+    "Czechia" = "Czech Republic",
+    "Korea, South" = "South Korea",
+    "North Macedonia" = "Macedonia",
+    "Serbia" = "Republic of Serbia",
+    "Taiwan*" = "Taiwan",
+    "US" = "United States of America"
+  )
+  
+  
+  if(Country1 %in% names(level_key)){
+    Country1 <- level_key[Country1]
+  }
+  if(Country2 %in% names(level_key)){
+    Country2 <- level_key[Country2]
+  }
+  
+  base <- geodata
+  stats <- brief("Country", t)
+  stats$group <- recode(stats$group, !!!level_key)
+  
+  base@data <- tibble(group = base$admin) %>%
+    left_join(stats) %>%
+    rename(admin = group) %>%
+    filter(admin == Country1 | admin == Country2) %>%
+    right_join(base@data) %>%
+    mutate(admin = factor(admin))
+  
+  pal <- colorNumeric("viridis", NULL)
+  
+  plot <- leaflet(base) %>%
+    addProviderTiles("CartoDB.DarkMatter") %>% 
+    addPolygons(
+      stroke = F, smoothFactor = 0.3,
+      fillOpacity = 1,
+      fillColor = ~pal(Cas),
+      label = ~paste(admin, "|", Cas, "cas",
+                     Morts, "morts", Retablis, "retablis")
+    ) %>% 
+    addLegend(
+      pal = pal,
+      values = ~(Cas)
+    )
+  
   return(plot)
 }

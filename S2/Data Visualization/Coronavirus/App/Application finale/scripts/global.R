@@ -3,6 +3,7 @@ library(tidyverse)
 T_cas <- read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv')
 T_retablis <- read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Recovered.csv')
 T_morts <- read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv')
+geodata <- rgdal::readOGR("custom.geo.json")
 ####################################################################
 
 clean <- function(data){
@@ -66,4 +67,26 @@ geocodeGratuit <- function(adresses) {
   return(tableau)
 }
 
+####################################################################
+
+brief <- function(group = NULL, t = ncol(T_cas) - 4){
+  #' Renvoie un résumé à un instant t
+  #' group: NULL, 'Country' ou 'Continent'
+  #' t: temps, entier >= 1
+  
+  if(is_empty(group)){
+    data <- latest(t) %>% 
+      mutate(group = 'Monde')
+    group <- 'group'
+  } else {
+    data <- latest(t) %>% 
+      rename('group' = group)
+  }
+  data <- data %>% 
+    group_by(group) %>% 
+    summarise(Cas = sum(Cas, na.rm = T),
+              Retablis = sum(Retablis, na.rm = T),
+              Morts = sum(Morts, na.rm = T))
+  return(data)
+}
 

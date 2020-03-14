@@ -2,6 +2,7 @@ library(shiny)
 library(DT)
 library(rAmCharts)
 library(plotly)
+library(leaflet)
 
 ################################################
 source("scripts/variables.R")
@@ -77,6 +78,10 @@ ui <- navbarPage(
       ),
       tabPanel("Italie",
                plotlyOutput("italiemap")
+      ),
+      tabPanel("Compare",
+               leafletOutput("comparemap")
+        
       )
     )
   ),

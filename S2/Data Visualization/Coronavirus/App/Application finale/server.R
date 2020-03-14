@@ -109,7 +109,10 @@ server <- function(input, output) {
       
       amHist(x = data$y,theme = ramChartStyle,col="rainbow",main= paste("Nombre de",input$columns),xlab=input$columns)
     })
-      
+    
+    output$comparemap <- renderLeaflet({
+      comparemap("France", "Italy")
+    })
     
     
     ####### Summary #######
