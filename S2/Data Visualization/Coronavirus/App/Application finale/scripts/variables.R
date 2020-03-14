@@ -177,3 +177,62 @@ comparemap <- function(Country1, Country2 = "Monde", t = ncol(T_cas)){
   
   return(plot)
 }
+
+#############################################################
+
+compare_situation <- function(Situation, Country1, Country2, t1, t2, logscale = F, reg = 0, pred = 10){
+  #' Renvoie un rAmCharts de l'évolution de la situation avec une régression
+  #' Situation: Cas/ Retablis/ Morts
+  #' Country1, Country2: pays
+  #' t1, t2: période, entier t1 < t2
+  #' reg: {0,1,2,3} reg polynomial, si 0 aucune reg
+  #' pred: nb jours à prédire si reg > 0
+  
+  data <- compare_data(Situation, Country1, Country2, t1, t2)
+  
+  if (reg > 0){
+    data <- data %>%
+      right_join(fitLM(data$Date, data[[Country1]], Country1, reg, pred)) %>%
+      right_join(fitLM(data$Date, data[[Country2]], Country2, reg, pred))
+  }
+  
+  if (logscale){
+    data[,2:ncol(data)] <- log(data[,2:ncol(data)] +1)
+  }
+  
+  data <- data %>%
+    mutate(Date = as.character(Date, format = "%d/%m/%Y"))%>%
+    replace(., is.na(.), 0)
+  
+  
+  plot <- amPlot(
+    data$Date, data[[Country1]],
+    parseDates = T, dataDateFormat = "DD/MM/YYYY",
+    col = "#f1c40f", lwd = 2, type = "smoothedLine",
+    zoom = T, legend = T, title = Country1,
+    ylim = c(min(data[,2:3]), max(data[,2:3])),
+    ylab = Situation, xlab = "Temps",
+    main = paste("Situation:", Situation),
+    theme = "dark"
+  ) %>%
+    amLines(
+      data[[Country2]], col = "#C4E538",
+      type = "smoothedLine", title = Country2
+    )
+  
+  if (reg > 0){
+    plot <- plot %>% 
+      amLines(
+        data[[paste0("pred.",Country1)]],
+        col = "#ecf0f1", type = "line",
+        title = paste0("pred.",Country1)
+      ) %>% 
+      amLines(
+        data[[paste0("pred.",Country2)]],
+        col = "#f7f1e3", type = "line",
+        title = paste0("pred.",Country2)
+      )
+  }
+  
+  return(plot)
+}
