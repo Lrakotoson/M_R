@@ -14,6 +14,11 @@ last <- tail(trie$dates, 1)
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
+  
+    ##### Reactive #####
+  rangeDate <- reactive({seq.Date(as.Date(first), as.Date(last), by = "day")})
+  beg <- reactive({match(as.Date(input$Comparedate[1]), rangeDate())})
+  end <- reactive({match(as.Date(input$Comparedate[2]), rangeDate())})
     
     ####### Plot #######
     
@@ -42,8 +47,7 @@ server <- function(input, output) {
     })
     
     output$worldmap <- renderPlotly({
-      rangeDate <- seq.Date(as.Date(first), as.Date(last), by = "day")
-      releve <- match(as.Date(input$dateslider), rangeDate)
+      releve <- match(as.Date(input$dateslider), rangeDate())
       worldmap <- map_evolution("World", releve, input$columns, F, T)
       worldmap
       })
@@ -111,7 +115,7 @@ server <- function(input, output) {
     })
     
     output$comparemap <- renderLeaflet({
-      comparemap("France", "Italy")
+      comparemap(input$Country1, input$Country2, end())
     })
     
     

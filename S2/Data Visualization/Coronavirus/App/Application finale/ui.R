@@ -65,23 +65,62 @@ ui <- navbarPage(
           ))),
   tabPanel(
     "Comparaisons",
-      colourpicker::colourInput("color",
-                                "Couleur :",
-                                value = "purple",
-                                showColour = c("both", "text", "background"),
-                                palette = c("square", "limited")
+    fluidRow(
+      column(4,
+             selectInput(
+               "Country1", "Pays A",
+               c(brief("Country")$group, "Monde"),
+               "France"
+             ),
+             selectInput(
+               "Country2", "Pays B",
+               c(brief("Country")$group, "Monde"),
+               "Italy"
+             ),
+             sliderInput(
+               "Comparedate", "Domaine",
+               min = first, 
+               max = last,
+               value = c(first, last), 
+               timeFormat = "%d/%m"
+             )
       ),
+      column(5,
+             h3("Analyse des cas"),
+             helpText(
+               "Focus sur l'évolution du nombre de Cas.",
+               "L'échelle logarithmique permet de visualiser",
+               "de façon linéaire"
+             ),
+             checkboxInput(
+               "Caslog", "Echelle logarithmique", value = F
+             ),
+             selectInput(
+               "Regresor",
+               "Régression",
+               c("Aucune", "Régression linéaire")
+             )
+      ),
+      column(3,
+             colourpicker::colourInput("color",
+                                       "Couleur :",
+                                       value = "purple",
+                                       showColour = c("both", "text", "background"),
+                                       palette = c("square", "limited")
+             )
+      )
+    ),hr(),br(),
     tabsetPanel(
+      tabPanel("Compare",
+               leafletOutput("comparemap")
+               
+      ),
       tabPanel("France",
                plotlyOutput("francemap")
                
       ),
       tabPanel("Italie",
                plotlyOutput("italiemap")
-      ),
-      tabPanel("Compare",
-               leafletOutput("comparemap")
-        
       )
     )
   ),
