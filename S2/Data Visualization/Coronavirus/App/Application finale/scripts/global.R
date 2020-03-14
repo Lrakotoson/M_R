@@ -92,17 +92,22 @@ brief <- function(group = NULL, t = ncol(T_cas) - 4){
 
 ####################################################################
 
-compare_data <- function(situation, Country1, Country2, t1, t2 = ncol(T_cas)-4, logscale = F){
+compare_data <- function(situation, Country1, Country2, t1, t2 = ncol(T_cas)-4){
   #' Renvoie un tible de la sitation de deux/un pays pour une periode
   #' Situation: Cas/Morts/Retablis, str
   #' Country1, Country2: Pays, str
   #' t1, t2: entier t1<2
-  #' logscale: bool
   
   if (situation == "Retablis"){
-    data <- T_retablis
+    data <- cbind(
+      T_retablis[,1:4],
+      T_retablis[,5:ncol(T_morts)]*100/(T_cas[,5:ncol(T_morts)] + 1)
+    )
   } else if (situation == "Morts"){
-    data <- T_morts
+    data <- cbind(
+      T_morts[,1:4],
+      T_morts[,5:ncol(T_morts)]*100/(T_morts[,5:ncol(T_morts)] + T_retablis[,5:ncol(T_morts)] + 1)
+    )
   } else {
     data <- T_cas
   }
@@ -119,21 +124,29 @@ compare_data <- function(situation, Country1, Country2, t1, t2 = ncol(T_cas)-4, 
     mutate(Date = as.Date(Date,format="%m/%d/%y")) %>%
     arrange(Date)
   
-  if (logscale){
-    data <- data%>%
-      rename(
-        Country1 = !!Country1,
-        Country2 = !!Country2
-      ) %>%
-      mutate(
-        Country1 = log(Country1+1),
-        Country2 = log(Country2+1)
-      ) %>%
-      rename(
-        !!Country1 := Country1,
-        !!Country2 := Country2
-      )
-  }
-  
   return(data)
+}
+
+####################################################################
+
+fitLM <- function(date, y, Country, pol = 1, pred = 10){
+  #' Renvoie un tibble des prédictions du lm
+  #' date: vecteur date
+  #' y: vecteur y
+  #' Country: nom du pays
+  #' pol: lm polynomiale 1 à 3
+  #' pred: nombre de jours à prédire
+  
+  x <- as.numeric(date)
+  x_pred <- as.numeric(unique(c(date, date+pred)))
+  y <- log(y)
+  
+  model <- lm(y~poly(x, pol))
+  y_pred <- predict.lm(model, newdata = list(x = x_pred))
+  
+  name <- paste0("pred.", Country)
+  pred <- tibble(Date = as.Date(x_pred, origin = "1970-01-01"),
+                 !!name := exp(y_pred))
+  
+  return(pred)
 }
