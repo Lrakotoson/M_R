@@ -94,7 +94,7 @@ brief <- function(group = NULL, t = ncol(T_cas) - 4){
 
 compare_data <- function(situation, Country1, Country2, t1, t2 = ncol(T_cas)-4){
   #' Renvoie un tible de la sitation de deux/un pays pour une periode
-  #' Situation: Cas/Morts/Retablis, str
+  #' Situation: Cas/Morts/Retablis/Letalite/Actifs/Nouveaux, str
   #' Country1, Country2: Pays, str
   #' t1, t2: entier t1<2
   
@@ -107,6 +107,16 @@ compare_data <- function(situation, Country1, Country2, t1, t2 = ncol(T_cas)-4){
     data <- cbind(
       T_morts[,1:4],
       T_morts[,5:ncol(T_morts)]*100/(T_morts[,5:ncol(T_morts)] + T_retablis[,5:ncol(T_morts)] + 1)
+    )
+  } else if (situation == "Letalite"){
+    data <- cbind(
+      T_morts[,1:4],
+      T_morts[,5:ncol(T_morts)]*100/(T_cas[,5:ncol(T_morts)] + 1)
+    )
+  } else if (situation == "Actifs"){
+    data <- cbind(
+     T_cas[,1:4],
+     T_cas[,5:ncol(T_cas)] - (T_morts[,5:ncol(T_cas)] + T_retablis[,5:ncol(T_cas)])
     )
   } else {
     data <- T_cas
@@ -124,6 +134,14 @@ compare_data <- function(situation, Country1, Country2, t1, t2 = ncol(T_cas)-4){
     mutate(Date = as.Date(Date,format="%m/%d/%y")) %>%
     arrange(Date)
   
+  if (situation == "Nouveaux"){
+    data <- data %>% 
+      mutate(!!Country1 := .[[Country1]] - lag(.[[!!Country1]]),
+             !!Country2 := .[[Country2]] - lag(.[[!!Country2]])
+      ) %>% na.omit() %>% 
+      mutate_if(is.numeric, function(x) ifelse(x<0, 0, x))
+  }
+  
   return(data)
 }
 
@@ -139,7 +157,7 @@ fitLM <- function(date, y, Country, pol = 1, pred = 10){
   
   x <- as.numeric(date)
   x_pred <- as.numeric(unique(c(date, date+pred)))
-  y <- log(y)
+  y <- log(y+1)
   
   model <- lm(y~poly(x, pol))
   y_pred <- predict.lm(model, newdata = list(x = x_pred))
