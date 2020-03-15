@@ -188,6 +188,21 @@ compare_situation <- function(Situation, Country1, Country2, t1, t2, logscale = 
   #' reg: {0,1,2,3} reg polynomial, si 0 aucune reg
   #' pred: nb jours à prédire si reg > 0
   
+  fill_alphas <- 0
+  if (Situation == "Morts"){
+    main <- "Taux de mortalite"
+  } else if (Situation == "Retablis"){
+    main <- "Taux de retablissement"
+  } else if (Situation == "Letalite"){
+    main <- "Taux de letalite"
+    fill_alphas <- 0.3
+  } else if (Situation == "Actifs"){
+    main <- "Nombre de Cas Actifs"
+    fill_alphas <- 0.3
+  } else {
+    main <- paste("Situation:", Situation)
+  }
+  
   data <- compare_data(Situation, Country1, Country2, t1, t2)
   
   if (reg > 0){
@@ -210,29 +225,56 @@ compare_situation <- function(Situation, Country1, Country2, t1, t2, logscale = 
     parseDates = T, dataDateFormat = "DD/MM/YYYY",
     col = "#f1c40f", lwd = 2, type = "smoothedLine",
     zoom = T, legend = T, title = Country1,
+    fill_alphas = fill_alphas,
     ylim = c(min(data[,2:3]), max(data[,2:3])),
     ylab = Situation, xlab = "Temps",
-    main = paste("Situation:", Situation),
+    main = main, mainColor = "white",
+    legendPosition = "bottom",
     theme = "dark"
   ) %>%
     amLines(
       data[[Country2]], col = "#C4E538",
-      type = "smoothedLine", title = Country2
+      type = "smoothedLine", title = Country2,
+      fill_alphas = fill_alphas
     )
   
   if (reg > 0){
     plot <- plot %>% 
       amLines(
         data[[paste0("pred.",Country1)]],
-        col = "#ecf0f1", type = "line",
-        title = paste0("pred.",Country1)
+        col = "#ecf0f1", type = "both",
+        title = paste0("pred.",Country1),
+        fill_alphas = fill_alphas
       ) %>% 
       amLines(
         data[[paste0("pred.",Country2)]],
-        col = "#f7f1e3", type = "line",
-        title = paste0("pred.",Country2)
+        col = "#f7f1e3", type = "both",
+        title = paste0("pred.",Country2),
+        fill_alphas = fill_alphas
       )
   }
   
+  return(plot)
+}
+
+#############################################################
+
+compare_new <- function(Country1, Country2, t1, t2){
+  #' Renvoie un amTimeSeries de l'évolution des nouveaux cas
+  #' Country1, Country2: pays
+  #' t1, t2: entier t1 < t2
+  
+  plot <- compare_data("Nouveaux", Country1, Country2, t1, t2) %>%
+    mutate(Date = as.POSIXct(paste(Date, "00:00:00"))) %>%
+    amTimeSeries(
+      "Date", c(Country1, Country2),
+      color = c("#f1c40f","#C4E538"),
+      type = "column",
+      fillAlphas = 1,
+      scrollbar = F,
+      theme = "dark",
+      main = "Nouveaux Cas",
+      mainColor = "white"
+    )
   return(plot)
 }
