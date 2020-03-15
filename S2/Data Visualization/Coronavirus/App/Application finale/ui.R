@@ -107,7 +107,8 @@ ui <- navbarPage(
              ),
              textInput(
                "Caspred",
-               "Nombre jours à prédire"
+               "Nombre jours à prédire",
+               value = 0
              )
       ),
       column(3,
@@ -126,7 +127,8 @@ ui <- navbarPage(
              ),
              textInput(
                "Mortspred",
-               "Nombre jours à prédire"
+               "Nombre jours à prédire",
+               value = 0
              )
       ),
       column(3,
@@ -145,7 +147,8 @@ ui <- navbarPage(
              ),
              textInput(
                "Retablispred",
-               "Nombre jours à prédire"
+               "Nombre jours à prédire",
+               value = 0
              )
       )
     ),hr(),br(),
@@ -169,11 +172,27 @@ ui <- navbarPage(
       ),
       column(
         6,
+        amChartsOutput("Compare_actifs")
+      )
+    ),
+    fluidRow(
+      column(
+        6,
         amChartsOutput("Compare_morts")
       ),
       column(
         6,
+        amChartsOutput("Compare_letalite")
+      )
+    ),
+    fluidRow(
+      column(
+        6,
         amChartsOutput("Compare_retablis")
+      ),
+      column(
+        6,
+        amChartsOutput("Compare_nouveaux")
       )
     ),
   ),

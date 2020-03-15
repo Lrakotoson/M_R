@@ -19,6 +19,8 @@ server <- function(input, output) {
   rangeDate <- reactive({seq.Date(as.Date(first), as.Date(last), by = "day")})
   beg <- reactive({match(as.Date(input$Comparedate[1]), rangeDate())})
   end <- reactive({match(as.Date(input$Comparedate[2]), rangeDate())})
+  Country1 <- reactive({input$Country1})
+  Country2 <- reactive({input$Country2})
     
     ####### Plot #######
     
@@ -114,10 +116,72 @@ server <- function(input, output) {
       amHist(x = data$y,theme = ramChartStyle,col="rainbow",main= paste("Nombre de",input$columns),xlab=input$columns)
     })
     
+    ###### Compare ######
+    
     output$comparemap <- renderLeaflet({
-      comparemap(input$Country1, input$Country2, end())
+      comparemap(Country1(), Country2(), end())
     })
     
+    output$Compare_cas <- renderAmCharts({
+      compare_situation(
+        "Cas",
+        Country1(), Country2(),
+        beg(), end(),
+        input$Caslog,
+        as.integer(input$Casreg),
+        as.integer(input$Caspred)
+      )
+    })
+    
+    output$Compare_morts <- renderAmCharts({
+      compare_situation(
+        "Morts",
+        Country1(), Country2(),
+        beg(), end(),
+        input$Mortslog,
+        as.integer(input$Mortsreg),
+        as.integer(input$Mortspred)
+      )
+    })
+    
+    output$Compare_retablis <- renderAmCharts({
+      compare_situation(
+        "Retablis",
+        Country1(), Country2(),
+        beg(), end(),
+        input$Retablislog,
+        as.integer(input$Retablisreg),
+        as.integer(input$Retablispred)
+      )
+    })
+    
+    output$Compare_actifs <- renderAmCharts({
+      compare_situation(
+        "Actifs",
+        Country1(), Country2(),
+        beg(), end(),
+        logscale = F,
+        reg = 0, pred = 0
+      )
+    })
+    
+    output$Compare_letalite <- renderAmCharts({
+      compare_situation(
+        "Letalite",
+        Country1(), Country2(),
+        beg(), end(),
+        input$Mortslog,
+        as.integer(input$Mortsreg),
+        as.integer(input$Mortspred)
+      )
+    })
+    
+    output$Compare_nouveaux <- renderAmCharts({
+      compare_new(
+        Country1(), Country2(),
+        beg(), end()
+      )
+    })
     
     ####### Summary #######
     output$resume <- renderPrint({
