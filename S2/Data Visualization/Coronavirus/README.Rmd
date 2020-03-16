@@ -1,9 +1,10 @@
 ---
 title: "COVID-19 Visualisation"
 output:
+  pdf_document: default
   html_document:
-    df_print: paged
     code_folding: hide
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
@@ -17,12 +18,14 @@ Ces applications traitent des données du Coronavirus COVID-19.
 - [**COVID-19 Dashboard**](https://lrakotoson.shinyapps.io/Covid-19/)
 - [**Shiny App Analysis**](https://lena35.shinyapps.io/Application_Shiny_Coronavirus/)
 
+**Les différents CDC mettent à jour leurs données la nuit entre 01:30AM et 04:00AM (heure de Paris), ce qui peut provoquer des `NAN` pendant cette période sur les résultats affichés par les applications. Dans ce cas, limitez l'analyse pour le jour $j-1$.**
+
 ## Les données
 ### Tables principales
 Les 3 tables de base (**Cas**, **Rétablis**, **Morts**) sur lequel nous travaillons possèdent la même structure. L'évolution des statistiques pour chaque pays pour chaque jour depuis le 22 Janvier 2020, en plus des coordonées GPS.  
 Une colonne s'ajoute chaque jour, une ligne s'ajoute pour un nouvel Etat touché.  
 Après netoyage, voici les premières lignes de la table **Cas**:
-```{r message=FALSE}
+```{r eval=FALSE}
 head(T_cas)
 ```
 
@@ -46,7 +49,7 @@ brief()
 #### Actus
 La fonction `actus(rows)` renvoie les rows-er infos les plus récentes dans la presse française. Les données en entrée sont en XML et sortent en tible d'une colonne formaté avec des liens de redirection.  
 Les premières lignes:
-```{r}
+```{r eval=FALSE}
 head(actus())
 ```
 
@@ -54,7 +57,7 @@ head(actus())
 
 # COVID-19 Dashboard
 Le Dashboard permet de visualiser l'évolution du Coronavirus en temps réel dans l'espace et le temps.  
-Il contient deux onglets pour visualiser la situation mondiale et pour chaque région du globe.  
+Il contient trois onglets pour visualiser la situation mondiale, pour chaque région du globe et pour analyser par pays *(déplacé dans le Shiny App)*  
 
 Nous l'avons mis en production directement le 25 Février 2020 face à l'urgence de la situation afin qu'on puisse s'informer et suivre l'évolution de la situation.
 
@@ -63,7 +66,7 @@ Cette page est subdivisée en trois parties: l'évolution géographique, les der
 
 <figure align="center">
 <img src="assets/SituationMondiale.png">
-<figcaption align="right"> Capture écran du 01 Mars 2020 </figcaption>
+<figcaption align="right"> Capture écran du 14 Mars 2020 </figcaption>
 </figure>
 <br>
 
@@ -87,7 +90,7 @@ Cette page permet d'analyser de façon plus précise chaque région du globe en 
 
 <figure align="center">
 <img src="assets/EvolutionRegionale.png">
-<figcaption align="right"> Capture écran du 01 Mars 2020 </figcaption>
+<figcaption align="right"> Capture écran du 14 Mars 2020 </figcaption>
 </figure>
 <br>
 
@@ -105,11 +108,59 @@ La barre de contrôle permet de piloter l'analyse en spécifiant:
 - Les données du t-ème relevé de l'OMS à représenter sur la carte
 - La représentation à l'échelle logarithmique ou non de l'évolution dans la région
 
+## Analyse par pays
+Cette page a été déplacée dans le Shiny App pour le rendu, toutefois elle est toujours comprise dans le Dashboard en production.  
+Aussi, après la date de rendu (16-03-2020), **le Dashboard sera rendu OpenSource** et donc sera ouverte aux contributions. Le code original de notre groupe sans contribution externe est aussi aacessible pour la version avant rendu du Dashboard [en cliquant ici: version avant rendu](https://github.com/Lrakotoson/Covid-19/tree/d3839851f5ebce09117565e9979ba1447a06440e).
+
+
 <hr>
 
 # Shiny App Analysis
-L'application Shiny permet d'effectuer l'analyse d'une des 3 situations dans une période donnée ainsi que la comparaison de la situation entre deux pays.  
+L'application Shiny permet d'effectuer l'analyse d'une des 3 situations dans une période donnée ainsi que la comparaison de la situation entre deux pays en appliquant des modèles de régression.  
 Elle contient alors 3 onglet en plus des données.
+
+## Evolution
+Cette page permet d'évaluer l'évolution de chaque situation (Cas, Décès ou Rétablissements) pour une période donnée et la répartition géographique de celle-ci pour une date précise.
+
+<figure align="center">
+<img src="assets/AppEvolution.png">
+<figcaption align="right"> Capture écran du 16 Mars 2020 </figcaption>
+</figure>
+<br>
+
+Le Sidebar permet de contrôler la période ainsi que la situation dont on veut visualiser l'évolution.  
+Le titre se met à jour automatiquement, toutefois il est aussi possible d'éditer celui-ci pour personnaliser une exportation.  
+La visualisation de la situation géographique à un jour précis est contrôlée par le curseur de la date.
+
+## Comparaisons
+Cette page permet une analyse par pays mais aussi une comparaison de l'évolution de la situation à une période donnée et une régression avec différents modèles.
+
+<figure align="center">
+<img src="assets/AppComparaison.png">
+<figcaption align="right"> Capture écran du 16 Mars 2020 </figcaption>
+</figure>
+<br>
+
+Le **Control Panel** permet de diriger l'analyse.  
+On y définit entre autres les deux pays à analyser (si on veut analyser un seul, choisir "Monde" pour l'autre) et la période.  
+Pour chaque situation, on peut:
+
+- Visualiser à l'échelle logarithmique. *(une épidemie a une évolution exponentielle)*
+- Effectuer un Régression sur la période d'analyse. (Linéaire, Polynomiale de degré 2 ou 3)
+- Choisir le nombre de jours à prédire après la période d'analyse. (Prédiction du modèle de régression sélectionné)
+
+Dans les **Résultats**, on retrouve:
+
+- La repésentation géographique et le nombre de cas
+- L'analyse des cas
+  - L'évolution des cas recencés ( + régression, prédictions)
+  - L'évolution des cas actifs (ni rétablis, ni morts)
+- L'analyse des décès
+  - L'évolution du taux de mortalité, les morts sur les cas ( + régression, prédictions)
+  - L'évolution du taux de létalité, les morts sur les cas inactifs ( + régression, prédictions)
+- L'analyse des rétablissements
+  - L'évolution du taux de rétablissement ( + régression, prédictions)
+  - Le nombre de nouveaux cas par jour
 
 <hr>
 
@@ -128,3 +179,10 @@ du gouvernement Chinois et les CDC de différents gouvernements ([Etats-Unis](ht
 Les trois jeux de données en CSV, traduites en anglais et aggrégées pour les Cas, les Rétablis et les Morts proviennent du CSSE de l'[Université de Johns Hopkins](https://systems.jhu.edu/) qui les met à jour pour $j-1$.
 
 Les flux RSS proviennent des *Google Actus* en XML.
+
+<hr>
+<center>
+[Loïc Rakotoson](https://github.com/Lrakotoson/) | 
+[Lena Coïc](https://github.com/lenacoic/) | 
+[Pierre-Yves Colson](https://github.com/pycolson)
+</center>
