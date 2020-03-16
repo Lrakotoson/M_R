@@ -98,6 +98,7 @@ compare_data <- function(situation, Country1, Country2, t1, t2 = ncol(T_cas)-4){
   #' Country1, Country2: Pays, str
   #' t1, t2: entier t1<2
   
+  aggreg <- F
   if (situation == "Retablis"){
     data <- cbind(
       T_retablis[,1:4],
@@ -114,20 +115,25 @@ compare_data <- function(situation, Country1, Country2, t1, t2 = ncol(T_cas)-4){
       T_morts[,5:ncol(T_morts)]*100/(T_cas[,5:ncol(T_morts)] + 1)
     )
   } else if (situation == "Actifs"){
+    aggreg <- T
     data <- cbind(
-     T_cas[,1:4],
-     T_cas[,5:ncol(T_cas)] - (T_morts[,5:ncol(T_cas)] + T_retablis[,5:ncol(T_cas)])
+      T_cas[,1:4],
+      T_cas[,5:ncol(T_cas)] - (T_morts[,5:ncol(T_cas)] + T_retablis[,5:ncol(T_cas)])
     )
   } else {
+    aggreg <- T
     data <- T_cas
   }
   
   data <- data %>%
     filter(Country %in% c(Country1, Country2)) %>%
-    select(c(1:4, all_of(t1+4):all_of(t2+4))) %>%
-    group_by(Country)%>%
-    select(-c(1:4))%>%
-    summarise_all(funs(sum)) %>%
+    select(c(2, all_of(t1+4):all_of(t2+4))) %>%
+    group_by(Country)%>%{
+      if(aggreg)
+        summarise_all(.,funs(sum))
+      else
+        summarise_all(.,funs(mean))
+    }%>%
     replace(is.na(.), 0) %>%
     gather(key = Date, value = value, 2:ncol(.)) %>% 
     spread_(key = names(.)[1],value = 'value') %>%
