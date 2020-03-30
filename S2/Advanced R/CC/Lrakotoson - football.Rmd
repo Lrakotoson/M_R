@@ -1,0 +1,199 @@
+---
+title: "Football"
+author: "Loïc Rakotoson"
+output:
+  pdf_document: default
+  html_notebook:
+    df_print: paged
+    highlight: tango
+    theme: flatly
+jupyter:
+  jupytext:
+    formats: ipynb,Rmd
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.1'
+      jupytext_version: 1.2.4
+  kernelspec:
+    display_name: R
+    language: R
+    name: ir
+---
+
+```{r message=FALSE, warning=FALSE, collapse=TRUE}
+library(tidyverse)
+library(DBI)
+library(RSQLite)
+```
+
+#### 1. Se connecter à la base `SQLitefootball.sqlite`
+
+```{r}
+db <- dbConnect(SQLite(), dbname = "football.sqlite")
+```
+
+#### 2. Lister les bases
+
+```{r}
+dbListTables(db)
+```
+
+#### 3. Afficher toutes les premières divisions présentes dans cette base de donnée (ligue 1 en France, sérieA en Italie etc...)
+La table **League** contient uniquement les premières divisions dont les `id` et les `country_id` renvoient aux `id` des pays dans **Country**.
+
+```{r}
+query <- "SELECT Pays.Name AS Pays, Ligue.Name AS Ligue
+          FROM Country AS Pays JOIN League AS Ligue ON Pays.id = Ligue.country_id"
+
+as_tibble(
+    dbGetQuery(db, query)
+)
+```
+#### 4. Afficher les champs de la table **Match**
+
+```{r}
+dbListFields(db, "Match")
+```
+
+#### 5. Extraire dans un data-frame les résultats de la Ligue 1 française
+Utilisation d'une sous-requête au lieu d'un jointure pour esquiver la gestion de `.name_repair` lors de la conversion en tibble.
+
+```{r}
+query <- "SELECT *
+           FROM Match
+           WHERE league_id = (
+            SELECT id
+            FROM League
+            WHERE Name = 'France Ligue 1'
+           )"
+
+matchFR <- as_tibble(
+    dbGetQuery(db, query)
+)
+
+matchFR
+```
+
+#### 6. Extraire dans un data-frame les résultats de la Ligue 1 française pour l’année 2015-2016 et ajouter le score du match et les points pour chaque match (match perdu = 0 pt, match nul = 1 pt et match gagné = 3 points ) de la saison 2015-2016.
+On ne gardera que les colonnes qui sont utiles pour la suite.
+
+```{r}
+matchFR <- matchFR %>% 
+filter(season == "2015/2016") %>%
+mutate(
+    score = home_team_goal - away_team_goal,
+    home_points = case_when(
+        score < 0 ~ 0,
+        score > 0 ~ 3,
+        TRUE ~ 1
+    )
+) %>% 
+select(home_team_api_id, home_team_goal, home_points,
+       away_team_api_id, away_team_goal, score, season)
+
+matchFR
+```
+
+#### 7. Trouver la meilleure équipe à domicile (celle qui le plus de points en ne comptant que les match à domicile)
+Importation de la table des équipes *(pour obtenir le nom)*.
+
+```{r}
+team <<- as_tibble(tbl(db, "Team"))
+```
+
+Création d'une fonction qui sera utilisée dans les 3 prochaines questions.
+
+```{r}
+best_n <- function(tb, n){
+    #' Renvoie un tibble des n meilleurs équipes par points
+    #' tb: tibble ayant les attributs de matchFR
+    #' n: entier
+    
+    best <- tb %>%
+    group_by(home_team_api_id) %>%
+    summarise(total_points = sum(home_points)) %>% 
+    arrange(desc(total_points)) %>% 
+    top_n(n, total_points) %>%
+    inner_join(
+        team,
+        by = c(home_team_api_id = "team_api_id")
+    ) %>% 
+    select(best_team = team_long_name, total_points)
+    
+    return(best)
+}
+```
+
+La meilleure équipe à domicile.
+
+```{r}
+matchFR %>%
+best_n(1)
+```
+
+#### 8. Trouver ensuite les trois meilleures équipes du championnat 2015-2016.
+Ajout des points gagnés en étant visiteur lors du championnat.
+
+```{r}
+match <- as_tibble(tbl(db, "Match")) %>% 
+filter(season == "2015/2016") %>%
+mutate(
+    score = home_team_goal - away_team_goal,
+    home_points = case_when(
+        score < 0 ~ 0,
+        score > 0 ~ 3,
+        TRUE ~ 1
+    ),
+    away_points = case_when(
+        score > 0 ~ 0,
+        score < 0 ~ 3,
+        TRUE ~ 1
+    )
+) %>% 
+select(home_team_api_id, home_team_goal, home_points,
+       away_team_api_id, away_team_goal, away_points,
+       score)
+```
+
+Création d'un vecteur de noms communs pour faciliter l'aggrégation des points gagnés à domicile et en tant que visiteur.
+
+```{r}
+newnames <- colnames(match)[4:6]
+names(newnames) <- colnames(match)[1:3]
+```
+
+Les 3 meilleurs équipes du championnat en terme de points.
+
+```{r}
+match %>%
+select(all_of(newnames)) %>% 
+bind_rows(match[,1:3]) %>% 
+best_n(3)
+```
+
+<h4> 9. Trouver les trois meilleures équipes si nous ajoutons à l’attribution des points les bonus suivants :
+    <ul>
+    <li> bonus offensif : +1 point si gain d’un match avec un ecart de 2 buts ou plus ;</li>
+    <li> bonus spectacle : +1 point si le match est perdu mais l’équipe a quand même marqué 2 buts ou plus.</li>
+    </ul>
+</h4>
+
+Ajout des bonus, s'il doit y en avoir, et affichage des 3 meilleurs équipes.
+
+```{r}
+match %>% 
+mutate(
+    home_points = if_else(
+        score >= 2 | (score < 0 & home_team_goal >= 2),
+        home_points +1, home_points
+    ),
+    away_points = if_else(
+        score <= -2 | (score > 0 & away_team_goal >= 2),
+        away_points +1, away_points
+    )
+) %>% 
+select(all_of(newnames)) %>% 
+bind_rows(.[,1:3]) %>% 
+best_n(3)
+```
