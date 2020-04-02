@@ -1,0 +1,54 @@
+---
+title: "Cyberattaques des smartphones"
+author: "Loïc Rakotoson"
+output:
+  html_notebook:
+    df_print: paged
+    highlight: tango
+    theme: flatly
+jupyter:
+  jupytext:
+    formats: ipynb,Rmd
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.1'
+      jupytext_version: 1.2.4
+  kernelspec:
+    display_name: R
+    language: R
+    name: ir
+---
+
+
+```{r}
+library(tidyverse)
+library(caret)
+library(randomForest)
+library(ranger) #RandomForest plus rapide
+library(rpart)
+library(pROC)
+```
+
+```{r}
+df <- read_csv("data/Attempt 8.csv")
+```
+
+```{r}
+df <- df %>% 
+  mutate_at(c('Destination IP', 'Protocol', 'Label'), funs(factor))
+```
+
+```{r}
+ggplot(df) + 
+  aes(x = Label) + geom_bar() + 
+  facet_grid(.~Protocol) +
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+```
+
+```{r}
+ggplot(df %>% mutate(`Destination Port` = as.factor(`Destination Port`))) +
+  aes(x = `Destination Port`) + geom_bar() + #facet_grid(.~Label) +
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+```
+
