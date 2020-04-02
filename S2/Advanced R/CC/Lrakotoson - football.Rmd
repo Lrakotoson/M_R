@@ -2,7 +2,6 @@
 title: "Football"
 author: "Loïc Rakotoson"
 output:
-  pdf_document: default
   html_notebook:
     df_print: paged
     highlight: tango
@@ -136,21 +135,14 @@ best_n(1)
 Ajout des points gagnés en étant visiteur lors du championnat.
 
 ```{r}
-match <- as_tibble(tbl(db, "Match")) %>% 
-filter(season == "2015/2016") %>%
+matchFR <- matchFR %>%
 mutate(
-    score = home_team_goal - away_team_goal,
-    home_points = case_when(
-        score < 0 ~ 0,
-        score > 0 ~ 3,
-        TRUE ~ 1
-    ),
     away_points = case_when(
         score > 0 ~ 0,
         score < 0 ~ 3,
         TRUE ~ 1
     )
-) %>% 
+) %>%
 select(home_team_api_id, home_team_goal, home_points,
        away_team_api_id, away_team_goal, away_points,
        score)
@@ -159,16 +151,16 @@ select(home_team_api_id, home_team_goal, home_points,
 Création d'un vecteur de noms communs pour faciliter l'aggrégation des points gagnés à domicile et en tant que visiteur.
 
 ```{r}
-newnames <- colnames(match)[4:6]
-names(newnames) <- colnames(match)[1:3]
+newnames <- colnames(matchFR)[4:6]
+names(newnames) <- colnames(matchFR)[1:3]
 ```
 
 Les 3 meilleurs équipes du championnat en terme de points.
 
 ```{r}
-match %>%
+matchFR %>%
 select(all_of(newnames)) %>% 
-bind_rows(match[,1:3]) %>% 
+bind_rows(matchFR[,1:3]) %>% 
 best_n(3)
 ```
 
@@ -182,7 +174,7 @@ best_n(3)
 Ajout des bonus, s'il doit y en avoir, et affichage des 3 meilleurs équipes.
 
 ```{r}
-match %>% 
+matchFR <- matchFR %>% 
 mutate(
     home_points = if_else(
         score >= 2 | (score < 0 & home_team_goal >= 2),
@@ -192,8 +184,17 @@ mutate(
         score <= -2 | (score > 0 & away_team_goal >= 2),
         away_points +1, away_points
     )
-) %>% 
+)
+
+matchFR %>% 
 select(all_of(newnames)) %>% 
-bind_rows(.[,1:3]) %>% 
+bind_rows(matchFR[,1:3]) %>% 
 best_n(3)
+```
+
+<hr>
+
+Fermeture de la connexion.
+```{r}
+dbDisconnect(db)
 ```
