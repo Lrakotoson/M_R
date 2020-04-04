@@ -22,6 +22,7 @@ jupyter:
 
 
 ```{r}
+options(warn = -1)
 library(tidyverse)
 library(caret)
 library(randomForest)
@@ -41,9 +42,47 @@ df <- df %>%
 
 ```{r}
 ggplot(df) + 
-  aes(x = Label) + geom_bar() + 
+  aes(x = Label) + geom_bar(aes(y = (..count..)/sum(..count..))) + 
   facet_grid(.~Protocol) +
   theme(axis.text.x=element_text(angle=90, hjust=1))
+```
+
+```{r}
+length(unique(df$`Destination Port`))
+```
+
+```{r}
+ip_split <- function(ip){
+    ipMain <- paste(str_split(ip, "\\.")[[1]][1], str_split(ip, "\\.")[[1]][2], sep = ".")
+    return(ipMain)
+}
+
+```
+
+```{r}
+df %>%
+select(IP = `Destination IP`) %>% rowwise() %>% mutate(sub_label = paste(str_split(`IP`, "\\.")[[1]][1], str_split(`IP`, "\\.")[[1]][2], sep = "."))
+```
+
+```{r}
+df  %>% 
+group_by(`Destination IP`) %>% 
+summarise(n = n()) %>% 
+top_n(20)
+```
+
+```{r}
+df  %>% 
+group_by(`Source Port`) %>% 
+summarise(n = n()) %>% 
+top_n(10)
+```
+
+```{r}
+df  %>% 
+group_by(`Destination Port`) %>% 
+summarise(n = n()) %>% 
+top_n(10)
 ```
 
 ```{r}
