@@ -20,9 +20,9 @@ jupyter:
     name: ir
 ---
 
-
-```{r}
-options(warn = -1)
+```{r message=FALSE, warning=FALSE}
+# options(warn = -1)
+# knitr::opts_chunk$set(message = FALSE)
 library(tidyverse)
 library(caret)
 library(randomForest)
@@ -31,8 +31,25 @@ library(rpart)
 library(pROC)
 ```
 
+L'objet de l'étude est la **classification des cyberattaques** sur les appareils mobiles sous sytème Android à partir des données qui s'échangent et transitent par le smartphone, recoltées par le moniteur des ressources. Le but étant d'effectuer le traitement adapté pour nettoyer l'appareil sans avoir besoin de la réinitialiser en perdant des données personnelles.
+
+Pour classer des appareils infectées ou non, les données du moniteur de ressources ne permettent pas de le faire puisque le téléphone attaqué arrive à avoir un comportement "normal" (sauf quelques `ransomeware`). L'analyse des logs (texte) permet de déceler les moments anormaux mais ne renseigne pas le type d'infection. Donc pour un log de réseau anormal, on récolte les données du moniteur de ressources.  
+Les données proviennent de l'[Université du Nouveau-Brunswick](https://www.unb.ca/cic/datasets/index.html) au Canada où ils ont infecté de manière indépendante plusieurs appareils.
+
+Dans cette étude, l'appareil est déjà infectée et les attaques ne peuvent pas se superposer (impossibilité d'avoir plus d'une infection).  
+En regroupant certaines classes de même nature, dont les variances sont très faibles, on a 4 attaques:
+
+- `adware`
+- `botnet`
+- `ransomeware`
+- `sms`
+
 ```{r}
-df <- read_csv("data/Attempt 8.csv")
+df <- read_csv("data/hackerAttack.csv")
+```
+
+```{r}
+unique(df$Label)
 ```
 
 ```{r}
@@ -89,5 +106,14 @@ top_n(10)
 ggplot(df %>% mutate(`Destination Port` = as.factor(`Destination Port`))) +
   aes(x = `Destination Port`) + geom_bar() + #facet_grid(.~Label) +
   theme(axis.text.x=element_text(angle=90, hjust=1))
+```
+
+```{r}
+df <- tibble(
+  a = 1:10,
+  b = rep(2,10),
+  c = c(rep(4,4), NA, rep(4,5)),
+  d = 41:50
+)
 ```
 
