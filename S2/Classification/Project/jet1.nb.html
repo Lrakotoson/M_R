@@ -1838,114 +1838,240 @@ summary {
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxub3B0aW9ucyh3YXJuID0gLTEpXG5saWJyYXJ5KHRpZHl2ZXJzZSlcbmxpYnJhcnkoY2FyZXQpXG5saWJyYXJ5KHJhbmRvbUZvcmVzdClcbmxpYnJhcnkocmFuZ2VyKSAjUmFuZG9tRm9yZXN0IHBsdXMgcmFwaWRlXG5saWJyYXJ5KHJwYXJ0KVxubGlicmFyeShwUk9DKVxuYGBgIn0= -->
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">options</span>(<span class="dt">warn =</span> <span class="dv">-1</span>)</a>
-<a class="sourceLine" id="cb1-2" title="2"><span class="kw">library</span>(tidyverse)</a>
-<a class="sourceLine" id="cb1-3" title="3"><span class="kw">library</span>(caret)</a>
-<a class="sourceLine" id="cb1-4" title="4"><span class="kw">library</span>(randomForest)</a>
-<a class="sourceLine" id="cb1-5" title="5"><span class="kw">library</span>(ranger) <span class="co">#RandomForest plus rapide</span></a>
-<a class="sourceLine" id="cb1-6" title="6"><span class="kw">library</span>(rpart)</a>
-<a class="sourceLine" id="cb1-7" title="7"><span class="kw">library</span>(pROC)</a></code></pre></div>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeSh0aWR5dmVyc2UpXG5saWJyYXJ5KGNhcmV0KVxubGlicmFyeShyYW5kb21Gb3Jlc3QpXG5saWJyYXJ5KHJhbmdlcikgI1JhbmRvbUZvcmVzdCBwbHVzIHJhcGlkZVxubGlicmFyeShycGFydClcbmxpYnJhcnkocFJPQylcbmBgYCJ9 -->
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">library</span>(tidyverse)</a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">library</span>(caret)</a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">library</span>(randomForest)</a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="kw">library</span>(ranger) <span class="co">#RandomForest plus rapide</span></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="kw">library</span>(rpart)</a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="kw">library</span>(pROC)</a></code></pre></div>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
-<p>L’objet de l’étude est la classification des cyberattaques sur les appareils mobiles sous sytème Android à partir des données</p>
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>L’objet de l’étude est la <strong>classification des cyberattaques</strong> sur les appareils mobiles sous sytème Android à partir des données qui s’échangent et transitent par le smartphone, recoltées par le moniteur des ressources. Le but étant d’effectuer le traitement adapté pour nettoyer l’appareil sans avoir besoin de la réinitialiser en perdant des données personnelles.</p>
+<p>Pour classer des appareils infectées ou non, les données du moniteur de ressources ne permettent pas de le faire puisque le téléphone attaqué arrive à avoir un comportement “normal” (sauf quelques <code>ransomeware</code>). L’analyse des logs (texte) permet de déceler les moments anormaux mais ne renseigne pas le type d’infection. Donc pour un log de réseau anormal, on récolte les données du moniteur de ressources. Nous intervenons dans cette deuxième partie.<br />
+Les données proviennent de l’<a href="https://www.unb.ca/cic/datasets/index.html">Université du Nouveau-Brunswick</a> au Canada.</p>
+<p>Dans cette étude, l’appareil est déjà infectée et les attaques ne peuvent pas se superposer (impossibilité d’avoir plus d’une infection).<br />
+En regroupant certaines classes de même nature, dont les variances sont très faibles, on a 4 attaques qui sont indécelables en analysant le comportement de l’appareil de façon générale:</p>
+<ul>
+<li><code>adware</code>, qui affiche des pubs ciblées tout en espionnant de manière illégale les activités de l’appareil.</li>
+<li><code>botnet</code>, qui intègre le téléphone à un réseau d’<a href="https://fr.wikipedia.org/wiki/Machine_zombie">appareils zombies</a>.</li>
+<li><code>ransomeware</code>, qui chiffre l’intégralité des données ou uniquement une partie (le cas ici) et qui se déchiffre après avoir payé une rançon ou en utilisant un décrypteur.</li>
+<li><code>sms</code>, qui installe un vers ou un cheval de Troie pour le transformer en appareil zombie.</li>
+</ul>
+<p>Pour être actifs, les appareils communiquent avec les serveurs des cyberattaquants. Nous analyserons les données liées à ces échanges.</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZGYgPC0gcmVhZF9jc3YoXCJkYXRhL0F0dGVtcHQgOC5jc3ZcIilcbmBgYCJ9 -->
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1">df &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="st">&quot;data/Attempt 8.csv&quot;</span>)</a></code></pre></div>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZGF0YSA8LSByZWFkX2NzdihcImRhdGEvaGFja2VyQXR0YWNrLmNzdlwiKVxuZGltKGRhdGEpXG5gYGAifQ== -->
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1">data &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="st">&quot;data/hackerAttack.csv&quot;</span>)</a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">dim</span>(data)</a></code></pre></div>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDQwMDAgICA4MlxuIn0= -->
+<pre><code>[1] 4000   82</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+</div>
+<div id="i.-features-engineering" class="section level1">
+<h1>I. Features Engineering</h1>
+<p>Dans nos données brutes, nous avons 81 variables et 4 000 observations.<br />
+Pour nettoyer nos données, nous devons supprimer les colonnes constantes ou ayant de faible variance (inférieure au premier quartile des variances), transformer certaines variables:</p>
+<ul>
+<li><code>Destination IP</code>, en facteur <code>IP</code> en ne gardant que le <strong>Net-ID</strong> (le 1<sup>er</sup> octet si classe A, les 2 premiers sinon)</li>
+<li><code>Source Port</code> et <code>Destination Port</code>, en <code>SPort</code> et <code>DPort</code>, de num à facteur en suivant les types d’attribution de l’<a href="https://fr.wikipedia.org/wiki/Internet_Assigned_Numbers_Authority">IANA</a></li>
+<li><code>Protocol</code>, de num à facteur en suivant les <a href="https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml">assignements</a> de l’IANA</li>
+<li><code>Label</code>, nos variables à expliquer <span class="math inline">\(Y\)</span> en facteur.</li>
+<li>Les variables quantitatives, standardisées.</li>
+</ul>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuaXBfc3BsaXQgPC0gZnVuY3Rpb24oaXApe1xuICAgICMnIFJlbnZvaWUgbGUgTmV0LUlEIGQndW5lIGFkcmVzc2UgSVBcbiAgICBvY3RldHMgPC0gc3RyX3NwbGl0KGlwLCBcIlxcXFwuXCIpW1sxXV1cbiAgICBpZiAoYXMubnVtZXJpYyhvY3RldHNbMV0pIDw9IDEyNykge1xuICAgICAgICBuZXRJRCA8LSBvY3RldHNbMV1cbiAgICB9IGVsc2Uge1xuICAgICAgICBuZXRJRCA8LSBwYXN0ZShvY3RldHNbMV0sIG9jdGV0c1syXSwgc2VwID0gXCIuXCIpXG4gICAgfVxuICAgIFxuICAgIHJldHVybihuZXRJRClcbn1cbmBgYCJ9 -->
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" title="1">ip_split &lt;-<span class="st"> </span><span class="cf">function</span>(ip){</a>
+<a class="sourceLine" id="cb4-2" title="2">    <span class="co">#&#39; Renvoie le Net-ID d&#39;une adresse IP</span></a>
+<a class="sourceLine" id="cb4-3" title="3">    octets &lt;-<span class="st"> </span><span class="kw">str_split</span>(ip, <span class="st">&quot;</span><span class="ch">\\</span><span class="st">.&quot;</span>)[[<span class="dv">1</span>]]</a>
+<a class="sourceLine" id="cb4-4" title="4">    <span class="cf">if</span> (<span class="kw">as.numeric</span>(octets[<span class="dv">1</span>]) <span class="op">&lt;=</span><span class="st"> </span><span class="dv">127</span>) {</a>
+<a class="sourceLine" id="cb4-5" title="5">        netID &lt;-<span class="st"> </span>octets[<span class="dv">1</span>]</a>
+<a class="sourceLine" id="cb4-6" title="6">    } <span class="cf">else</span> {</a>
+<a class="sourceLine" id="cb4-7" title="7">        netID &lt;-<span class="st"> </span><span class="kw">paste</span>(octets[<span class="dv">1</span>], octets[<span class="dv">2</span>], <span class="dt">sep =</span> <span class="st">&quot;.&quot;</span>)</a>
+<a class="sourceLine" id="cb4-8" title="8">    }</a>
+<a class="sourceLine" id="cb4-9" title="9">    </a>
+<a class="sourceLine" id="cb4-10" title="10">    <span class="kw">return</span>(netID)</a>
+<a class="sourceLine" id="cb4-11" title="11">}</a></code></pre></div>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
+<!-- rnb-text-begin -->
+<p>Transformation des IPs.</p>
+<!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZGYgPC0gZGYgJT4lIFxuICBtdXRhdGVfYXQoYygnRGVzdGluYXRpb24gSVAnLCAnUHJvdG9jb2wnLCAnTGFiZWwnKSwgZnVucyhmYWN0b3IpKVxuYGBgIn0= -->
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1">df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb3-2" title="2"><span class="st">  </span><span class="kw">mutate_at</span>(<span class="kw">c</span>(<span class="st">&#39;Destination IP&#39;</span>, <span class="st">&#39;Protocol&#39;</span>, <span class="st">&#39;Label&#39;</span>), <span class="kw">funs</span>(factor))</a></code></pre></div>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZGF0YSA8LSBkYXRhICU+JSBcbnJlbmFtZShJUCA9ICdEZXN0aW5hdGlvbiBJUCcpICU+JSBcbnJvd3dpc2UoKSAlPiUgIyB2ZWN0b3Jpc2UgbGEgZm9uY3Rpb24gaXBfc3BsaXRcbm11dGF0ZShJUCA9IGlwX3NwbGl0KElQKSkgJT4lIFxuYXNfdGliYmxlKCkgIyBzdXBwcmltZSByb3d3aXNlX2RmXG5gYGAifQ== -->
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" title="1">data &lt;-<span class="st"> </span>data <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="kw">rename</span>(<span class="dt">IP =</span> <span class="st">&#39;Destination IP&#39;</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="kw">rowwise</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="co"># vectorise la fonction ip_split</span></a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="kw">mutate</span>(<span class="dt">IP =</span> <span class="kw">ip_split</span>(IP)) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="kw">as_tibble</span>() <span class="co"># supprime rowwise_df</span></a></code></pre></div>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p>Les autres transformations</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZGF0YSA8LSBkYXRhICU+JSBcbnJlbmFtZShcbiAgICBTUG9ydCA9ICdTb3VyY2UgUG9ydCcsXG4gICAgRFBvcnQgPSAnRGVzdGluYXRpb24gUG9ydCcsXG4pICU+JSBcbm11dGF0ZShcbiAgICBEUG9ydCA9IGNhc2Vfd2hlbihcbiAgICAgICAgRFBvcnQgPT0gNTMgfiBcIkROU1wiLFxuICAgICAgICBEUG9ydCA9PSA4MCB+IFwiSFRUUFwiLFxuICAgICAgICBEUG9ydCA9PSA0NDMgfiBcIkhUVFBTXCIsXG4gICAgICAgIERQb3J0ICVpbiUgYygxMDI0OjUwMDAsIDQ5MTUyOjY1NTM1KSB+IFwiTWljcm9zb2Z0IFJQQ1wiLFxuICAgICAgICBEUG9ydCAlaW4lIDYwMDAwOjYxMDAwIH4gXCJNb3NoXCIsXG4gICAgICAgIFRSVUUgfiBcIlByaXZhdGVcIlxuICAgICksXG4gICAgU1BvcnQgPSBjYXNlX3doZW4oXG4gICAgICAgIFNQb3J0ID09IDgwIH4gXCJIVFRQXCIsXG4gICAgICAgIFNQb3J0ID09IDQ0MyB+IFwiSFRUUFNcIixcbiAgICAgICAgU1BvcnQgJWluJSBjKDEwMjQ6NTAwMCwgNDkxNTI6NjU1MzUpIH4gXCJNaWNyb3NvZnQgUlBDXCIsXG4gICAgICAgIFNQb3J0ICVpbiUgNjAwMDA6NjEwMDAgfiBcIk1vc2hcIixcbiAgICAgICAgVFJVRSB+IFwiUHJpdmF0ZVwiXG4gICAgKVxuKSAlPiUgXG5tdXRhdGVfYXQoXG4gICAgYygnU1BvcnQnLCAnRFBvcnQnLCAnSVAnLCAnUHJvdG9jb2wnLCAnTGFiZWwnKSxcbiAgICBmdW5zKGZhY3RvcilcbikgJT4lIFxuc2VsZWN0KFxuICAgIDE6NCwgIyBGYWN0ZXVyc1xuICAgIGNvbG5hbWVzKHNlbGVjdF9pZiguLCBmdW5jdGlvbihjb2wpIGlzLm51bWVyaWMoY29sKSAmJiB2YXIoY29sKSA+PSBxMSkpLCAjIFZhcmlhbmNlcyBmYWlibGVzXG4gICAgbmNvbCguKSAjIExhYmVsXG4pICU+JSBcbm11dGF0ZV9pZihcbiAgICBpcy5udW1lcmljLFxuICAgIHNjYWxlXG4pXG5gYGAifQ== -->
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" title="1">data &lt;-<span class="st"> </span>data <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="kw">rename</span>(</a>
+<a class="sourceLine" id="cb6-3" title="3">    <span class="dt">SPort =</span> <span class="st">&#39;Source Port&#39;</span>,</a>
+<a class="sourceLine" id="cb6-4" title="4">    <span class="dt">DPort =</span> <span class="st">&#39;Destination Port&#39;</span>,</a>
+<a class="sourceLine" id="cb6-5" title="5">) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb6-6" title="6"><span class="kw">mutate</span>(</a>
+<a class="sourceLine" id="cb6-7" title="7">    <span class="dt">DPort =</span> <span class="kw">case_when</span>(</a>
+<a class="sourceLine" id="cb6-8" title="8">        DPort <span class="op">==</span><span class="st"> </span><span class="dv">53</span> <span class="op">~</span><span class="st"> &quot;DNS&quot;</span>,</a>
+<a class="sourceLine" id="cb6-9" title="9">        DPort <span class="op">==</span><span class="st"> </span><span class="dv">80</span> <span class="op">~</span><span class="st"> &quot;HTTP&quot;</span>,</a>
+<a class="sourceLine" id="cb6-10" title="10">        DPort <span class="op">==</span><span class="st"> </span><span class="dv">443</span> <span class="op">~</span><span class="st"> &quot;HTTPS&quot;</span>,</a>
+<a class="sourceLine" id="cb6-11" title="11">        DPort <span class="op">%in%</span><span class="st"> </span><span class="kw">c</span>(<span class="dv">1024</span><span class="op">:</span><span class="dv">5000</span>, <span class="dv">49152</span><span class="op">:</span><span class="dv">65535</span>) <span class="op">~</span><span class="st"> &quot;Microsoft RPC&quot;</span>,</a>
+<a class="sourceLine" id="cb6-12" title="12">        DPort <span class="op">%in%</span><span class="st"> </span><span class="dv">60000</span><span class="op">:</span><span class="dv">61000</span> <span class="op">~</span><span class="st"> &quot;Mosh&quot;</span>,</a>
+<a class="sourceLine" id="cb6-13" title="13">        <span class="ot">TRUE</span> <span class="op">~</span><span class="st"> &quot;Private&quot;</span></a>
+<a class="sourceLine" id="cb6-14" title="14">    ),</a>
+<a class="sourceLine" id="cb6-15" title="15">    <span class="dt">SPort =</span> <span class="kw">case_when</span>(</a>
+<a class="sourceLine" id="cb6-16" title="16">        SPort <span class="op">==</span><span class="st"> </span><span class="dv">80</span> <span class="op">~</span><span class="st"> &quot;HTTP&quot;</span>,</a>
+<a class="sourceLine" id="cb6-17" title="17">        SPort <span class="op">==</span><span class="st"> </span><span class="dv">443</span> <span class="op">~</span><span class="st"> &quot;HTTPS&quot;</span>,</a>
+<a class="sourceLine" id="cb6-18" title="18">        SPort <span class="op">%in%</span><span class="st"> </span><span class="kw">c</span>(<span class="dv">1024</span><span class="op">:</span><span class="dv">5000</span>, <span class="dv">49152</span><span class="op">:</span><span class="dv">65535</span>) <span class="op">~</span><span class="st"> &quot;Microsoft RPC&quot;</span>,</a>
+<a class="sourceLine" id="cb6-19" title="19">        SPort <span class="op">%in%</span><span class="st"> </span><span class="dv">60000</span><span class="op">:</span><span class="dv">61000</span> <span class="op">~</span><span class="st"> &quot;Mosh&quot;</span>,</a>
+<a class="sourceLine" id="cb6-20" title="20">        <span class="ot">TRUE</span> <span class="op">~</span><span class="st"> &quot;Private&quot;</span></a>
+<a class="sourceLine" id="cb6-21" title="21">    )</a>
+<a class="sourceLine" id="cb6-22" title="22">) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb6-23" title="23"><span class="kw">mutate_at</span>(</a>
+<a class="sourceLine" id="cb6-24" title="24">    <span class="kw">c</span>(<span class="st">&#39;SPort&#39;</span>, <span class="st">&#39;DPort&#39;</span>, <span class="st">&#39;IP&#39;</span>, <span class="st">&#39;Protocol&#39;</span>, <span class="st">&#39;Label&#39;</span>),</a>
+<a class="sourceLine" id="cb6-25" title="25">    <span class="kw">funs</span>(factor)</a>
+<a class="sourceLine" id="cb6-26" title="26">) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb6-27" title="27"><span class="kw">select</span>(</a>
+<a class="sourceLine" id="cb6-28" title="28">    <span class="dv">1</span><span class="op">:</span><span class="dv">4</span>, <span class="co"># Facteurs</span></a>
+<a class="sourceLine" id="cb6-29" title="29">    <span class="kw">colnames</span>(<span class="kw">select_if</span>(., <span class="cf">function</span>(col) <span class="kw">is.numeric</span>(col) <span class="op">&amp;&amp;</span><span class="st"> </span><span class="kw">var</span>(col) <span class="op">&gt;=</span><span class="st"> </span>q1)), <span class="co"># Variances faibles</span></a>
+<a class="sourceLine" id="cb6-30" title="30">    <span class="kw">ncol</span>(.) <span class="co"># Label</span></a>
+<a class="sourceLine" id="cb6-31" title="31">) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb6-32" title="32"><span class="kw">mutate_if</span>(</a>
+<a class="sourceLine" id="cb6-33" title="33">    is.numeric,</a>
+<a class="sourceLine" id="cb6-34" title="34">    scale</a>
+<a class="sourceLine" id="cb6-35" title="35">)</a></code></pre></div>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-text-begin -->
+<p>Nous obtenons une dimension de 4000, 63 après nettoyage.</p>
+<p>Un total de 169 variables explicatives:</p>
+<ul>
+<li>58 variables quantitatives.</li>
+<li>103 modalités de IP.</li>
+<li>4 modalités de SPort</li>
+<li>5 modalités de DPort</li>
+<li>3 modalités de Protocol.</li>
+</ul>
+<p>On ne peut pas utiliser l’ACP pour réduire les dimensions puisque les variables ne sont pas linéaires. La stratégie sera d’éliminer les variables qui ne sont pas importantes pour les modèles de classifications.</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZ2dwbG90KGRhdGEpICsgYWVzKHggPSBJUCkgKyBnZW9tX2hpc3RvZ3JhbShzdGF0PVwiY291bnRcIilcbmBgYCJ9 -->
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">ggplot</span>(data) <span class="op">+</span><span class="st"> </span><span class="kw">aes</span>(<span class="dt">x =</span> IP) <span class="op">+</span><span class="st"> </span><span class="kw">geom_histogram</span>(<span class="dt">stat=</span><span class="st">&quot;count&quot;</span>)</a></code></pre></div>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZ2dwbG90KGRmKSArIFxuICBhZXMoeCA9IExhYmVsKSArIGdlb21fYmFyKGFlcyh5ID0gKC4uY291bnQuLikvc3VtKC4uY291bnQuLikpKSArIFxuICBmYWNldF9ncmlkKC5+UHJvdG9jb2wpICtcbiAgdGhlbWUoYXhpcy50ZXh0Lng9ZWxlbWVudF90ZXh0KGFuZ2xlPTkwLCBoanVzdD0xKSlcbmBgYCJ9 -->
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">ggplot</span>(df) <span class="op">+</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb4-2" title="2"><span class="st">  </span><span class="kw">aes</span>(<span class="dt">x =</span> Label) <span class="op">+</span><span class="st"> </span><span class="kw">geom_bar</span>(<span class="kw">aes</span>(<span class="dt">y =</span> (..count..)<span class="op">/</span><span class="kw">sum</span>(..count..))) <span class="op">+</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb4-3" title="3"><span class="st">  </span><span class="kw">facet_grid</span>(.<span class="op">~</span>Protocol) <span class="op">+</span></a>
-<a class="sourceLine" id="cb4-4" title="4"><span class="st">  </span><span class="kw">theme</span>(<span class="dt">axis.text.x=</span><span class="kw">element_text</span>(<span class="dt">angle=</span><span class="dv">90</span>, <span class="dt">hjust=</span><span class="dv">1</span>))</a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">ggplot</span>(df) <span class="op">+</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb8-2" title="2"><span class="st">  </span><span class="kw">aes</span>(<span class="dt">x =</span> Label) <span class="op">+</span><span class="st"> </span><span class="kw">geom_bar</span>(<span class="kw">aes</span>(<span class="dt">y =</span> (..count..)<span class="op">/</span><span class="kw">sum</span>(..count..))) <span class="op">+</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb8-3" title="3"><span class="st">  </span><span class="kw">facet_grid</span>(.<span class="op">~</span>Protocol) <span class="op">+</span></a>
+<a class="sourceLine" id="cb8-4" title="4"><span class="st">  </span><span class="kw">theme</span>(<span class="dt">axis.text.x=</span><span class="kw">element_text</span>(<span class="dt">angle=</span><span class="dv">90</span>, <span class="dt">hjust=</span><span class="dv">1</span>))</a></code></pre></div>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGVuZ3RoKHVuaXF1ZShkZiRgRGVzdGluYXRpb24gUG9ydGApKVxuYGBgIn0= -->
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">length</span>(<span class="kw">unique</span>(df<span class="op">$</span><span class="st">`</span><span class="dt">Destination Port</span><span class="st">`</span>))</a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">length</span>(<span class="kw">unique</span>(df<span class="op">$</span><span class="st">`</span><span class="dt">Destination Port</span><span class="st">`</span>))</a></code></pre></div>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuaXBfc3BsaXQgPC0gZnVuY3Rpb24oaXApe1xuICAgIGlwTWFpbiA8LSBwYXN0ZShzdHJfc3BsaXQoaXAsIFwiXFxcXC5cIilbWzFdXVsxXSwgc3RyX3NwbGl0KGlwLCBcIlxcXFwuXCIpW1sxXV1bMl0sIHNlcCA9IFwiLlwiKVxuICAgIHJldHVybihpcE1haW4pXG59XG5cbmBgYCJ9 -->
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" title="1">ip_split &lt;-<span class="st"> </span><span class="cf">function</span>(ip){</a>
-<a class="sourceLine" id="cb6-2" title="2">    ipMain &lt;-<span class="st"> </span><span class="kw">paste</span>(<span class="kw">str_split</span>(ip, <span class="st">&quot;</span><span class="ch">\\</span><span class="st">.&quot;</span>)[[<span class="dv">1</span>]][<span class="dv">1</span>], <span class="kw">str_split</span>(ip, <span class="st">&quot;</span><span class="ch">\\</span><span class="st">.&quot;</span>)[[<span class="dv">1</span>]][<span class="dv">2</span>], <span class="dt">sep =</span> <span class="st">&quot;.&quot;</span>)</a>
-<a class="sourceLine" id="cb6-3" title="3">    <span class="kw">return</span>(ipMain)</a>
-<a class="sourceLine" id="cb6-4" title="4">}</a></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" title="1">ip_split &lt;-<span class="st"> </span><span class="cf">function</span>(ip){</a>
+<a class="sourceLine" id="cb10-2" title="2">    ipMain &lt;-<span class="st"> </span><span class="kw">paste</span>(<span class="kw">str_split</span>(ip, <span class="st">&quot;</span><span class="ch">\\</span><span class="st">.&quot;</span>)[[<span class="dv">1</span>]][<span class="dv">1</span>], <span class="kw">str_split</span>(ip, <span class="st">&quot;</span><span class="ch">\\</span><span class="st">.&quot;</span>)[[<span class="dv">1</span>]][<span class="dv">2</span>], <span class="dt">sep =</span> <span class="st">&quot;.&quot;</span>)</a>
+<a class="sourceLine" id="cb10-3" title="3">    <span class="kw">return</span>(ipMain)</a>
+<a class="sourceLine" id="cb10-4" title="4">}</a></code></pre></div>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZGYgJT4lXG5zZWxlY3QoSVAgPSBgRGVzdGluYXRpb24gSVBgKSAlPiUgcm93d2lzZSgpICU+JSBtdXRhdGUoc3ViX2xhYmVsID0gcGFzdGUoc3RyX3NwbGl0KGBJUGAsIFwiXFxcXC5cIilbWzFdXVsxXSwgc3RyX3NwbGl0KGBJUGAsIFwiXFxcXC5cIilbWzFdXVsyXSwgc2VwID0gXCIuXCIpKVxuYGBgIn0= -->
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1">df <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb7-2" title="2"><span class="kw">select</span>(<span class="dt">IP =</span> <span class="st">`</span><span class="dt">Destination IP</span><span class="st">`</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">rowwise</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">sub_label =</span> <span class="kw">paste</span>(<span class="kw">str_split</span>(<span class="st">`</span><span class="dt">IP</span><span class="st">`</span>, <span class="st">&quot;</span><span class="ch">\\</span><span class="st">.&quot;</span>)[[<span class="dv">1</span>]][<span class="dv">1</span>], <span class="kw">str_split</span>(<span class="st">`</span><span class="dt">IP</span><span class="st">`</span>, <span class="st">&quot;</span><span class="ch">\\</span><span class="st">.&quot;</span>)[[<span class="dv">1</span>]][<span class="dv">2</span>], <span class="dt">sep =</span> <span class="st">&quot;.&quot;</span>))</a></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" title="1">df <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb11-2" title="2"><span class="kw">select</span>(<span class="dt">IP =</span> <span class="st">`</span><span class="dt">Destination IP</span><span class="st">`</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">rowwise</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">sub_label =</span> <span class="kw">paste</span>(<span class="kw">str_split</span>(<span class="st">`</span><span class="dt">IP</span><span class="st">`</span>, <span class="st">&quot;</span><span class="ch">\\</span><span class="st">.&quot;</span>)[[<span class="dv">1</span>]][<span class="dv">1</span>], <span class="kw">str_split</span>(<span class="st">`</span><span class="dt">IP</span><span class="st">`</span>, <span class="st">&quot;</span><span class="ch">\\</span><span class="st">.&quot;</span>)[[<span class="dv">1</span>]][<span class="dv">2</span>], <span class="dt">sep =</span> <span class="st">&quot;.&quot;</span>))</a></code></pre></div>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZGYgICU+JSBcbmdyb3VwX2J5KGBEZXN0aW5hdGlvbiBJUGApICU+JSBcbnN1bW1hcmlzZShuID0gbigpKSAlPiUgXG50b3BfbigyMClcbmBgYCJ9 -->
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" title="1">df  <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb8-2" title="2"><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">Destination IP</span><span class="st">`</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb8-3" title="3"><span class="kw">summarise</span>(<span class="dt">n =</span> <span class="kw">n</span>()) <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb8-4" title="4"><span class="kw">top_n</span>(<span class="dv">20</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" title="1">df  <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb12-2" title="2"><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">Destination IP</span><span class="st">`</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb12-3" title="3"><span class="kw">summarise</span>(<span class="dt">n =</span> <span class="kw">n</span>()) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb12-4" title="4"><span class="kw">top_n</span>(<span class="dv">20</span>)</a></code></pre></div>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZGYgICU+JSBcbmdyb3VwX2J5KGBTb3VyY2UgUG9ydGApICU+JSBcbnN1bW1hcmlzZShuID0gbigpKSAlPiUgXG50b3BfbigxMClcbmBgYCJ9 -->
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" title="1">df  <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb9-2" title="2"><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">Source Port</span><span class="st">`</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb9-3" title="3"><span class="kw">summarise</span>(<span class="dt">n =</span> <span class="kw">n</span>()) <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb9-4" title="4"><span class="kw">top_n</span>(<span class="dv">10</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" title="1">df  <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb13-2" title="2"><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">Source Port</span><span class="st">`</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb13-3" title="3"><span class="kw">summarise</span>(<span class="dt">n =</span> <span class="kw">n</span>()) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb13-4" title="4"><span class="kw">top_n</span>(<span class="dv">10</span>)</a></code></pre></div>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZGYgICU+JSBcbmdyb3VwX2J5KGBEZXN0aW5hdGlvbiBQb3J0YCkgJT4lIFxuc3VtbWFyaXNlKG4gPSBuKCkpICU+JSBcbnRvcF9uKDEwKVxuYGBgIn0= -->
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" title="1">df  <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb10-2" title="2"><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">Destination Port</span><span class="st">`</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb10-3" title="3"><span class="kw">summarise</span>(<span class="dt">n =</span> <span class="kw">n</span>()) <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb10-4" title="4"><span class="kw">top_n</span>(<span class="dv">10</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" title="1">df  <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb14-2" title="2"><span class="kw">group_by</span>(<span class="st">`</span><span class="dt">Destination Port</span><span class="st">`</span>) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb14-3" title="3"><span class="kw">summarise</span>(<span class="dt">n =</span> <span class="kw">n</span>()) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb14-4" title="4"><span class="kw">top_n</span>(<span class="dv">10</span>)</a></code></pre></div>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZ2dwbG90KGRmICU+JSBtdXRhdGUoYERlc3RpbmF0aW9uIFBvcnRgID0gYXMuZmFjdG9yKGBEZXN0aW5hdGlvbiBQb3J0YCkpKSArXG4gIGFlcyh4ID0gYERlc3RpbmF0aW9uIFBvcnRgKSArIGdlb21fYmFyKCkgKyAjZmFjZXRfZ3JpZCgufkxhYmVsKSArXG4gIHRoZW1lKGF4aXMudGV4dC54PWVsZW1lbnRfdGV4dChhbmdsZT05MCwgaGp1c3Q9MSkpXG5gYGAifQ== -->
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" title="1"><span class="kw">ggplot</span>(df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="st">`</span><span class="dt">Destination Port</span><span class="st">`</span> =<span class="st"> </span><span class="kw">as.factor</span>(<span class="st">`</span><span class="dt">Destination Port</span><span class="st">`</span>))) <span class="op">+</span></a>
-<a class="sourceLine" id="cb11-2" title="2"><span class="st">  </span><span class="kw">aes</span>(<span class="dt">x =</span> <span class="st">`</span><span class="dt">Destination Port</span><span class="st">`</span>) <span class="op">+</span><span class="st"> </span><span class="kw">geom_bar</span>() <span class="op">+</span><span class="st"> </span><span class="co">#facet_grid(.~Label) +</span></a>
-<a class="sourceLine" id="cb11-3" title="3"><span class="st">  </span><span class="kw">theme</span>(<span class="dt">axis.text.x=</span><span class="kw">element_text</span>(<span class="dt">angle=</span><span class="dv">90</span>, <span class="dt">hjust=</span><span class="dv">1</span>))</a></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb15-1" title="1"><span class="kw">ggplot</span>(df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="st">`</span><span class="dt">Destination Port</span><span class="st">`</span> =<span class="st"> </span><span class="kw">as.factor</span>(<span class="st">`</span><span class="dt">Destination Port</span><span class="st">`</span>))) <span class="op">+</span></a>
+<a class="sourceLine" id="cb15-2" title="2"><span class="st">  </span><span class="kw">aes</span>(<span class="dt">x =</span> <span class="st">`</span><span class="dt">Destination Port</span><span class="st">`</span>) <span class="op">+</span><span class="st"> </span><span class="kw">geom_bar</span>() <span class="op">+</span><span class="st"> </span><span class="co">#facet_grid(.~Label) +</span></a>
+<a class="sourceLine" id="cb15-3" title="3"><span class="st">  </span><span class="kw">theme</span>(<span class="dt">axis.text.x=</span><span class="kw">element_text</span>(<span class="dt">angle=</span><span class="dv">90</span>, <span class="dt">hjust=</span><span class="dv">1</span>))</a></code></pre></div>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZGYgPC0gdGliYmxlKFxuICBhID0gMToxMCxcbiAgYiA9IHJlcCgyLDEwKSxcbiAgYyA9IGMocmVwKDQsNCksIE5BLCByZXAoNCw1KSksXG4gIGQgPSA0MTo1MFxuKVxuYGBgIn0= -->
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb16-1" title="1">df &lt;-<span class="st"> </span><span class="kw">tibble</span>(</a>
+<a class="sourceLine" id="cb16-2" title="2">  <span class="dt">a =</span> <span class="dv">1</span><span class="op">:</span><span class="dv">10</span>,</a>
+<a class="sourceLine" id="cb16-3" title="3">  <span class="dt">b =</span> <span class="kw">rep</span>(<span class="dv">2</span>,<span class="dv">10</span>),</a>
+<a class="sourceLine" id="cb16-4" title="4">  <span class="dt">c =</span> <span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">4</span>,<span class="dv">4</span>), <span class="ot">NA</span>, <span class="kw">rep</span>(<span class="dv">4</span>,<span class="dv">5</span>)),</a>
+<a class="sourceLine" id="cb16-5" title="5">  <span class="dt">d =</span> <span class="dv">41</span><span class="op">:</span><span class="dv">50</span></a>
+<a class="sourceLine" id="cb16-6" title="6">)</a></code></pre></div>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuRmlsdGVyKHZhciwgZGYpXG5gYGAifQ== -->
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" title="1"><span class="kw">Filter</span>(var, df)</a></code></pre></div>
+<!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
+</div>
 
-<div id="rmd-source-code">LS0tDQp0aXRsZTogIkN5YmVyYXR0YXF1ZXMgZGVzIHNtYXJ0cGhvbmVzIg0KYXV0aG9yOiAiTG/Dr2MgUmFrb3Rvc29uIg0Kb3V0cHV0Og0KICBodG1sX25vdGVib29rOg0KICAgIGRmX3ByaW50OiBwYWdlZA0KICAgIGhpZ2hsaWdodDogdGFuZ28NCiAgICB0aGVtZTogZmxhdGx5DQpqdXB5dGVyOg0KICBqdXB5dGV4dDoNCiAgICBmb3JtYXRzOiBpcHluYixSbWQNCiAgICB0ZXh0X3JlcHJlc2VudGF0aW9uOg0KICAgICAgZXh0ZW5zaW9uOiAuUm1kDQogICAgICBmb3JtYXRfbmFtZTogcm1hcmtkb3duDQogICAgICBmb3JtYXRfdmVyc2lvbjogJzEuMScNCiAgICAgIGp1cHl0ZXh0X3ZlcnNpb246IDEuMi40DQogIGtlcm5lbHNwZWM6DQogICAgZGlzcGxheV9uYW1lOiBSDQogICAgbGFuZ3VhZ2U6IFINCiAgICBuYW1lOiBpcg0KLS0tDQoNCg0KYGBge3IgbWVzc2FnZT1GQUxTRSwgd2FybmluZz1GQUxTRX0NCm9wdGlvbnMod2FybiA9IC0xKQ0KbGlicmFyeSh0aWR5dmVyc2UpDQpsaWJyYXJ5KGNhcmV0KQ0KbGlicmFyeShyYW5kb21Gb3Jlc3QpDQpsaWJyYXJ5KHJhbmdlcikgI1JhbmRvbUZvcmVzdCBwbHVzIHJhcGlkZQ0KbGlicmFyeShycGFydCkNCmxpYnJhcnkocFJPQykNCmBgYA0KDQpMJ29iamV0IGRlIGwnw6l0dWRlIGVzdCBsYSBjbGFzc2lmaWNhdGlvbiBkZXMgY3liZXJhdHRhcXVlcyBzdXIgbGVzIGFwcGFyZWlscyBtb2JpbGVzIHNvdXMgc3l0w6htZSBBbmRyb2lkIMOgIHBhcnRpciBkZXMgZG9ubsOpZXMgDQoNCmBgYHtyfQ0KZGYgPC0gcmVhZF9jc3YoImRhdGEvQXR0ZW1wdCA4LmNzdiIpDQpgYGANCg0KYGBge3J9DQpkZiA8LSBkZiAlPiUgDQogIG11dGF0ZV9hdChjKCdEZXN0aW5hdGlvbiBJUCcsICdQcm90b2NvbCcsICdMYWJlbCcpLCBmdW5zKGZhY3RvcikpDQpgYGANCg0KYGBge3J9DQpnZ3Bsb3QoZGYpICsgDQogIGFlcyh4ID0gTGFiZWwpICsgZ2VvbV9iYXIoYWVzKHkgPSAoLi5jb3VudC4uKS9zdW0oLi5jb3VudC4uKSkpICsgDQogIGZhY2V0X2dyaWQoLn5Qcm90b2NvbCkgKw0KICB0aGVtZShheGlzLnRleHQueD1lbGVtZW50X3RleHQoYW5nbGU9OTAsIGhqdXN0PTEpKQ0KYGBgDQoNCmBgYHtyfQ0KbGVuZ3RoKHVuaXF1ZShkZiRgRGVzdGluYXRpb24gUG9ydGApKQ0KYGBgDQoNCmBgYHtyfQ0KaXBfc3BsaXQgPC0gZnVuY3Rpb24oaXApew0KICAgIGlwTWFpbiA8LSBwYXN0ZShzdHJfc3BsaXQoaXAsICJcXC4iKVtbMV1dWzFdLCBzdHJfc3BsaXQoaXAsICJcXC4iKVtbMV1dWzJdLCBzZXAgPSAiLiIpDQogICAgcmV0dXJuKGlwTWFpbikNCn0NCg0KYGBgDQoNCmBgYHtyfQ0KZGYgJT4lDQpzZWxlY3QoSVAgPSBgRGVzdGluYXRpb24gSVBgKSAlPiUgcm93d2lzZSgpICU+JSBtdXRhdGUoc3ViX2xhYmVsID0gcGFzdGUoc3RyX3NwbGl0KGBJUGAsICJcXC4iKVtbMV1dWzFdLCBzdHJfc3BsaXQoYElQYCwgIlxcLiIpW1sxXV1bMl0sIHNlcCA9ICIuIikpDQpgYGANCg0KYGBge3J9DQpkZiAgJT4lIA0KZ3JvdXBfYnkoYERlc3RpbmF0aW9uIElQYCkgJT4lIA0Kc3VtbWFyaXNlKG4gPSBuKCkpICU+JSANCnRvcF9uKDIwKQ0KYGBgDQoNCmBgYHtyfQ0KZGYgICU+JSANCmdyb3VwX2J5KGBTb3VyY2UgUG9ydGApICU+JSANCnN1bW1hcmlzZShuID0gbigpKSAlPiUgDQp0b3BfbigxMCkNCmBgYA0KDQpgYGB7cn0NCmRmICAlPiUgDQpncm91cF9ieShgRGVzdGluYXRpb24gUG9ydGApICU+JSANCnN1bW1hcmlzZShuID0gbigpKSAlPiUgDQp0b3BfbigxMCkNCmBgYA0KDQpgYGB7cn0NCmdncGxvdChkZiAlPiUgbXV0YXRlKGBEZXN0aW5hdGlvbiBQb3J0YCA9IGFzLmZhY3RvcihgRGVzdGluYXRpb24gUG9ydGApKSkgKw0KICBhZXMoeCA9IGBEZXN0aW5hdGlvbiBQb3J0YCkgKyBnZW9tX2JhcigpICsgI2ZhY2V0X2dyaWQoLn5MYWJlbCkgKw0KICB0aGVtZShheGlzLnRleHQueD1lbGVtZW50X3RleHQoYW5nbGU9OTAsIGhqdXN0PTEpKQ0KYGBgDQoNCmBgYHtyfQ0KZGYgPC0gdGliYmxlKA0KICBhID0gMToxMCwNCiAgYiA9IHJlcCgyLDEwKSwNCiAgYyA9IGMocmVwKDQsNCksIE5BLCByZXAoNCw1KSksDQogIGQgPSA0MTo1MA0KKQ0KYGBgDQoNCg==</div>
+<div id="rmd-source-code">LS0tDQp0aXRsZTogIkN5YmVyYXR0YXF1ZXMgZGVzIHNtYXJ0cGhvbmVzIg0KYXV0aG9yOiAiTG/Dr2MgUmFrb3Rvc29uIg0Kb3V0cHV0Og0KICBodG1sX25vdGVib29rOg0KICAgIGRmX3ByaW50OiBwYWdlZA0KICAgIGhpZ2hsaWdodDogdGFuZ28NCiAgICB0aGVtZTogZmxhdGx5DQpqdXB5dGVyOg0KICBqdXB5dGV4dDoNCiAgICBmb3JtYXRzOiBpcHluYixSbWQNCiAgICB0ZXh0X3JlcHJlc2VudGF0aW9uOg0KICAgICAgZXh0ZW5zaW9uOiAuUm1kDQogICAgICBmb3JtYXRfbmFtZTogcm1hcmtkb3duDQogICAgICBmb3JtYXRfdmVyc2lvbjogJzEuMScNCiAgICAgIGp1cHl0ZXh0X3ZlcnNpb246IDEuMi40DQogIGtlcm5lbHNwZWM6DQogICAgZGlzcGxheV9uYW1lOiBSDQogICAgbGFuZ3VhZ2U6IFINCiAgICBuYW1lOiBpcg0KLS0tDQoNCmBgYHtyIG1lc3NhZ2U9RkFMU0UsIHdhcm5pbmc9RkFMU0V9DQpsaWJyYXJ5KHRpZHl2ZXJzZSkNCmxpYnJhcnkoY2FyZXQpDQpsaWJyYXJ5KHJhbmRvbUZvcmVzdCkNCmxpYnJhcnkocmFuZ2VyKSAjUmFuZG9tRm9yZXN0IHBsdXMgcmFwaWRlDQpsaWJyYXJ5KHJwYXJ0KQ0KbGlicmFyeShwUk9DKQ0KYGBgDQoNCiMgSW50cm9kdWN0aW9uDQpMJ29iamV0IGRlIGwnw6l0dWRlIGVzdCBsYSAqKmNsYXNzaWZpY2F0aW9uIGRlcyBjeWJlcmF0dGFxdWVzKiogc3VyIGxlcyBhcHBhcmVpbHMgbW9iaWxlcyBzb3VzIHN5dMOobWUgQW5kcm9pZCDDoCBwYXJ0aXIgZGVzIGRvbm7DqWVzIHF1aSBzJ8OpY2hhbmdlbnQgZXQgdHJhbnNpdGVudCBwYXIgbGUgc21hcnRwaG9uZSwgcmVjb2x0w6llcyBwYXIgbGUgbW9uaXRldXIgZGVzIHJlc3NvdXJjZXMuIExlIGJ1dCDDqXRhbnQgZCdlZmZlY3R1ZXIgbGUgdHJhaXRlbWVudCBhZGFwdMOpIHBvdXIgbmV0dG95ZXIgbCdhcHBhcmVpbCBzYW5zIGF2b2lyIGJlc29pbiBkZSBsYSByw6lpbml0aWFsaXNlciBlbiBwZXJkYW50IGRlcyBkb25uw6llcyBwZXJzb25uZWxsZXMuDQoNClBvdXIgY2xhc3NlciBkZXMgYXBwYXJlaWxzIGluZmVjdMOpZXMgb3Ugbm9uLCBsZXMgZG9ubsOpZXMgZHUgbW9uaXRldXIgZGUgcmVzc291cmNlcyBuZSBwZXJtZXR0ZW50IHBhcyBkZSBsZSBmYWlyZSBwdWlzcXVlIGxlIHTDqWzDqXBob25lIGF0dGFxdcOpIGFycml2ZSDDoCBhdm9pciB1biBjb21wb3J0ZW1lbnQgIm5vcm1hbCIgKHNhdWYgcXVlbHF1ZXMgYHJhbnNvbWV3YXJlYCkuIEwnYW5hbHlzZSBkZXMgbG9ncyAodGV4dGUpIHBlcm1ldCBkZSBkw6ljZWxlciBsZXMgbW9tZW50cyBhbm9ybWF1eCBtYWlzIG5lIHJlbnNlaWduZSBwYXMgbGUgdHlwZSBkJ2luZmVjdGlvbi4gRG9uYyBwb3VyIHVuIGxvZyBkZSByw6lzZWF1IGFub3JtYWwsIG9uIHLDqWNvbHRlIGxlcyBkb25uw6llcyBkdSBtb25pdGV1ciBkZSByZXNzb3VyY2VzLiBOb3VzIGludGVydmVub25zIGRhbnMgY2V0dGUgZGV1eGnDqG1lIHBhcnRpZS4gIA0KTGVzIGRvbm7DqWVzIHByb3ZpZW5uZW50IGRlIGwnW1VuaXZlcnNpdMOpIGR1IE5vdXZlYXUtQnJ1bnN3aWNrXShodHRwczovL3d3dy51bmIuY2EvY2ljL2RhdGFzZXRzL2luZGV4Lmh0bWwpIGF1IENhbmFkYS4NCg0KRGFucyBjZXR0ZSDDqXR1ZGUsIGwnYXBwYXJlaWwgZXN0IGTDqWrDoCBpbmZlY3TDqWUgZXQgbGVzIGF0dGFxdWVzIG5lIHBldXZlbnQgcGFzIHNlIHN1cGVycG9zZXIgKGltcG9zc2liaWxpdMOpIGQnYXZvaXIgcGx1cyBkJ3VuZSBpbmZlY3Rpb24pLiAgDQpFbiByZWdyb3VwYW50IGNlcnRhaW5lcyBjbGFzc2VzIGRlIG3Dqm1lIG5hdHVyZSwgZG9udCBsZXMgdmFyaWFuY2VzIHNvbnQgdHLDqHMgZmFpYmxlcywgb24gYSA0IGF0dGFxdWVzIHF1aSBzb250IGluZMOpY2VsYWJsZXMgZW4gYW5hbHlzYW50IGxlIGNvbXBvcnRlbWVudCBkZSBsJ2FwcGFyZWlsIGRlIGZhw6dvbiBnw6luw6lyYWxlOg0KDQotIGBhZHdhcmVgLCBxdWkgYWZmaWNoZSBkZXMgcHVicyBjaWJsw6llcyB0b3V0IGVuIGVzcGlvbm5hbnQgZGUgbWFuacOocmUgaWxsw6lnYWxlIGxlcyBhY3Rpdml0w6lzIGRlIGwnYXBwYXJlaWwuDQotIGBib3RuZXRgLCBxdWkgaW50w6hncmUgbGUgdMOpbMOpcGhvbmUgw6AgdW4gcsOpc2VhdSBkJ1thcHBhcmVpbHMgem9tYmllc10oaHR0cHM6Ly9mci53aWtpcGVkaWEub3JnL3dpa2kvTWFjaGluZV96b21iaWUpLg0KLSBgcmFuc29tZXdhcmVgLCBxdWkgY2hpZmZyZSBsJ2ludMOpZ3JhbGl0w6kgZGVzIGRvbm7DqWVzIG91IHVuaXF1ZW1lbnQgdW5lIHBhcnRpZSAobGUgY2FzIGljaSkgZXQgcXVpIHNlIGTDqWNoaWZmcmUgYXByw6hzIGF2b2lyIHBhecOpIHVuZSByYW7Dp29uIG91IGVuIHV0aWxpc2FudCB1biBkw6ljcnlwdGV1ci4NCi0gYHNtc2AsIHF1aSBpbnN0YWxsZSB1biB2ZXJzIG91IHVuIGNoZXZhbCBkZSBUcm9pZSBwb3VyIGxlIHRyYW5zZm9ybWVyIGVuIGFwcGFyZWlsIHpvbWJpZS4NCg0KUG91ciDDqnRyZSBhY3RpZnMsIGxlcyBhcHBhcmVpbHMgY29tbXVuaXF1ZW50IGF2ZWMgbGVzIHNlcnZldXJzIGRlcyBjeWJlcmF0dGFxdWFudHMuIE5vdXMgYW5hbHlzZXJvbnMgbGVzIGRvbm7DqWVzIGxpw6llcyDDoCBjZXMgw6ljaGFuZ2VzLg0KDQpgYGB7ciBtZXNzYWdlPUZBTFNFLCB3YXJuaW5nPUZBTFNFfQ0KZGF0YSA8LSByZWFkX2NzdigiZGF0YS9oYWNrZXJBdHRhY2suY3N2IikNCmRpbShkYXRhKQ0KYGBgDQoNCiMgSS4gRmVhdHVyZXMgRW5naW5lZXJpbmcNCkRhbnMgbm9zIGRvbm7DqWVzIGJydXRlcywgbm91cyBhdm9ucyA4MSB2YXJpYWJsZXMgZXQgNCAwMDAgb2JzZXJ2YXRpb25zLiAgDQpQb3VyIG5ldHRveWVyIG5vcyBkb25uw6llcywgbm91cyBkZXZvbnMgc3VwcHJpbWVyIGxlcyBjb2xvbm5lcyBjb25zdGFudGVzIG91IGF5YW50IGRlIGZhaWJsZSB2YXJpYW5jZSAoaW5mw6lyaWV1cmUgYXUgcHJlbWllciBxdWFydGlsZSBkZXMgdmFyaWFuY2VzKSwgdHJhbnNmb3JtZXIgY2VydGFpbmVzIHZhcmlhYmxlczoNCg0KLSBgRGVzdGluYXRpb24gSVBgLCBlbiBmYWN0ZXVyIGBJUGAgZW4gbmUgZ2FyZGFudCBxdWUgbGUgKipOZXQtSUQqKiAobGUgMTxzdXA+ZXI8L3N1cD4gb2N0ZXQgc2kgY2xhc3NlIEEsIGxlcyAyIHByZW1pZXJzIHNpbm9uKQ0KLSBgU291cmNlIFBvcnRgIGV0IGBEZXN0aW5hdGlvbiBQb3J0YCwgZW4gYFNQb3J0YCBldCBgRFBvcnRgLCBkZSBudW0gw6AgZmFjdGV1ciBlbiBzdWl2YW50IGxlcyB0eXBlcyBkJ2F0dHJpYnV0aW9uIGRlIGwnW0lBTkFdKGh0dHBzOi8vZnIud2lraXBlZGlhLm9yZy93aWtpL0ludGVybmV0X0Fzc2lnbmVkX051bWJlcnNfQXV0aG9yaXR5KQ0KLSBgUHJvdG9jb2xgLCBkZSBudW0gw6AgZmFjdGV1ciBlbiBzdWl2YW50IGxlcyBbYXNzaWduZW1lbnRzXShodHRwczovL3d3dy5pYW5hLm9yZy9hc3NpZ25tZW50cy9wcm90b2NvbC1udW1iZXJzL3Byb3RvY29sLW51bWJlcnMueGh0bWwpIGRlIGwnSUFOQQ0KLSBgTGFiZWxgLCBub3MgdmFyaWFibGVzIMOgIGV4cGxpcXVlciAkWSQgZW4gZmFjdGV1ci4NCi0gTGVzIHZhcmlhYmxlcyBxdWFudGl0YXRpdmVzLCBzdGFuZGFyZGlzw6llcy4NCg0KYGBge3IgbWVzc2FnZT1GQUxTRSwgd2FybmluZz1GQUxTRX0NCmlwX3NwbGl0IDwtIGZ1bmN0aW9uKGlwKXsNCiAgICAjJyBSZW52b2llIGxlIE5ldC1JRCBkJ3VuZSBhZHJlc3NlIElQDQogICAgb2N0ZXRzIDwtIHN0cl9zcGxpdChpcCwgIlxcLiIpW1sxXV0NCiAgICBpZiAoYXMubnVtZXJpYyhvY3RldHNbMV0pIDw9IDEyNykgew0KICAgICAgICBuZXRJRCA8LSBvY3RldHNbMV0NCiAgICB9IGVsc2Ugew0KICAgICAgICBuZXRJRCA8LSBwYXN0ZShvY3RldHNbMV0sIG9jdGV0c1syXSwgc2VwID0gIi4iKQ0KICAgIH0NCiAgICANCiAgICByZXR1cm4obmV0SUQpDQp9DQpgYGANCg0KYGBge3IgcXVhbnRpbGUsIGluY2x1ZGU9RkFMU0V9DQpkYXRhICU+JSANCnNlbGVjdF9pZihpcy5udW1lcmljKSAlPiUgDQpzdW1tYXJpc2VfYWxsKHZhcikgJT4lIA0KZ2F0aGVyKCkgJT4lDQpzZWxlY3QodmFsdWUpICU+JQ0KYXMubWF0cml4KCkgJT4lDQpxdWFudGlsZSgwLjI1KSAtPiBxMQ0KYGBgDQoNClRyYW5zZm9ybWF0aW9uIGRlcyBJUHMuDQoNCmBgYHtyIG1lc3NhZ2U9RkFMU0UsIHdhcm5pbmc9RkFMU0V9DQpkYXRhIDwtIGRhdGEgJT4lIA0KcmVuYW1lKElQID0gJ0Rlc3RpbmF0aW9uIElQJykgJT4lIA0Kcm93d2lzZSgpICU+JSAjIHZlY3RvcmlzZSBsYSBmb25jdGlvbiBpcF9zcGxpdA0KbXV0YXRlKElQID0gaXBfc3BsaXQoSVApKSAlPiUgDQphc190aWJibGUoKSAjIHN1cHByaW1lIHJvd3dpc2VfZGYNCmBgYA0KDQpMZXMgYXV0cmVzIHRyYW5zZm9ybWF0aW9ucw0KDQpgYGB7ciBtZXNzYWdlPUZBTFNFLCB3YXJuaW5nPUZBTFNFfQ0KZGF0YSA8LSBkYXRhICU+JSANCnJlbmFtZSgNCiAgICBTUG9ydCA9ICdTb3VyY2UgUG9ydCcsDQogICAgRFBvcnQgPSAnRGVzdGluYXRpb24gUG9ydCcsDQopICU+JSANCm11dGF0ZSgNCiAgICBEUG9ydCA9IGNhc2Vfd2hlbigNCiAgICAgICAgRFBvcnQgPT0gNTMgfiAiRE5TIiwNCiAgICAgICAgRFBvcnQgPT0gODAgfiAiSFRUUCIsDQogICAgICAgIERQb3J0ID09IDQ0MyB+ICJIVFRQUyIsDQogICAgICAgIERQb3J0ICVpbiUgYygxMDI0OjUwMDAsIDQ5MTUyOjY1NTM1KSB+ICJNaWNyb3NvZnQgUlBDIiwNCiAgICAgICAgRFBvcnQgJWluJSA2MDAwMDo2MTAwMCB+ICJNb3NoIiwNCiAgICAgICAgVFJVRSB+ICJQcml2YXRlIg0KICAgICksDQogICAgU1BvcnQgPSBjYXNlX3doZW4oDQogICAgICAgIFNQb3J0ID09IDgwIH4gIkhUVFAiLA0KICAgICAgICBTUG9ydCA9PSA0NDMgfiAiSFRUUFMiLA0KICAgICAgICBTUG9ydCAlaW4lIGMoMTAyNDo1MDAwLCA0OTE1Mjo2NTUzNSkgfiAiTWljcm9zb2Z0IFJQQyIsDQogICAgICAgIFNQb3J0ICVpbiUgNjAwMDA6NjEwMDAgfiAiTW9zaCIsDQogICAgICAgIFRSVUUgfiAiUHJpdmF0ZSINCiAgICApDQopICU+JSANCm11dGF0ZV9hdCgNCiAgICBjKCdTUG9ydCcsICdEUG9ydCcsICdJUCcsICdQcm90b2NvbCcsICdMYWJlbCcpLA0KICAgIGZ1bnMoZmFjdG9yKQ0KKSAlPiUgDQpzZWxlY3QoDQogICAgMTo0LCAjIEZhY3RldXJzDQogICAgY29sbmFtZXMoc2VsZWN0X2lmKC4sIGZ1bmN0aW9uKGNvbCkgaXMubnVtZXJpYyhjb2wpICYmIHZhcihjb2wpID49IHExKSksICMgVmFyaWFuY2VzIGZhaWJsZXMNCiAgICBuY29sKC4pICMgTGFiZWwNCikgJT4lIA0KbXV0YXRlX2lmKA0KICAgIGlzLm51bWVyaWMsDQogICAgc2NhbGUNCikNCmBgYA0KDQoNCmBgYHtyIGluY2x1ZGU9RkFMU0V9DQpkaW1fcXVhbnQgPC0gZGF0YSAlPiUgc2VsZWN0X2lmKGlzLm51bWVyaWMpICU+JSBuY29sKCkNCmRpbV9JUCA8LSBsZW5ndGgodW5pcXVlKGRhdGEkSVApKQ0KZGltX1NQb3J0IDwtIGxlbmd0aCh1bmlxdWUoZGF0YSRTUG9ydCkpDQpkaW1fRFBvcnQgPC0gbGVuZ3RoKHVuaXF1ZShkYXRhJERQb3J0KSkNCmRpbV9Qcm90b2NvbCA8LSBsZW5ndGgodW5pcXVlKGRhdGEkUHJvdG9jb2wpKQ0KZGltX1ggPC0gZGltX3F1YW50ICsgZGltX0lQLTEgKyBkaW1fU1BvcnQtMSArIGRpbV9EUG9ydC0xICsgZGltX1Byb3RvY29sLTENCmBgYA0KDQpOb3VzIG9idGVub25zIHVuZSBkaW1lbnNpb24gZGUgYHIgZGltKGRhdGEpYCBhcHLDqHMgbmV0dG95YWdlLg0KDQpVbiB0b3RhbCBkZSBgciBkaW1fWGAgdmFyaWFibGVzIGV4cGxpY2F0aXZlczoNCg0KLSBgciBkaW1fcXVhbnRgIHZhcmlhYmxlcyBxdWFudGl0YXRpdmVzLg0KLSBgciBkaW1fSVBgIG1vZGFsaXTDqXMgZGUgSVAuDQotIGByIGRpbV9TUG9ydGAgbW9kYWxpdMOpcyBkZSBTUG9ydA0KLSBgciBkaW1fRFBvcnRgIG1vZGFsaXTDqXMgZGUgRFBvcnQNCi0gYHIgZGltX1Byb3RvY29sYCBtb2RhbGl0w6lzIGRlIFByb3RvY29sLg0KDQpPbiBuZSBwZXV0IHBhcyB1dGlsaXNlciBsJ0FDUCBwb3VyIHLDqWR1aXJlIGxlcyBkaW1lbnNpb25zIHB1aXNxdWUgbGVzIHZhcmlhYmxlcyBuZSBzb250IHBhcyBsaW7DqWFpcmVzLiBMYSBzdHJhdMOpZ2llIHNlcmEgZCfDqWxpbWluZXIgbGVzIHZhcmlhYmxlcyBxdWkgbmUgc29udCBwYXMgaW1wb3J0YW50ZXMgcG91ciBsZXMgbW9kw6hsZXMgZGUgY2xhc3NpZmljYXRpb25zLg0KDQoNCmBgYHtyfQ0KZ2dwbG90KGRhdGEpICsgYWVzKHggPSBJUCkgKyBnZW9tX2hpc3RvZ3JhbShzdGF0PSJjb3VudCIpDQpgYGANCg0KYGBge3J9DQpnZ3Bsb3QoZGYpICsgDQogIGFlcyh4ID0gTGFiZWwpICsgZ2VvbV9iYXIoYWVzKHkgPSAoLi5jb3VudC4uKS9zdW0oLi5jb3VudC4uKSkpICsgDQogIGZhY2V0X2dyaWQoLn5Qcm90b2NvbCkgKw0KICB0aGVtZShheGlzLnRleHQueD1lbGVtZW50X3RleHQoYW5nbGU9OTAsIGhqdXN0PTEpKQ0KYGBgDQoNCmBgYHtyfQ0KbGVuZ3RoKHVuaXF1ZShkZiRgRGVzdGluYXRpb24gUG9ydGApKQ0KYGBgDQoNCmBgYHtyfQ0KaXBfc3BsaXQgPC0gZnVuY3Rpb24oaXApew0KICAgIGlwTWFpbiA8LSBwYXN0ZShzdHJfc3BsaXQoaXAsICJcXC4iKVtbMV1dWzFdLCBzdHJfc3BsaXQoaXAsICJcXC4iKVtbMV1dWzJdLCBzZXAgPSAiLiIpDQogICAgcmV0dXJuKGlwTWFpbikNCn0NCg0KYGBgDQoNCmBgYHtyfQ0KZGYgJT4lDQpzZWxlY3QoSVAgPSBgRGVzdGluYXRpb24gSVBgKSAlPiUgcm93d2lzZSgpICU+JSBtdXRhdGUoc3ViX2xhYmVsID0gcGFzdGUoc3RyX3NwbGl0KGBJUGAsICJcXC4iKVtbMV1dWzFdLCBzdHJfc3BsaXQoYElQYCwgIlxcLiIpW1sxXV1bMl0sIHNlcCA9ICIuIikpDQpgYGANCg0KYGBge3J9DQpkZiAgJT4lIA0KZ3JvdXBfYnkoYERlc3RpbmF0aW9uIElQYCkgJT4lIA0Kc3VtbWFyaXNlKG4gPSBuKCkpICU+JSANCnRvcF9uKDIwKQ0KYGBgDQoNCmBgYHtyfQ0KZGYgICU+JSANCmdyb3VwX2J5KGBTb3VyY2UgUG9ydGApICU+JSANCnN1bW1hcmlzZShuID0gbigpKSAlPiUgDQp0b3BfbigxMCkNCmBgYA0KDQpgYGB7cn0NCmRmICAlPiUgDQpncm91cF9ieShgRGVzdGluYXRpb24gUG9ydGApICU+JSANCnN1bW1hcmlzZShuID0gbigpKSAlPiUgDQp0b3BfbigxMCkNCmBgYA0KDQpgYGB7cn0NCmdncGxvdChkZiAlPiUgbXV0YXRlKGBEZXN0aW5hdGlvbiBQb3J0YCA9IGFzLmZhY3RvcihgRGVzdGluYXRpb24gUG9ydGApKSkgKw0KICBhZXMoeCA9IGBEZXN0aW5hdGlvbiBQb3J0YCkgKyBnZW9tX2JhcigpICsgI2ZhY2V0X2dyaWQoLn5MYWJlbCkgKw0KICB0aGVtZShheGlzLnRleHQueD1lbGVtZW50X3RleHQoYW5nbGU9OTAsIGhqdXN0PTEpKQ0KYGBgDQoNCmBgYHtyfQ0KZGYgPC0gdGliYmxlKA0KICBhID0gMToxMCwNCiAgYiA9IHJlcCgyLDEwKSwNCiAgYyA9IGMocmVwKDQsNCksIE5BLCByZXAoNCw1KSksDQogIGQgPSA0MTo1MA0KKQ0KYGBgDQpgYGB7cn0NCkZpbHRlcih2YXIsIGRmKQ0KYGBgDQoNCg0K</div>
 
 
 

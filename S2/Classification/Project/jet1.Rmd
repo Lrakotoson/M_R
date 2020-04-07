@@ -21,8 +21,6 @@ jupyter:
 ---
 
 ```{r message=FALSE, warning=FALSE}
-# options(warn = -1)
-# knitr::opts_chunk$set(message = FALSE)
 library(tidyverse)
 library(caret)
 library(randomForest)
@@ -31,30 +29,136 @@ library(rpart)
 library(pROC)
 ```
 
+# Introduction
 L'objet de l'étude est la **classification des cyberattaques** sur les appareils mobiles sous sytème Android à partir des données qui s'échangent et transitent par le smartphone, recoltées par le moniteur des ressources. Le but étant d'effectuer le traitement adapté pour nettoyer l'appareil sans avoir besoin de la réinitialiser en perdant des données personnelles.
 
-Pour classer des appareils infectées ou non, les données du moniteur de ressources ne permettent pas de le faire puisque le téléphone attaqué arrive à avoir un comportement "normal" (sauf quelques `ransomeware`). L'analyse des logs (texte) permet de déceler les moments anormaux mais ne renseigne pas le type d'infection. Donc pour un log de réseau anormal, on récolte les données du moniteur de ressources.  
-Les données proviennent de l'[Université du Nouveau-Brunswick](https://www.unb.ca/cic/datasets/index.html) au Canada où ils ont infecté de manière indépendante plusieurs appareils.
+Pour classer des appareils infectées ou non, les données du moniteur de ressources ne permettent pas de le faire puisque le téléphone attaqué arrive à avoir un comportement "normal" (sauf quelques `ransomeware`). L'analyse des logs (texte) permet de déceler les moments anormaux mais ne renseigne pas le type d'infection. Donc pour un log de réseau anormal, on récolte les données du moniteur de ressources. Nous intervenons dans cette deuxième partie.  
+Les données proviennent de l'[Université du Nouveau-Brunswick](https://www.unb.ca/cic/datasets/index.html) au Canada.
 
 Dans cette étude, l'appareil est déjà infectée et les attaques ne peuvent pas se superposer (impossibilité d'avoir plus d'une infection).  
-En regroupant certaines classes de même nature, dont les variances sont très faibles, on a 4 attaques:
+En regroupant certaines classes de même nature, dont les variances sont très faibles, on a 4 attaques qui sont indécelables en analysant le comportement de l'appareil de façon générale:
 
-- `adware`
-- `botnet`
-- `ransomeware`
-- `sms`
+- `adware`, qui affiche des pubs ciblées tout en espionnant de manière illégale les activités de l'appareil.
+- `botnet`, qui intègre le téléphone à un réseau d'[appareils zombies](https://fr.wikipedia.org/wiki/Machine_zombie).
+- `ransomeware`, qui chiffre l'intégralité des données ou uniquement une partie (le cas ici) et qui se déchiffre après avoir payé une rançon ou en utilisant un décrypteur.
+- `sms`, qui installe un vers ou un cheval de Troie pour le transformer en appareil zombie.
 
-```{r}
-df <- read_csv("data/hackerAttack.csv")
+Pour être actifs, les appareils communiquent avec les serveurs des cyberattaquants. Nous analyserons les données liées à ces échanges.
+
+```{r message=FALSE, warning=FALSE}
+data <- read_csv("data/hackerAttack.csv")
+dim(data)
 ```
 
-```{r}
-unique(df$Label)
+# I. Features Engineering
+Dans nos données brutes, nous avons 81 variables et 4 000 observations.  
+Pour nettoyer nos données, nous devons supprimer les colonnes constantes ou ayant de faible variance (inférieure au premier quartile des variances), transformer certaines variables:
+
+- `Destination IP`, en facteur `IP` en ne gardant que le **Net-ID** (le 1<sup>er</sup> octet si classe A, les 2 premiers sinon)
+- `Source Port` et `Destination Port`, en `SPort` et `DPort`, de num à facteur en suivant les types d'attribution de l'[IANA](https://fr.wikipedia.org/wiki/Internet_Assigned_Numbers_Authority)
+- `Protocol`, de num à facteur en suivant les [assignements](https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml) de l'IANA
+- `Label`, nos variables à expliquer $Y$ en facteur.
+- Les variables quantitatives, standardisées.
+
+```{r message=FALSE, warning=FALSE}
+ip_split <- function(ip){
+    #' Renvoie le Net-ID d'une adresse IP
+    octets <- str_split(ip, "\\.")[[1]]
+    if (as.numeric(octets[1]) <= 127) {
+        netID <- octets[1]
+    } else {
+        netID <- paste(octets[1], octets[2], sep = ".")
+    }
+    
+    return(netID)
+}
 ```
 
+```{r quantile, include=FALSE}
+data %>% 
+select_if(is.numeric) %>% 
+summarise_all(var) %>% 
+gather() %>%
+select(value) %>%
+as.matrix() %>%
+quantile(0.25) -> q1
+```
+
+Transformation des IPs.
+
+```{r message=FALSE, warning=FALSE}
+data <- data %>% 
+rename(IP = 'Destination IP') %>% 
+rowwise() %>% # vectorise la fonction ip_split
+mutate(IP = ip_split(IP)) %>% 
+as_tibble() # supprime rowwise_df
+```
+
+Les autres transformations
+
+```{r message=FALSE, warning=FALSE}
+data <- data %>% 
+rename(
+    SPort = 'Source Port',
+    DPort = 'Destination Port',
+) %>% 
+mutate(
+    DPort = case_when(
+        DPort == 53 ~ "DNS",
+        DPort == 80 ~ "HTTP",
+        DPort == 443 ~ "HTTPS",
+        DPort %in% c(1024:5000, 49152:65535) ~ "Microsoft RPC",
+        DPort %in% 60000:61000 ~ "Mosh",
+        TRUE ~ "Private"
+    ),
+    SPort = case_when(
+        SPort == 80 ~ "HTTP",
+        SPort == 443 ~ "HTTPS",
+        SPort %in% c(1024:5000, 49152:65535) ~ "Microsoft RPC",
+        SPort %in% 60000:61000 ~ "Mosh",
+        TRUE ~ "Private"
+    )
+) %>% 
+mutate_at(
+    c('SPort', 'DPort', 'IP', 'Protocol', 'Label'),
+    funs(factor)
+) %>% 
+select(
+    1:4, # Facteurs
+    colnames(select_if(., function(col) is.numeric(col) && var(col) >= q1)), # Variances faibles
+    ncol(.) # Label
+) %>% 
+mutate_if(
+    is.numeric,
+    scale
+)
+```
+
+
+```{r include=FALSE}
+dim_quant <- data %>% select_if(is.numeric) %>% ncol()
+dim_IP <- length(unique(data$IP))
+dim_SPort <- length(unique(data$SPort))
+dim_DPort <- length(unique(data$DPort))
+dim_Protocol <- length(unique(data$Protocol))
+dim_X <- dim_quant + dim_IP-1 + dim_SPort-1 + dim_DPort-1 + dim_Protocol-1
+```
+
+Nous obtenons une dimension de `r dim(data)` après nettoyage.
+
+Un total de `r dim_X` variables explicatives:
+
+- `r dim_quant` variables quantitatives.
+- `r dim_IP` modalités de IP.
+- `r dim_SPort` modalités de SPort
+- `r dim_DPort` modalités de DPort
+- `r dim_Protocol` modalités de Protocol.
+
+On ne peut pas utiliser l'ACP pour réduire les dimensions puisque les variables ne sont pas linéaires. La stratégie sera d'éliminer les variables qui ne sont pas importantes pour les modèles de classifications.
+
+
 ```{r}
-df <- df %>% 
-  mutate_at(c('Destination IP', 'Protocol', 'Label'), funs(factor))
+ggplot(data) + aes(x = IP) + geom_histogram(stat="count")
 ```
 
 ```{r}
@@ -116,4 +220,8 @@ df <- tibble(
   d = 41:50
 )
 ```
+```{r}
+Filter(var, df)
+```
+
 
