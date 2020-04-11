@@ -22,6 +22,7 @@ jupyter:
 
 ```{r message=FALSE, warning=FALSE}
 library(tidyverse)
+library(gridExtra)
 library(caret)
 library(randomForest)
 library(ranger) #RandomForest plus rapide
@@ -47,7 +48,6 @@ Pour être actifs, les appareils communiquent avec les serveurs des cyberattaqua
 
 ```{r message=FALSE, warning=FALSE}
 data <- read_csv("data/hackerAttack.csv")
-dim(data)
 ```
 
 # I. Features Engineering
@@ -157,71 +157,126 @@ Un total de `r dim_X` variables explicatives:
 On ne peut pas utiliser l'ACP pour réduire les dimensions puisque les variables ne sont pas linéaires. La stratégie sera d'éliminer les variables qui ne sont pas importantes pour les modèles de classifications.
 
 
-```{r}
-ggplot(data) + aes(x = IP) + geom_histogram(stat="count")
-```
+# II. Statistique descriptive
+Visualisons dans cette partie la distribution de nos variables pour en tirer des informations qui peuvent aider à la classification.
 
-```{r}
-ggplot(df) + 
-  aes(x = Label) + geom_bar(aes(y = (..count..)/sum(..count..))) + 
-  facet_grid(.~Protocol) +
-  theme(axis.text.x=element_text(angle=90, hjust=1))
-```
+## 1. Variables qualitatives
 
-```{r}
-length(unique(df$`Destination Port`))
-```
+### Les Ports et les attaques
+En visualisant la répartition de l'utilisation des ports d'entrée et de sortie pour chaque infection, on peut voir:
 
-```{r}
-ip_split <- function(ip){
-    ipMain <- paste(str_split(ip, "\\.")[[1]][1], str_split(ip, "\\.")[[1]][2], sep = ".")
-    return(ipMain)
-}
+- De manière générale, les attaquants récoltent les données ou les réponses de leurs requêtes en ouvrant des ports privés ou en utilisant l'exploit Microsoft RPC. Ils les recoivent via des requêtes HTTP et HTTPS sur leurs serveurs distants. L'étude des IP permettra d'identifier les serveurs ou les 1<sup>er</sup> noeuds s'il s'agit d'un [réseau TOR](https://fr.wikipedia.org/wiki/Tor_(r%C3%A9seau)).
+- Le port DNS n'est pas utilisé en source et très peu pour recevoir. Les attaques par DNS les plus courants sont des [DDoS](https://fr.wikipedia.org/wiki/Attaque_par_d%C3%A9ni_de_service) contre de grandes structures ou du [Phishing](https://fr.wikipedia.org/wiki/Hame%C3%A7onnage) contre des personnes ciblées comme dans notre cas. On souligne directement que le `botnet` n'utilise pas le DNS puisqu'il n'a pas besoin d'usurper un site pour infecter.
+- Près de 80% de la recéption des requêtes des `ransomeware` et 65% des `botnet` passent par le port 443, HTTPS. Il s'agit aussi des deux infections qui ont obligatoirement besoin d'un [back door](https://fr.wikipedia.org/wiki/Porte_d%C3%A9rob%C3%A9e) pour que l'attaquant garde le plus longtemps possible le contrôle de l'appareil.
 
-```
-
-```{r}
-df %>%
-select(IP = `Destination IP`) %>% rowwise() %>% mutate(sub_label = paste(str_split(`IP`, "\\.")[[1]][1], str_split(`IP`, "\\.")[[1]][2], sep = "."))
-```
-
-```{r}
-df  %>% 
-group_by(`Destination IP`) %>% 
-summarise(n = n()) %>% 
-top_n(20)
-```
-
-```{r}
-df  %>% 
-group_by(`Source Port`) %>% 
-summarise(n = n()) %>% 
-top_n(10)
-```
-
-```{r}
-df  %>% 
-group_by(`Destination Port`) %>% 
-summarise(n = n()) %>% 
-top_n(10)
-```
-
-```{r}
-ggplot(df %>% mutate(`Destination Port` = as.factor(`Destination Port`))) +
-  aes(x = `Destination Port`) + geom_bar() + #facet_grid(.~Label) +
-  theme(axis.text.x=element_text(angle=90, hjust=1))
-```
-
-```{r}
-df <- tibble(
-  a = 1:10,
-  b = rep(2,10),
-  c = c(rep(4,4), NA, rep(4,5)),
-  d = 41:50
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+data %>%
+select(SPort, DPort, Label) %>%
+gather("Entry", "Port", -Label) %>% ggplot() + 
+aes(x = Port, y = ..prop.., group = 1, fill = Label) +
+geom_bar() + guides(fill = F) + 
+facet_grid(cols = vars(Label), rows = vars(Entry)) +
+labs(title = "Utilisation des Ports par infection", x = "Ports", y = "proportion") +
+theme(
+    axis.text.x = element_text(angle = 50, hjust = 1),
+    plot.title = element_text(hjust = 0.5)
 )
 ```
-```{r}
-Filter(var, df)
+
+### Les IPs et les protocoles
+L'analyse des NetID des adresses IP permet d'obtenir des informations sur le comportement des infections.  
+En analysant les 2 NetID les plus utilisés par infection, on s'aperçoit que:
+
+- Le 172.217 (classe B) est le plus utilisé, sauf pour les `sms` qui le placent en 2<sup>e</sup>.
+- Le deuxième le plus fréquent est de classe A, le 10 pour toutes sauf pour les `ransomeware` avec le 119.
+
+L'analyse des protocoles (*ici utilisés pour la réception DPort*) y ajoute plus d'informations:
+
+- On retrouve les 2 mêmes NetID les plus fréquents pour le protocol 6 (TCP) et 17 (UDP)
+- Le protocol 0 (HOPOPT) utilise deux NetID de classe A, dont le 8 qui représente 93.8% du traffic
+- Le 10 représente 87.5% du traffic du protocol 17 (UDP), moins sécurisé que le TCP.
+- Au moins 95% des traffics utilisent le protocol 6 (TCP) pour toutes infections sauf `sms`, qui est le plus grand utilisateur du protocol 17 (UDP).
+
+```{r include=FALSE}
+ip_label <- data %>% 
+group_by(Label, IP) %>% 
+summarise(proportion = n()) %>%
+mutate(proportion = proportion*100 / sum(proportion)) %>% 
+top_n(2, proportion) %>% 
+ggplot() + aes(x = IP, y = proportion, fill = IP) +
+geom_bar(stat="identity") + facet_grid(Label~.) +
+guides(fill = F) + xlab("NetID")
+
+ip_protocol <- data %>% 
+group_by(Protocol, IP) %>% 
+summarise(proportion = n()) %>%
+mutate(proportion = proportion*100 / sum(proportion)) %>% 
+top_n(2, proportion) %>% 
+ggplot() + aes(x = IP, y = proportion, fill = IP) +
+geom_bar(stat="identity") + facet_grid(Protocol~.) +
+guides(fill = F) + xlab("NetID") +
+scale_fill_manual(values = c("#f39c12", "#f8766d", "#619cff", "#8e44ad"))
 ```
 
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+data %>% 
+group_by(Label, Protocol) %>% 
+summarise(proportion = n()) %>%
+mutate(proportion = proportion*100 / sum(proportion)) %>% 
+spread(Protocol, proportion)
+grid.arrange(ip_label, ip_protocol,
+             ncol = 2, nrow = 1,
+             top = "Top 2 des NetIDs par infection et par protocole"
+)
+```
 
+### En résumé
+Avec l'analyse des 4 variables qualitatives, il est déjà possible de dresser les profils des infections:
+
+- `sms` utilise moins de chiffrement: plutôt HTTP que HTTPS, avec l'utilisation du protocol 17 (UDP) qui reçoit beaucoup sur le NetID 10. Il s'agit d'une attaque courte. La variable `Flow Duration` devrait avoir une valeur faible et les `Packets` grandes.
+- `ransomeware` est la plus chiffrée et reçoit sur le NetID 119 pour la classe A. Il s'agit de l'attaque communiquer le plus avec le serveur tant qu'elle n'est pas résolue. Les variables de types `Active` devrait prendre de grandes valeurs.
+- `botnet` et `adware` se distinguent uniquement par l'utilisation des chiffrements à la réception (`botnet` est plus HTTP). Les variables quantitatives ne permettent pas plus de les discriminer.
+
+## 2. Variables quantitatives
+Rappelons que les données ont été standardisées.
+
+### Longueur de paquet
+La variable `Min Packet Length` est celle qui est la plus corrélée aux labels. Elle représente la taille minimale du packet en prenant en compte l'en-tête.  
+Comme attendu, la densité est plus répartie pour `sms`. La variable étant plus concentrée autour de la moyenne pour `ransomeware` et `botnet`.
+
+```{r}
+ggplot(data) + aes(x = `Min Packet Length`, fill = Label) +
+geom_density() + facet_grid(Label~., scales = "free_y") +
+xlim(range(-1,5)) + guides(fill = F)
+```
+
+### Durée de débit
+La visualisation de `Flow Duration` permet de visualiser le temps de connexion entre le serveur et l'appareil.  
+L'infection par `sms` étant rapide et n'ayant pas systématiquement besoin d'un backdoor, elle se distingue facilement par une durée de débit faible par rapport aux autres infections.  
+Cela confirme l'analyse sur les protocols où le chiffrement n'est pas nécessaire.
+
+```{r}
+ggplot(data) + aes(y = `Flow Duration`, x = Label, fill = Label) +
+geom_violin() + ylim(range(-0.6:2.6)) + guides(fill = F) +
+geom_boxplot(width = 0.07, fill = "#ecf0f1", outlier.size = -1)
+```
+
+### Durée entre 2 paquets d'un débit
+La variable `Flow IAT Mean` représente la vitesse moyenne d'envoi de paquets, entre autres la durée entre l'envoi de 2 paquets dans un seul débit. Un Flow IAT faible est un débit plus rapide.  
+L'infection `sms` doit envoyer dans une durée faible le maximum d'informations, tandis que pour les `botnet`, pour lesquelles les machines zombies sont souvent utilisées pour attaquer en DDoS, l'attaquant envoie une instruction et doit attendre l'exécution de celle-ci avant de déconnecter, d'où une vitesse faible.
+
+```{r}
+ggplot(data) + 
+aes(y = `Flow IAT Mean`, x = Label, fill = Label) +
+geom_boxplot(notch=T, outlier.size = -1) +
+coord_flip(ylim=c(-0.5, 1)) +
+guides(fill = F)
+```
+
+```{r}
+names(num)
+```
+
+```{r}
+-1:1
+```
