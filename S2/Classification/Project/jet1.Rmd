@@ -5,7 +5,7 @@ output:
   html_notebook:
     df_print: paged
     highlight: tango
-    theme: flatly
+    theme: cerulean
 jupyter:
   jupytext:
     formats: ipynb,Rmd
@@ -244,7 +244,7 @@ Rappelons que les données ont été standardisées.
 La variable `Min Packet Length` est celle qui est la plus corrélée aux labels. Elle représente la taille minimale du packet en prenant en compte l'en-tête.  
 Comme attendu, la densité est plus répartie pour `sms`. La variable étant plus concentrée autour de la moyenne pour `ransomeware` et `botnet`.
 
-```{r}
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
 ggplot(data) + aes(x = `Min Packet Length`, fill = Label) +
 geom_density() + facet_grid(Label~., scales = "free_y") +
 xlim(range(-1,5)) + guides(fill = F)
@@ -255,7 +255,7 @@ La visualisation de `Flow Duration` permet de visualiser le temps de connexion e
 L'infection par `sms` étant rapide et n'ayant pas systématiquement besoin d'un backdoor, elle se distingue facilement par une durée de débit faible par rapport aux autres infections.  
 Cela confirme l'analyse sur les protocols où le chiffrement n'est pas nécessaire.
 
-```{r}
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
 ggplot(data) + aes(y = `Flow Duration`, x = Label, fill = Label) +
 geom_violin() + ylim(range(-0.6:2.6)) + guides(fill = F) +
 geom_boxplot(width = 0.07, fill = "#ecf0f1", outlier.size = -1)
@@ -265,18 +265,10 @@ geom_boxplot(width = 0.07, fill = "#ecf0f1", outlier.size = -1)
 La variable `Flow IAT Mean` représente la vitesse moyenne d'envoi de paquets, entre autres la durée entre l'envoi de 2 paquets dans un seul débit. Un Flow IAT faible est un débit plus rapide.  
 L'infection `sms` doit envoyer dans une durée faible le maximum d'informations, tandis que pour les `botnet`, pour lesquelles les machines zombies sont souvent utilisées pour attaquer en DDoS, l'attaquant envoie une instruction et doit attendre l'exécution de celle-ci avant de déconnecter, d'où une vitesse faible.
 
-```{r}
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
 ggplot(data) + 
 aes(y = `Flow IAT Mean`, x = Label, fill = Label) +
 geom_boxplot(notch=T, outlier.size = -1) +
 coord_flip(ylim=c(-0.5, 1)) +
 guides(fill = F)
-```
-
-```{r}
-names(num)
-```
-
-```{r}
--1:1
 ```
