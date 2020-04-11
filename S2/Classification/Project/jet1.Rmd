@@ -6,6 +6,7 @@ output:
     df_print: paged
     highlight: tango
     theme: cerulean
+  pdf_document: default
 jupyter:
   jupytext:
     formats: ipynb,Rmd
