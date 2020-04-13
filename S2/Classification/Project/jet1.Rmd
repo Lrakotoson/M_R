@@ -22,14 +22,9 @@ jupyter:
 ---
 
 ```{r message=FALSE, warning=FALSE}
-library(MASS)
-library(class)
 library(tidyverse)
 library(gridExtra)
 library(caret)
-library(randomForest)
-library(ranger) #RandomForest plus rapide
-library(rpart)
 library(pROC)
 library(doParallel)
 ```
@@ -293,6 +288,45 @@ split_set <- function(data, trainSize = 0.9){
 }
 ```
 
+```{r include=FALSE}
+plotmetrics <- function(train_obj){
+    #' Renvoie un ggplot de l'évolution d'Accuracy et AUC
+    #' train_obj: objet de type train de caret
+    
+    train_obj <- train_obj$results %>% select(1, AUC, Accuracy)
+    parameter <- names(train_obj)[1]
+    AUC_limits <- c(min(train_obj$AUC), max(train_obj$AUC))
+    Accuracy_limits <- c(min(train_obj$Accuracy), max(train_obj$Accuracy))
+    train_obj$Accuracy <- train_obj$Accuracy * (AUC_limits[2]/Accuracy_limits[2])
+    limit <- c(min(train_obj[,2:3]), max(train_obj[,2:3]))
+    maxAUC <- filter(train_obj, AUC == max(AUC))
+    maxAccuracy <- filter(train_obj, Accuracy == max(Accuracy))
+
+    plot <- train_obj %>% 
+    ggplot() + aes_string(x = parameter) + 
+    geom_line(aes(y = AUC), color = "#38ada9") +  
+    geom_point(aes(y = AUC), color = "#38ada9") +
+    geom_line(aes(y = Accuracy), color = "#e55039") +
+    geom_point(aes(y = Accuracy), color = "#e55039") +
+    geom_point(data = maxAUC, aes_string(x = parameter, y = "AUC"), color = "#38ada9", shape = 5, size = 3) +
+    geom_point(data = maxAccuracy, aes_string(x = parameter, y = "Accuracy"), color = "#e55039", shape = 0, size = 3) +
+    scale_y_continuous(
+        limits = limit,
+        sec.axis = sec_axis(~ . *Accuracy_limits[2]/AUC_limits[2],
+                            name = "Accuracy")) +
+    theme(
+        plot.title = element_text(hjust = 0.5),
+        axis.title.y.left = element_text(color = "#38ada9"),
+        axis.text.y.left = element_text(color = "#38ada9"),
+        axis.title.y.right = element_text(color = "#e55039"),
+        axis.text.y.right = element_text(color = "#e55039"),
+
+    )
+    
+    return(plot)
+}
+```
+
 ```{r message=FALSE, warning=FALSE}
 multiroc <- function(Y, Y_pred){
     #' Renvoie les courbes ROC de chaque classe
@@ -346,6 +380,8 @@ tune_control <- trainControl(
 
 ### Approche naïve
 
+$$\hat{g}(x) = \underset{k \in Y}{\operatorname{argmax}}  \underset{i \in kkpv(x)}{\operatorname{\sum}} 1_{Y_i = k} $$
+
 ```{r message=FALSE, warning=FALSE}
 knn_tune_naive <- data.frame(
     k = seq(3, 170, by = 6)
@@ -370,9 +406,8 @@ on.exit(stopCluster(cl))
 ```
 
 ```{r message=FALSE, warning=FALSE, fig.width=9.5}
-ggplot(knn_naive_cv, highlight = T) +
-labs(title = "AUC en fonction des K voisins", x = "Voisins") +
-theme(plot.title = element_text(hjust = 0.5))
+plotmetrics(knn_naive_cv) +
+labs(title = "AUC et Accuracy en fonction des K voisins", x = "Voisins")
 ```
 
 Le meilleurs K se trouvent entre 3 et 15
@@ -408,9 +443,8 @@ on.exit(stopCluster(cl))
 ```
 
 ```{r message=FALSE, warning=FALSE, fig.width=9.5}
-ggplot(knn_cv, highlight = T) +
-labs(title = "AUC en fonction des K voisins", x = "Voisins") +
-theme(plot.title = element_text(hjust = 0.5))
+plotmetrics(knn_cv) +
+labs(title = "AUC et Accuracy en fonction des K voisins", x = "Voisins")
 ```
 
 ```{r message=FALSE, warning=FALSE}
@@ -527,17 +561,15 @@ rf_cv <- train(
     method = "ranger",
     metric = "AUC",
     trControl = tune_control,
-    tuneGrid = rf_tune,
-    importance = 'impurity_corrected'
+    tuneGrid = rf_tune
 )
 
 on.exit(stopCluster(cl))
 ```
 
 ```{r message=FALSE, warning=FALSE, fig.width=9.5}
-ggplot(rf_cv, highlight = T) +
-labs(title = "AUC en fonction des mtry", x = "mtry") +
-theme(plot.title = element_text(hjust = 0.5))
+plotmetrics(rf_cv) +
+labs(title = "AUC et Accuracy en fonction des mtry")
 ```
 
 ```{r message=FALSE, warning=FALSE}
@@ -559,4 +591,105 @@ bind_rows(
      select(Model, AUC, Accuracy)
     )
 )
+```
+
+## 3. Logit Boost
+
+### Approche Naïve
+
+```{r message=FALSE, warning=FALSE}
+lgb_tune_naive <- data.frame(
+    nIter = seq(1, 171, by =  10)
+)
+```
+
+```{r message=FALSE, warning=FALSE}
+cl <- makePSOCKcluster(4)
+registerDoParallel(cl)
+set.seed(2020)
+
+lgb_cv_naive <- train(
+    Label ~ .,
+    data = train_set,
+    method = "LogitBoost",
+    metric = "AUC",
+    trControl = tune_control,
+    tuneGrid = lgb_tune_naive
+)
+
+on.exit(stopCluster(cl))
+```
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+plotmetrics(lgb_cv_naive) +
+labs(title = "AUC et Accuracy en fonction des nIter")
+```
+
+Entre 120 et 140
+
+### Optimisation
+
+```{r message=FALSE, warning=FALSE}
+train_lgb <- split_set(data)[[1]]
+test_lgb <- split_set(data)[[2]]
+```
+
+```{r message=FALSE, warning=FALSE}
+lgb_tune <- data.frame(
+    nIter = seq(119, 141, by = 2)
+)
+```
+
+```{r message=FALSE, warning=FALSE}
+cl <- makePSOCKcluster(4)
+registerDoParallel(cl)
+set.seed(2020)
+
+lgb_cv <- train(
+    Label ~ .,
+    data = train_lgb,
+    method = "LogitBoost",
+    metric = "AUC",
+    trControl = tune_control,
+    tuneGrid = lgb_tune
+)
+
+on.exit(stopCluster(cl))
+```
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+plotmetrics(lgb_cv) +
+labs(title = "AUC et Accuracy en fonction des nIter")
+```
+
+```{r message=FALSE, warning=FALSE}
+model_lgb <- lgb_cv$finalModel
+pred_lgb <- predict(lgb_cv, newdata = test_lgb)
+```
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+multiroc(test_lgb$Label, pred_lgb) +
+labs(title = "Courbes ROC avec Logitboost, nIter = 129")
+```
+
+```{r message=FALSE, warning=FALSE}
+result <- result %>%
+bind_rows(
+    (lgb_cv$results %>% 
+     filter(nIter == 129)  %>%
+     mutate(Model = "LGB") %>% 
+     select(Model, AUC, Accuracy)
+    )
+)
+```
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5, fig.height=3}
+result %>% 
+gather(metric, value, -Model) %>% 
+ggplot() +
+aes(fill = metric, y = value, x = Model) +
+geom_bar(position = "dodge", stat = "identity") +
+coord_flip(ylim = c(0, 1)) +
+labs(title = "Comparaison des modèles") +
+theme(plot.title = element_text(hjust = 0.5))
 ```
