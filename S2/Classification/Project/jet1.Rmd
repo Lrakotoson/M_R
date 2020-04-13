@@ -23,6 +23,7 @@ jupyter:
 
 ```{r message=FALSE, warning=FALSE}
 library(MASS)
+library(class)
 library(tidyverse)
 library(gridExtra)
 library(caret)
@@ -281,6 +282,8 @@ guides(fill = F)
 
 ```{r message=FALSE, warning=FALSE}
 split_set <- function(data, trainSize = 0.9){
+    #' Divise nos données en partitions train et test
+    
     set.seed(2020)
     part <- createDataPartition(data$Label, p = trainSize)
     train_set <- data %>% slice(part$Resample1)
@@ -288,6 +291,41 @@ split_set <- function(data, trainSize = 0.9){
     
     return(list(train_set, test_set))
 }
+```
+
+```{r message=FALSE, warning=FALSE}
+multiroc <- function(Y, Y_pred){
+    #' Renvoie les courbes ROC de chaque classe
+    
+    predicted <- tibble(
+        Y = as.character(Y),
+        Y_pred = as.character(Y_pred)
+    )
+
+    roclist <- vector(mode = "list")
+
+    for (label in unique(predicted$Y)){
+        one_rest <- predicted %>% 
+        mutate(
+            Y = if_else(
+                Y == label,
+                1, 0
+            ),
+            Y_pred = if_else(
+                Y_pred == label,
+                1, 0
+            )
+        )
+
+        roclist[[label]] <- roc(one_rest$Y, one_rest$Y_pred)
+    }
+
+    plot <- roclist %>% ggroc(aes = "color", size = 1, legacy.axes = TRUE) +
+    labs(color = "Labels") + theme(plot.title = element_text(hjust = 0.5))
+    
+    return(plot)
+}
+
 ```
 
 ```{r message=FALSE, warning=FALSE}
@@ -304,7 +342,95 @@ tune_control <- trainControl(
 )
 ```
 
-## 1. Forêts aléatoires
+## 1. K plus proches voisins
+
+### Approche naïve
+
+```{r message=FALSE, warning=FALSE}
+knn_tune_naive <- data.frame(
+    k = seq(3, 170, by = 6)
+)
+```
+
+```{r message=FALSE, warning=FALSE}
+cl <- makePSOCKcluster(4)
+registerDoParallel(cl)
+set.seed(2020)
+
+knn_naive_cv <- train(
+    Label ~ .,
+    data = train_set,
+    method = "knn",
+    metric = "AUC",
+    trControl = tune_control,
+    tuneGrid = knn_tune_naive,
+)
+
+on.exit(stopCluster(cl))
+```
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+ggplot(knn_naive_cv, highlight = T) +
+labs(title = "AUC en fonction des K voisins", x = "Voisins") +
+theme(plot.title = element_text(hjust = 0.5))
+```
+
+Le meilleurs K se trouvent entre 3 et 15
+
+### Optimisation
+
+```{r message=FALSE, warning=FALSE}
+train_knn <- split_set(data)[[1]]
+test_knn <- split_set(data)[[2]]
+```
+
+```{r message=FALSE, warning=FALSE}
+knn_tune <- data.frame(
+    k = seq(3, 15)
+)
+```
+
+```{r message=FALSE, warning=FALSE}
+cl <- makePSOCKcluster(4)
+registerDoParallel(cl)
+set.seed(2020)
+
+knn_cv <- train(
+    Label ~ .,
+    data = train_knn,
+    method = "knn",
+    metric = "AUC",
+    trControl = tune_control,
+    tuneGrid = knn_tune,
+)
+
+on.exit(stopCluster(cl))
+```
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+ggplot(knn_cv, highlight = T) +
+labs(title = "AUC en fonction des K voisins", x = "Voisins") +
+theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r message=FALSE, warning=FALSE}
+model_knn <- knn_cv$finalModel
+pred_knn <- predict(knn_cv, newdata = test_knn)
+```
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+multiroc(test_knn$Label, pred_knn) +
+labs(title = "Courbes ROC avec KNN, K = 4")
+```
+
+```{r message=FALSE, warning=FALSE}
+result <- knn_cv$results %>% 
+filter(k == 4)  %>%
+mutate(Model = "KNN") %>% 
+select(Model, AUC, Accuracy)
+```
+
+## 2. Forêts aléatoires
 
 ### Approche naïve
 
@@ -341,7 +467,8 @@ rf_naive_vars <- tibble(variable = names(rf_naive_vars), importance = rf_naive_v
     top_frac(0.15)
 
 ggplot(rf_naive_vars) + coord_flip() + aes(x = variable, y = importance) + geom_bar(stat = "identity") + 
-    labs(title = "15% des variables classées par importance", x = "")
+    labs(title = "15% des variables classées par importance", x = "") +
+    theme(plot.title = element_text(hjust = 0.5))
 ```
 
 ### Optimisation
@@ -408,16 +535,28 @@ on.exit(stopCluster(cl))
 ```
 
 ```{r message=FALSE, warning=FALSE, fig.width=9.5}
-ggplot(rf_cv, highlight = T)
+ggplot(rf_cv, highlight = T) +
+labs(title = "AUC en fonction des mtry", x = "mtry") +
+theme(plot.title = element_text(hjust = 0.5))
 ```
 
 ```{r message=FALSE, warning=FALSE}
 model_rf <- rf_cv$finalModel
+pred_rf <- predict(rf_cv, newdata = test_rf)
+```
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+multiroc(test_rf$Label, pred_rf) +
+labs(title = "Courbes ROC avec Random Forest, mtry = 11")
 ```
 
 ```{r message=FALSE, warning=FALSE}
-result <- rf_cv$results %>% 
-filter(mtry == 11)  %>%
-mutate(Model = "RF") %>% 
-select(Model, AUC, Accuracy)
+result <- result %>%
+bind_rows(
+    (rf_cv$results %>% 
+     filter(mtry == 11)  %>%
+     mutate(Model = "RF") %>% 
+     select(Model, AUC, Accuracy)
+    )
+)
 ```
