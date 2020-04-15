@@ -1,0 +1,525 @@
+---
+title: "Régression logistique"
+author: "Loïc Rakotoson"
+output:
+  pdf_document: default
+jupyter:
+  jupytext:
+    formats: ipynb,Rmd
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.1'
+      jupytext_version: 1.2.4
+  kernelspec:
+    display_name: R
+    language: R
+    name: ir
+---
+
+```{r include=FALSE}
+library(caret)
+library(pROC)
+library(Kendall)
+library(car)
+library(bestglm)
+library(tidyverse)
+library(dummies)
+library(ggcorrplot)
+```
+
+# Introduction
+L'objectif dans ce document est de trouver le meilleur modèle pour expliquer la souscription ou pas d'un client à une dépôt à terme à partir de plusieurs variables récoltées par  l’UC Irvine Machine Learning Repository. Les modèles testés seront uniquement de la **régression logistique**.
+
+Pour la clareté du document, certaines portions de codes ne sont pas intégré au document final.
+
+### Stratégie.
+La stratégie est de trouver les meilleurs modèles en utilisant 5 métriques pour faciliter la prise de décision en cas d'égalité. Il s'agit de l'**Accuracy**, l'**AUC**, le **tau de Kendall**, l'**AIC** et le **BIC**.  
+Pour que la comparaison ait un sens, et dans un souci de reproductibilité, nous fixerons deux échantillons, d'entraînement et de test, choisis aléatoirement. Pour se faire la fonction `split_test( )` séparera toujours les mêmes individus peu importe les transformation des données que nous effectuerons.
+
+### Condition de validité de la régression logistique 
+Dans nos données nous avons 1000 individus et 14 colonnes, dont la variable explicative $Y$ à 2 modalités.  
+Dans les données brutes, la modalité $Y = 1$ se compte au nombre de 110. On compte dans notre matrice de design, $X$, 35 variables explicatives (avec les modalités des variables qualitatives).
+
+Or, pour généraliser, la condition de validité de la régression logistique requiert "au moins 5 à 10 évènements par variables explicatives".  
+Donc au moins 175 évènements pour $Y = 1$ qui n'en compte que 110 au maximum. Il est impératif donc de réduire nos variables explicatives pour en avoir tout au plus 22 (dans l'hypothèse où nous utilisons l'ensemble des données), et au mieux 10.  
+Un des algorithmes que nous testerons (`bestglm( )`) requiert cette réduction de dimension.
+
+```{r message=FALSE, warning=FALSE}
+split_set <- function(data, trainSize = 0.8){
+    #' Divise nos données en partitions train et test
+    
+    set.seed(2020)
+    part <- createDataPartition(data$y, p = trainSize)
+    train_set <- data %>% slice(part$Resample1)
+    test_set <- data %>% slice(-part$Resample1)
+    
+    return(list(train_set, test_set))
+}
+```
+
+```{r message=FALSE, warning=FALSE}
+data <- read.delim("bankCC.txt", sep = " ") %>% as_tibble()
+```
+
+# I. Statistique descriptive
+
+Un rapide résumé de nos données.  
+Ces statistiques seront utiles pour la sélection des variables.
+
+Visualisons la distribution de nos variables.
+
+```{r message=FALSE, warning=FALSE}
+summary(data)
+```
+
+```{r include=FALSE}
+library(ggpubr)
+
+p_job_edu <- data %>% 
+mutate(job = factor(job, 
+                    levels = c(
+                        'management', 'admin.', 'self-employed', 'entrepreneur',
+                        'technician', 'services', 'housemaid', 'retired',
+                        'student', 'unemployed', 'blue-collar', 'unknown'
+                    ))) %>% 
+filter(job != "unknown") %>% filter(education != "unknown") %>% 
+ggplot() + aes(x = job, fill = education) + geom_bar(position="fill") +
+coord_flip() + labs(title = "Relation travail - éducation", y = "prop") +
+theme(plot.title = element_text(hjust = 0.5))
+
+p_edu <- data %>% 
+ggplot() + aes(x = education, fill = y) + geom_bar(position = "fill", alpha = 0.6) +
+coord_flip() + labs(title = "Souscription en fonction de l'éducation", y = "prop") +
+theme(plot.title = element_text(hjust = 0.5))
+
+edulist <- list(p_job_edu, p_edu)
+```
+
+## 1. Variables qualitatives
+
+En analysans la souscription en fonction de l'emploi et du statut marital, on remarque une tendance chez la population célibataire. Il faut pondérer avec le deséquilibre de la variables $Y$ comme décrit précédemment.
+
+L'emploi et le statut marital semblent être des variables discriminantes dans notre problème.
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+data %>%
+ggplot() + aes(x = job, fill = y) + geom_bar(position="fill", alpha = 0.6) + 
+coord_flip() + facet_wrap(.~marital) +
+labs(title = "Souscription en fonction de l'emploi et du statut marital", y = "prop") +
+theme(plot.title = element_text(hjust = 0.5))
+```
+
+Si l'emploi semble avoir un effet sur $Y$, il est naturel d'analyser l'éducation qui semble être corrélée avec.  
+Toutefois, celle-ci ne fait varier $Y$ que très peu entre chaque modalité. La variable éducation sera donc moins importante.
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+ggarrange(
+    plotlist = edulist,
+    ncol = 1, nrow = 2
+)
+```
+
+Les résultats de la précédente campagne varie significativement entre chaque modalité. On note par exemple que 75% des clients renouvellent leur contrat.  
+La variable poutcome sera donc importante.
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+data %>% 
+ggplot() + aes(x = poutcome, fill = y) + geom_bar(position = "fill", alpha = 0.6) +
+labs(title = "Souscription en fonction des anciens résultats", y = "prop") +
+theme(plot.title = element_text(hjust = 0.5))
+```
+
+En mettant dans l'ordre les jours, on peut voir dégager une tendance au long d'une semaine.  
+Toutefois, les variances inter-journalière semblent extrêmement basses. On ne retiendra donc pas cette variable.
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+data %>%
+mutate(day_of_week = factor(day_of_week,
+                            levels = c("mon", "tue", "wed", "thu", "fri"))) %>% 
+ggplot() + aes(x = day_of_week, fill = y) + geom_bar(position = "fill", alpha = 0.6) +
+labs(title = "Evolution des souscriptions dans la semaine", y = "prop") +
+theme(plot.title = element_text(hjust = 0.5))
+```
+
+Entre les deux modalités de la variable contact, la variance est faible, cependant il est intéressant d'analyser le rapport:  
+`cellular` a trois fois plus de succès que `telephone`.  
+Cette variable peut donc avoir un effet sur $Y$.
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+data %>% 
+ggplot() + aes(contact, fill = y) + geom_bar(position="fill", alpha = 0.6) +
+labs(title = "Succès des moyens de contact", y = "prop") +
+theme(plot.title = element_text(hjust = 0.5))
+```
+
+## 2. Variables quantitatives
+
+L'analyse de la corrélation entre les variables quantitatives démontre une corrélation entre la récence de l'appel et la fréquence.  
+Autrement, les corrélations sont faibles.
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+data %>% 
+select(age, duration, campaign, pdays, previous) %>% cor() %>% 
+ggcorrplot(hc.order = T, type = "lower", lab = T,
+           outline.col = "white", ggtheme = theme_gray) + 
+labs(title = "Corrélation entre les variables quantitatives") +
+theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r include=FALSE}
+p_age <- data %>% 
+ggplot() + aes(x = age, fill = y) + geom_density(alpha = 0.5) +
+labs(title = "Age", y = NULL) +
+theme(plot.title = element_text(hjust = 0.5))
+
+p_duree <- data %>% 
+ggplot() + aes(x = duration, fill = y) + geom_density(alpha = 0.5) +
+labs(title = "Durée", y = NULL) + xlim(c(0, 1750)) +
+theme(plot.title = element_text(hjust = 0.5))
+
+p_pdays <- data %>% 
+ggplot() + aes(x = pdays, fill = y) + geom_density(alpha = 0.5) +
+labs(title = "Récence", y = NULL) +
+theme(plot.title = element_text(hjust = 0.5))
+
+p_campaign <- data %>% 
+ggplot() + aes(x = campaign, fill = y) + geom_density(alpha = 0.5) +
+labs(title = "Fréquence", y = NULL) + xlim(c(0, 10)) +
+theme(plot.title = element_text(hjust = 0.5))
+
+quantlist <- list(p_age, p_duree, p_pdays, p_campaign)
+```
+
+Il est intéressant de visualiser la distribution de chaque variables quantitatives en fonction des modalités de $Y$.  
+On peut voir que les variables `age` et de la récence (`campaign`) sont pratiquements confondues pour chaque modalité de $Y$. La variable de la durée en revanche possède une bonne variance, cette variable sera importante dans notre étude.
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+ggarrange(
+    plotlist = quantlist,
+    ncol = 2, nrow = 2,
+    common.legend = T,
+    legend = "right"
+)
+```
+
+# II. Features Engineering
+Afin de réduire la dimension de $X$, il est nécessaire de nettoyer et d'éliminer les variables qui peuvent être superflues pour nos modèles.  
+Nous procèderons en 2 temps, en éliminant les variables non significatives sur un modèle naïf pré-entraîné et en regroupant des modalités de variables qualitatives qui ont peu voire pas de variances entre elles.
+
+## 1. Significativité des variables
+Entraînons un modèle naïf sur les données d'entraînement (naïves aussi, du coup).  
+Ensuite, nous effectuons une analyse de la significativité des variables par tests multiples:
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+train_naive <- split_set(data)[[1]]
+
+model_naive <- glm(y~., data = train_naive, family = binomial)
+Anova(model_naive, type = 3, test.statistic = "Wald") %>% print()
+```
+
+L'analyse de la significativité confirme nos déscripions plus haut.  
+En effet, l'âge, l'éducation, les jours de la semaine et la récence possèdent une grande p-value pour le test du $\chi^2$. Nous éliminons aussi la variable housing.
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+clean_data <- data %>% 
+select(-c(age, education, housing, day_of_week, pdays))
+```
+
+## 2. Correction des modalités
+Désormais, il est nécessaire de regrouper des modalités:
+
+- Marital: la modalité `unknown` n'est présente que 2 fois sur les 1000 individus. L'analyse descriptive démontre que ces personnes possèdent un profil proche des célibataires. Elles seront converties ainsi donc.
+- Job: plusieurs profil de job ont une variance faible au vu de l'éducation, du statut marital et de $Y$, elles seront groupées.
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+clean_data <- clean_data %>% 
+mutate(
+    marital = factor(if_else(
+        marital == "unknown",
+        "single", as.character(marital)
+    )),
+    job = factor(case_when(
+        job == "admin." ~ "management",
+        job == "self-employed" ~ "entrepreneur",
+        job == "housemaid" ~ "services",
+        TRUE ~ as.character(job)
+    )),
+    y = if_else(
+        y == "no",
+        0, 1
+    )
+)
+```
+
+Enfin, séparons nos échantillons à partir des données nettoyées.
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+train_set <- split_set(clean_data)[[1]]
+test_set <- split_set(clean_data)[[2]]
+```
+
+# III. Construction des scores
+Nous rappelons que l'échantillons a été découpé en 80% - 20%. La matrice de confusion "parfaite" est donc la suivante. Elle est utile pour les interprétations qui suivent.
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+table(prev = test_set$y,
+      obs = test_set$y)
+```
+
+## 1. Modèle sur les nouvelles variables
+Nous allons ajusté notre premier modèle sur les variables qu'on a sélectionné précédemment.
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+model_1 <- glm(y~., data = train_set, family = binomial)
+
+summary(model_1)
+```
+
+On a plus de variables significatives par rapport au modèle naïf, toutefois, elles sont peu nombreuses.  
+Effectuons des tests multiples pour chaque colonne.
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+Anova(model_1, type = 3, test.statistic = "Wald") %>% print()
+```
+
+Les variables marital, default et job ne semblent pas avoir d'effet sur $Y$.
+
+Effectuons nos préductions sur l'échantillon test et visualisons le résulat.
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+model_1_pred <- predict(model_1, newdata = test_set, type = 'response')  %>% round()
+
+Kendall(model_1_pred, test_set$y)
+```
+
+La p-value de tau de Kendall est faible, il y a indépendance entre les variables.
+
+La matrice de confusion démontre que ce modèle ne classe bien que le quart des personnes qui veulent souscrire.
+
+```{r eval=FALSE, fig.width=9.5, message=FALSE, warning=FALSE, include=FALSE}
+table(prev = model_1_pred,
+      obs = test_set$y)
+```
+
+```{r include=FALSE}
+roclist <- vector(mode = "list")
+roclist[["Model_1"]] <- roc(model_1_pred, test_set$y)
+```
+
+Nous enregistrons chaque valeur des métriques dans la table `result` au vu de la comparaison.
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+result <- tibble(
+    Model = "Model_1",
+    AIC = model_1$aic,
+    BIC = BIC(model_1),
+    Accuracy = 1 - mean(model_1_pred!=test_set$y),
+    AUC = roc(model_1_pred, test_set$y)$auc,
+    Kendall = Kendall(model_1_pred, test_set$y)$tau
+    )
+
+result
+```
+
+Nous avons un Accuracy élevé, 90%, ce qui est une bonne chose.
+
+Nous allons sélectionner nos variables par étapes en enlevant une par une, tout en optimisant sur la métrique de l'AIC.
+
+## 2. Sélection par étape
+Effectuons une procédure pas à pas descendante.
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+model_2 <- step(model_1, direction = "backward", trace = F)
+
+summary(model_2)
+```
+
+Le meilleur modèle ne garde que 7 variables explicatives, ce qui est déjà loin de nos 35 variables. Elle a en effet supprimé les variables `marital` mais aussi `job` qui possède 9 modalités après nos transformations.
+
+L'analyse du $\chi^2$ démontre qu'il ne reste plus que la variable `default` qui n'a pas d'effet sur $Y$.
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+Anova(model_2, type = 3, test.statistic = "Wald") %>% print()
+```
+
+Effectuons nos prédictions et visualisons les résultats.
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+model_2_pred <- predict(model_2, newdata = test_set, type = 'response')  %>% round()
+
+Kendall(model_2_pred, test_set$y)
+```
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+table(prev = model_2_pred,
+      obs = test_set$y)
+```
+
+```{r include=FALSE}
+roclist[["Model_2"]] <- roc(model_2_pred, test_set$y)
+
+result <- result %>%
+bind_rows(
+    tibble(
+        Model = "Model_2",
+        AIC = model_2$aic,
+        BIC = BIC(model_2),
+        Accuracy = 1 - mean(model_2_pred!=test_set$y),
+        AUC = roc(model_2_pred, test_set$y)$auc,
+        Kendall = Kendall(model_2_pred, test_set$y)$tau
+    )
+)
+```
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+result[2,]
+```
+
+L'accuracy, qui est déjà très bien, n'a pas bougé. Par contre, on a de meilleurs AIC et BIC, mais au prix de la baisse de l'AUC.
+
+Essayons à présente de trouver le meilleur modèle ajusté sur l'AIC, maintenant qu'on est pleinement dans la validité de la régression logistique.
+## 3. BestGLM avec l'AIC
+
+Pour se faire, nous devons définir manuellement notre matrice design $X$. Ensuite nous séparons en 2 échantillons.
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+marital <- data.frame(dummy(clean_data$marital)[,-1])
+poutcome <- data.frame(dummy(clean_data$poutcome)[,-1])
+
+dummy_data <- bind_cols(
+    marital, poutcome,
+    clean_data[,3:7],
+    y = clean_data$y
+)
+
+train_dummy <- split_set(dummy_data)[[1]]
+test_dummy <- split_set(dummy_data)[[2]]
+```
+
+Recherons le meilleur modèle.
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+model_3 <- bestglm(train_dummy, family = binomial, IC = 'AIC')$BestModel
+summary(model_3)
+```
+
+Par rapport au modèle 2, le modèle 3 ne garde que 2 modalités de la variable `marital` et toutes les variables sont significatives au moins au seuil de 10%.
+
+Effectuons nos prédictions et visualisons.
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+model_3_pred <- predict(model_3, newdata = test_dummy, type = 'response')  %>% round()
+
+Kendall(model_3_pred, test_dummy$y)
+```
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+table(prev = model_3_pred,
+      obs = test_dummy$y)
+```
+
+```{r include=FALSE}
+roclist[["Model_3"]] <- roc(model_3_pred, test_dummy$y)
+
+result <- result %>%
+bind_rows(
+    tibble(
+        Model = "Model_3",
+        AIC = model_3$aic,
+        BIC = BIC(model_3),
+        Accuracy = 1 - mean(model_3_pred!=test_dummy$y),
+        AUC = roc(model_3_pred, test_dummy$y)$auc,
+        Kendall = Kendall(model_3_pred, test_dummy$y)$tau
+    )
+)
+```
+
+Nos AIC et BIC ont encore baissé et on retrouve un AUC à la hausse.
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+result[3,]
+```
+
+Enfin, ajustons par rapport au BIC
+## 4. BestGLM avec le BIC
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+model_4 <- bestglm(train_dummy, family = binomial, IC = 'BIC')$BestModel
+summary(model_4)
+```
+
+Le modèle ne garde que 3 variables dont `poutcome` à deux modalités.
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+model_4_pred <- predict(model_4, newdata = test_dummy, type = 'response')  %>% round()
+
+Kendall(model_4_pred, test_dummy$y)
+```
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+table(prev = model_4_pred,
+      obs = test_dummy$y)
+```
+
+```{r include=FALSE}
+roclist[["Model_4"]] <- roc(model_4_pred, test_dummy$y)
+
+result <- result %>%
+bind_rows(
+    tibble(
+        Model = "Model_4",
+        AIC = model_4$aic,
+        BIC = BIC(model_4),
+        Accuracy = 1 - mean(model_4_pred!=test_dummy$y),
+        AUC = roc(model_4_pred, test_dummy$y)$auc,
+        Kendall = Kendall(model_4_pred, test_dummy$y)$tau
+    )
+)
+```
+
+Notre AUC est en forte hausse par rapport aux 3 autres modèles, par contre l'AIC et le BIC est moins optimal par rapport au modèle 3.
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+result[4,]
+```
+
+# IV. Comparaison et sélection de modèle
+
+```{r include=FALSE}
+scale1 <- result %>% 
+select(-c(AIC, BIC)) %>% 
+gather(metric, value, -Model) %>% 
+ggplot() +
+aes(fill = metric, y = value, x = Model) +
+geom_bar(position = "dodge", stat = "identity", alpha = 0.6) +
+coord_flip(ylim = c(0.25, 0.9)) +
+labs(title = "Accuracy, AUC et Kendall") +
+theme(plot.title = element_text(hjust = 0.5),
+     legend.position="bottom")
+
+scale2 <- result %>% 
+select(AIC, BIC, Model) %>% 
+gather(metric, value, -Model) %>% 
+ggplot() + coord_cartesian(ylim = c(350, 500)) +
+aes(fill = metric, y = value, x = Model) +
+geom_bar(position = "dodge", stat = "identity", alpha = 0.6) +
+labs(title = "AIC et BIC par modèle", y = NULL) +
+theme(plot.title = element_text(hjust = 0.5),
+     legend.position="bottom")
+```
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+ggarrange(
+    scale1, scale2,
+    ncol = 2, nrow = 1
+)
+```
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
+ggroc(roclist, aes = "color", size = 0.9, legacy.axes = TRUE, alpha = 0.5) +
+labs(color = "Modèles", title = "Courbes ROC de chaque modèle") + geom_abline() +
+theme(plot.title = element_text(hjust = 0.5))
+```
+
+Au vu de nos résultats, on gardera le modèle 4.
