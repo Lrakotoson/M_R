@@ -351,11 +351,11 @@ plotmetrics <- function(train_obj, parameter){
 ```
 
 ```{r}
-confmatrix <- function(test, pred){
+confmatrix <- function(pred, test){
     #' Renvoie un ggplot de matrice de confusion
-    #' test, pred: vecteurs de même taille
+    #' pred, test: vecteurs de même taille
     
-    plot <- confusionMatrix(test, pred)$table %>% 
+    plot <- confusionMatrix(pred, test)$table %>% 
     as_tibble() %>%
     ggplot() +
     aes(x = Reference, y = reorder(Prediction, desc(Prediction)), fill = n) + 
@@ -370,7 +370,7 @@ confmatrix <- function(test, pred){
 ```
 
 ```{r message=FALSE, warning=FALSE}
-multiroc <- function(Y, Y_pred){
+multiroc <- function(Y_pred, Y){
     #' Renvoie les courbes ROC de chaque classe
     
     predicted <- tibble(
@@ -393,7 +393,7 @@ multiroc <- function(Y, Y_pred){
             )
         )
 
-        roclist[[label]] <- roc(one_rest$Y, one_rest$Y_pred)
+        roclist[[label]] <- roc(one_rest$Y_pred, one_rest$Y)
     }
 
     plot <- roclist %>% ggroc(aes = "color", size = 1, legacy.axes = TRUE) +
@@ -421,6 +421,7 @@ tune_control <- trainControl(
 L'algorithme des K plus proches voisins se base sur la distance entre les individus et ne fait aucune supposition préalable des données.  
 Sa règle est la suivante:  
 soient $k \leq n$, $x$ à classer et $\text{kkpv}(x) = \{i: X_i\, \text{parmi les}\, k \,\text{plus proches voisins de}\, x \,\text{dans}\, \{X_1, .. X_n\} \}$, la règle de classification est
+
 $$\hat{g}(x) = \underset{k \in Y}{\operatorname{argmax}}  \underset{i \in kkpv(x)}{\operatorname{\sum}} 1_{Y_i = k} $$
 
 ### Approche naïve
@@ -463,6 +464,10 @@ train_knn <- split_set(data)[[1]]
 test_knn <- split_set(data)[[2]]
 ```
 
+En entraînant notre algorithme sur cette nouvelle plage de $k$ et en l'optimisant sur le critère de l'AUC, on obtient $k = 4$.  
+Notre deuxième critère, l'Accuracy, est optimal pour $k = 3$, comme lors de l'approche naïve.  
+Nous décidons de garder $k = 4$ en suivant notre premier critère.
+
 ```{r message=FALSE, warning=FALSE, fig.width=9.5}
 knn_tune <- data.frame(
     k = seq(3, 15)
@@ -487,18 +492,24 @@ plotmetrics(knn_cv, "k") +
 labs(title = "AUC et Accuracy en fonction des K voisins", x = "Voisins")
 ```
 
-```{r message=FALSE, warning=FALSE}
-model_knn <- knn_cv$finalModel
-pred_knn <- predict(knn_cv, newdata = test_knn)
-```
+Visualisons les performances de notre meilleur algorithme des KNN à travers la matrice de confusion et les courbes ROC.
+
+On a vu que l'Accuracy vaut environ $0.57$ pour $k = 4$. Donc en général notre classifieur prédit bien à peu près $6$ infections sur $10$, en tou cas pour `adware`, `ransomeware` et `sms`.  
+Il se trompe surtout sur `botnet` où il prédit quand même $29\%$ en `ransomeware`.
 
 ```{r}
-confmatrix(test_knn$Label, pred_knn) +
+model_knn <- knn_cv$finalModel
+pred_knn <- predict(knn_cv, newdata = test_knn)
+
+confmatrix(pred_knn, test_knn$Label) +
 labs(title = "Matrice de confusion KNN, K = 4")
 ```
 
+Les courbes ROC confirment cette difficulté à classer `botnet`.  
+Les infection par `sms` sont les plus facilement discriminables, toutefois le classifieur s'est trompé sur $41\%$ des cas.
+
 ```{r message=FALSE, warning=FALSE, fig.width=9.5}
-multiroc(test_knn$Label, pred_knn) +
+multiroc(pred_knn, test_knn$Label) +
 labs(title = "Courbes ROC avec KNN, K = 4")
 ```
 
@@ -509,9 +520,17 @@ mutate(Model = "KNN") %>%
 select(Model, AUC, Accuracy)
 ```
 
+Nous avons vu que le KNN est un algorithme simple et performant, mais les erreurs de classifications sont assez grandes.  
+Passons à une méthode ensembliste, les forêts aléatoires.
+
 ## 2. Forêts aléatoires
+Les forêts aléatoires se base sur des classifieurs faibles, des arbres de décision $\hat{T}_k$.  
+L’idée derrière est que chaque arbre de décision overfit sur une partie des données, tout en possédant une bonne capacité de prédiction. Toute la subtilité réside dans la sélection de l’échantillon à utiliser pour créer chaque arbre, car nous voulons qu’ils soient tous différents. Pour cela, on va bootstraper le jeu de données.
+
+Notre jeu de données contient $M =$ `r dim_X` variables explicatives et l'hyperparamètre qui permettra d'optimiser notre algorithme est $m \leq$ `r dim_X`. Il sera important aussi de réduire $M$ pour ne garder que les variables les plus importantes.
 
 ### Approche naïve
+Entraînons notre algorithme en passant $m$ sur toute la plage des `r dim_X` variables explicatives et capturons l'importance de chaque variable en fonction de l'impurtée.
 
 ```{r message=FALSE, warning=FALSE}
 rf_tune_naive <- data.frame(
@@ -519,9 +538,7 @@ rf_tune_naive <- data.frame(
     splitrule = "gini",
     min.node.size = 1
 )
-```
 
-```{r message=FALSE, warning=FALSE}
 cl <- makePSOCKcluster(4)
 registerDoParallel(cl)
 set.seed(2020)
@@ -539,6 +556,10 @@ rf_naive_cv <- train(
 on.exit(stopCluster(cl))
 ```
 
+Sur nos `r dim_X` variables explicatives, on pourra voir qu'une bonne partie ne porte pas d'information pour la classification des infections en passant par les arbres de décisions.  
+En représentant ici uniquement 15% des variables par ordre d'importance, on remarque que très peu semblent avoir du poids.  
+Dans notre cas, nous choisirons les variables avant les 5 premiers sauts. En effet, à 4 sauts on ne retiendra que 6 variables, ce qui semble peu et risque l'overfit complet sur nos données d'apprentissage. 
+
 ```{r message=FALSE, warning=FALSE, fig.width=9.5}
 rf_naive_vars <- rf_naive_cv$finalModel$variable.importance
 rf_naive_vars <- tibble(variable = names(rf_naive_vars), importance = rf_naive_vars) %>% 
@@ -550,7 +571,10 @@ ggplot(rf_naive_vars) + coord_flip() + aes(x = variable, y = importance, fill = 
     theme(plot.title = element_text(hjust = 0.5))
 ```
 
+Le paramètre $m$ optimal peut changer avec la réduction de variables explicatives, ainsi sa grille de recherche se réduira aussi.
 ### Optimisation
+Sélectionnons donc les 18 variables explicatives les plus importantes.  
+Ce qui en fera les données utilisées pour RandomForest.
 
 ```{r message=FALSE, warning=FALSE}
 data_rf <- data %>% 
@@ -582,20 +606,35 @@ dim_DPort_rf <- length(unique(data_rf$DPort))
 dim_X_rf <- dim_quant_rf + dim_IP_rf-1 + dim_SPort_rf-1 + dim_DPort_rf-1
 ```
 
+Nous obtenons une dimension de `r dim(data_rf)` après sélection.
+
+Un total de `r dim_X_rf` variables explicatives:
+
+- `r dim_quant_rf` variables quantitatives.
+- `r dim_IP_rf` modalités de IP.
+- `r dim_SPort_rf` modalités de SPort
+- `r dim_DPort_rf` modalités de DPort
+
+Séparons à nouveaux nos échantillons en gardant bien évidemment les index pour avoir exactement la même donnée pour tous les algorithmes mais avec des colonnes en moins.
+
 ```{r message=FALSE, warning=FALSE}
 train_rf <- split_set(data_rf)[[1]]
 test_rf <- split_set(data_rf)[[2]]
 ```
 
-```{r message=FALSE, warning=FALSE}
+Entraînons à présent notre algorithme sur les variables sélectionnées en l'optimisant par rapport à $1 \lt m \lt 18$ sur le critère de l'AUC.  
+Pour l'AUC, $m$ est optimal à $15$ tandis que l'Accuracy le préfère à $13$.
+
+En faisant les rapport pour $m \in \{13, 15\}$ pour chaque métrique, on remarque que l'Accuracy perd beaucoup alors qu'il n'est pas significatif pour l'AUC.  
+On gardera alors $m = 13$ comme paramètre du meilleur algorithme.
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
 rf_tune <- data.frame(
     mtry = seq(2, 17),
     splitrule = rep("gini", 16),
     min.node.size = rep(1, 16)
 )
-```
 
-```{r message=FALSE, warning=FALSE}
 cl <- makePSOCKcluster(4)
 registerDoParallel(cl)
 set.seed(2020)
@@ -610,26 +649,28 @@ rf_cv <- train(
 )
 
 on.exit(stopCluster(cl))
-```
 
-```{r message=FALSE, warning=FALSE, fig.width=9.5}
 plotmetrics(rf_cv, "mtry") +
 labs(title = "AUC et Accuracy en fonction des mtry")
 ```
 
-```{r message=FALSE, warning=FALSE}
-model_rf <- ranger(Label~., data = train_rf, mtry = 13, splitrule = "gini", min.node.size = 1)
-pred_rf <- predict(model_rf, data = test_rf)$prediction
-```
+Sur la matrice de confuion, les erreurs sont nettement plus faibles par rapport à notre KNN, sauf pour `botnet`.  
+En effet, notre algorithme a du mal à discriminer `botnet` et `ransomeware` en classifiant $32\%$ de `botnet` en `ransomeware` et $15\%$ l'inverse.
 
 ```{r}
-confmatrix(test_rf$Label, pred_rf) +
-labs(title = "Matrice de confusion Random Forest, mtry = 11")
+model_rf <- ranger(Label~., data = train_rf, mtry = 13, splitrule = "gini", min.node.size = 1)
+pred_rf <- predict(model_rf, data = test_rf)$prediction
+
+confmatrix(pred_rf, test_rf$Label) +
+labs(title = "Matrice de confusion Random Forest, mtry = 13")
 ```
 
+Les courbes ROC permettent de visualiser ce fort taux de faux positifs de `ransomeware` par rapport aux autres infections.  
+Elles confirment aussi la performance du modèle à bien prédire `adware` vu son taux d'erreur faible dans la matrice de confusion.
+
 ```{r message=FALSE, warning=FALSE, fig.width=9.5}
-multiroc(test_rf$Label, pred_rf) +
-labs(title = "Courbes ROC avec Random Forest, mtry = 11")
+multiroc(pred_rf, test_rf$Label) +
+labs(title = "Courbes ROC avec Random Forest, mtry = 13")
 ```
 
 ```{r message=FALSE, warning=FALSE}
@@ -643,17 +684,25 @@ bind_rows(
 )
 ```
 
+On a vu que le modèle des forêts aléatoires est vraiment puissant en combinant plusieurs arbres de décisions qui sont des classifieurs faibles.  
+En restant dans ce thème de modèles d'ensembles, nous testerons l'algorithme de Logitboost.
 ## 3. Logit Boost
+L'algorithme logitboost utilise le gradient boosting pour la classification. Il s'agit donc d'un cas parmi les algorithme de descentes de gradient que nous allons aussi tester dans la suite.
+
+L'algorithme applique la fonction coût de la régression logistique, en itérant.  
+Le paramètre à chercher sera donc le nombre d'itération $m$.
 
 ### Approche Naïve
+Entraînons l'algorithme sur une grille allant de 1 à 170 par pas de 10.
 
-```{r message=FALSE, warning=FALSE}
+Pour une unique itération, on a un modèle avec un Accuracy élevé mais un AUC très faible. Toutefois, il s'agit ici de l'aléatoire. On considère les courbes à partir de 10 itérations.  
+L'AUC et l'Accuracy s'accorde à un meilleur modèle pour $m = 130$.  
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
 lgb_tune_naive <- data.frame(
     nIter = seq(1, 171, by =  10)
 )
-```
 
-```{r message=FALSE, warning=FALSE}
 cl <- makePSOCKcluster(4)
 registerDoParallel(cl)
 set.seed(2020)
@@ -668,29 +717,31 @@ lgb_cv_naive <- train(
 )
 
 on.exit(stopCluster(cl))
-```
 
-```{r message=FALSE, warning=FALSE, fig.width=9.5}
 plotmetrics(lgb_cv_naive, "nIter") +
 labs(title = "AUC et Accuracy en fonction des nIter")
 ```
 
-Entre 120 et 140
+On optimisera pour $m \in [120, 140]$
 
 ### Optimisation
+Il n'y a pas de traitement à faire en plus sur les données puisqu'il n'y a pas sélection de variable.  
+Donc en divisera les mêmes échantillons.
 
 ```{r message=FALSE, warning=FALSE}
 train_lgb <- split_set(data)[[1]]
 test_lgb <- split_set(data)[[2]]
 ```
 
-```{r message=FALSE, warning=FALSE}
+En entraînant sur la nouvelle plage $[120, 140]$.  
+On notera que lors d'un pré-entraînement, l'algorithme a été très sensible au fait que le nombre d'itération soit pair ou impair. De meilleurs performances ont été constatées sur nos deux critères en testants sur des itérations impaires. La grille sera alors $[119, 141]$ par pas de 2.  
+Nos deux critères s'accorde sur un même $m = 129$ itérations comme meilleur algorithme.  
+
+```{r message=FALSE, warning=FALSE, fig.width=9.5}
 lgb_tune <- data.frame(
     nIter = seq(119, 141, by = 2)
 )
-```
 
-```{r message=FALSE, warning=FALSE}
 cl <- makePSOCKcluster(4)
 registerDoParallel(cl)
 set.seed(2020)
@@ -705,25 +756,24 @@ lgb_cv <- train(
 )
 
 on.exit(stopCluster(cl))
-```
 
-```{r message=FALSE, warning=FALSE, fig.width=9.5}
 plotmetrics(lgb_cv, "nIter") +
 labs(title = "AUC et Accuracy en fonction des nIter")
 ```
 
-```{r message=FALSE, warning=FALSE}
-model_lgb <- lgb_cv$finalModel
-pred_lgb <- predict(lgb_cv, newdata = test_lgb)
-```
+On s'aperçoit, en analysant les performances, que notre modèle Logitboost est moins bon que notre modèle Random forest précédent.  
+Il effectue certes moins d'erreur que le KNN, mais ne classe pas le tiers de nos données pour chaque label.
 
 ```{r}
-confmatrix(test_lgb$Label, pred_lgb) +
+model_lgb <- lgb_cv$finalModel
+pred_lgb <- predict(lgb_cv, newdata = test_lgb)
+
+confmatrix(pred_lgb, test_lgb$Label) +
 labs(title = "Matrice de confusion Logitboost, nIter = 129")
 ```
 
 ```{r message=FALSE, warning=FALSE, fig.width=9.5}
-multiroc(test_lgb$Label, pred_lgb) +
+multiroc(pred_lgb, test_lgb$Label) +
 labs(title = "Courbes ROC avec Logitboost, nIter = 129")
 ```
 
@@ -738,18 +788,36 @@ bind_rows(
 )
 ```
 
+On a vu que notre modèle Logitbost n'est pas plus performant que les deux premiers sur ce problème.  
+Nous testerons un dernier algorithme, lui aussi basé sur le boosting.
 ## 4. Gradient boosting
+Le Gradient boosting utilise le gradient de la fonction de perte pour le calcul des poids des individus lors de la construction de chaque nouveau modèle.  
+L'augmentation du nombre d'arbre $k$ n'augmente pas pour autant le risque d'overfitting tant que la profondeur $p$ de celles-ci est petite. Aussi, la réduction du nombre de variables explicatives permet d'améliorer les arbres construites.
+
+### Approche naïve
+Nous entraînerons donc sur ces deux paramètres pour trouver notre meilleur modèle tout en capturant l'importance des variables, avec:
+
+$$\left\{
+    \begin{array}{ll}
+        p \in \{1, 3, 5\} \\
+        k \in \{50, 100, 500, 1000, 1500, 2500, 4000\}
+    \end{array}
+\right.
+$$
+
+On remarque que l'AUC est meilleure pour $p \gt 1$. Pour $p = 5$, l'AUC est maximale pour $k = 500$.  
+La meilleure AUC pour cette recherche naïve est atteinte pour $p = 3$ et $k \in [1000, 2500]$. Nous choisirons l'option où il y a le plus d'arbre avec une profondeur plus faible pourvu que cela améliore les performances tout en réduisant le risque d'overfitting, malgré que l'apprentissage demande plus de temps de calcul donc.
 
 ```{r}
 gbm_tune_naive <- data.frame(
     shrinkage = rep(0.1, 21),
-    interaction.depth = rep(c(1,3,5), 7),
+    interaction.depth = rep(c(1, 3, 5), 7),
     n.minobsinnode = rep(10, 21),
-    n.trees = c(rep(50, 3), rep(100, 3), rep(500, 3), rep(1000, 3), rep(1500, 3), rep(2500, 3), rep(4000, 3))
-)
-```
+    n.trees = c(rep(50, 3), rep(100, 3), 
+                rep(500, 3), rep(1000, 3),
+                rep(1500, 3), rep(2500, 3),
+                rep(4000, 3)))
 
-```{r}
 cl <- makePSOCKcluster(4)
 registerDoParallel(cl)
 set.seed(2020)
@@ -760,16 +828,19 @@ gbm_cv_naive <- train(
     method = "gbm",
     metric = "AUC",
     trControl = tune_control,
-    tuneGrid = gbm_tune_naive
+    tuneGrid = gbm_tune_naive,
+    verbose = FALSE
 )
 
 on.exit(stopCluster(cl))
-```
 
-```{r}
 ggplot(gbm_cv_naive) +
 labs(title = "AUC pour chaque nombre de division en fonction du nombre d'arbres")
 ```
+
+Du côté des variables explicatives, on a l'importance moyenne pour chaque variable. C'est-à-dire la moyenne de l'importance par classe par variable.  
+Si nous visualisons la totalité, sur les `r dim_X`, près de la moitié a une importance moyenne nulle ou négative.  
+Parmi les 20% les plus importantes, nous ne garderons que celles avant les 3 sauts, en l'occurence celles qui ont une importance moyenne supérieure à 2.
 
 ```{r}
 gbm_naive_vars <- summary(gbm_cv_naive$finalModel, plotit = F) %>% as_tibble() %>% 
@@ -780,7 +851,9 @@ ggplot(gbm_naive_vars) + coord_flip() + aes(x = var, y = rel.inf, fill = rel.inf
     theme(plot.title = element_text(hjust = 0.5)) + guides(fill = F)
 ```
 
+Nous optimisons donc sur $p = 3$, sur une nouvelle plage de $k$ et de variables explicatives réduites.
 ### Optimisation
+Mettons en forme nos 13 variables explicatives et séparons cette nouvelle table en deux échantillons avec toujours les mêms index que les autres algorithmes.
 
 ```{r}
 data_gbm <- data %>% 
@@ -807,10 +880,26 @@ dim_DPort_gbm <- length(unique(data_gbm$DPort))
 dim_X_gbm <- dim_quant_gbm + dim_IP_gbm-1 + dim_DPort_gbm-1
 ```
 
+Nous obtenons une dimension de `r dim(data_gbm)` après sélection.
+
+Un total de `r dim_X_gbm` variables explicatives:
+
+- `r dim_quant_gbm` variables quantitatives.
+- `r dim_IP_gbm` modalités de IP.
+- `r dim_DPort_gbm` modalités de DPort
+
+Séparons à nouveaux nos échantillons en gardant bien évidemment les index pour avoir exactement la même donnée pour tous les algorithmes mais avec des colonnes en moins.
+
 ```{r}
 train_gbm <- split_set(data_gbm)[[1]]
 test_gbm <- split_set(data_gbm)[[2]]
 ```
+
+Entraînons à présent notre algorithme sur les variables sélectionnées en l'optimisant par rapport à $k \in [1100, 2400]$ par pas de 100 sur le critère de l'AUC.  
+Pour l'AUC, $k$ est optimal à $1800$ tandis que l'Accuracy le préfère à $1100$.
+
+A $k = 1100$, compte tenu de l'AUC, l'algorithme n'a pas encore convergé.  
+A $k = 1800$, on retrouve l'AUC maximale ainsi qu'un maximum local pour l'Accuracy. On prefèrera alors garder $k = 1800$
 
 ```{r}
 gbm_tune <- data.frame(
@@ -819,9 +908,7 @@ gbm_tune <- data.frame(
     n.minobsinnode = rep(10, 14),
     n.trees = seq(1100, 2400, by = 100)
 )
-```
 
-```{r}
 cl <- makePSOCKcluster(4)
 registerDoParallel(cl)
 set.seed(2020)
@@ -832,29 +919,31 @@ gbm_cv <- train(
     method = "gbm",
     metric = "AUC",
     trControl = tune_control,
-    tuneGrid = gbm_tune
+    tuneGrid = gbm_tune,
+    verbose = FALSE
 )
 
 on.exit(stopCluster(cl))
-```
 
-```{r}
 plotmetrics(gbm_cv, "n.trees") +
 labs(title = "AUC et Accuracy en fonction du nombre d'arbres")
 ```
 
+En visualisant les performances de notre meilleur modèle, on constate que ce dernier réussit le mieux à bien classer `botnet` et `ransomeware` par rapport aux 3 premiers en ayant un taux d'erreur d'une différence de 10%. Il a par contre une erreur un peu plus grande sur la classification entre `adware` et `sms` par rapport à notre modèle Random Forest.
+
 ```{r}
 model_gbm <- gbm_cv$finalModel
 pred_gbm <- predict(gbm_cv, newdata = test_gbm)
-```
 
-```{r}
-confmatrix(test_gbm$Label, pred_gbm) +
+confmatrix(pred_gbm, test_gbm$Label) +
 labs(title = "Matrice de confusion Stochastic gradient boosting, n.trees = 1800")
 ```
 
+Les courbes ROC confirme la meilleure gestion du `ransomeware` par le gradient boosting.  
+Elles semblent s'uniformiser pour chaque classification des infections.
+
 ```{r}
-multiroc(test_gbm$Label, pred_gbm) +
+multiroc(pred_gbm, test_gbm$Label) +
 labs(title = "Courbes ROC avec Stochastic gradient boosting, n.trees = 1800")
 ```
 
@@ -869,9 +958,19 @@ bind_rows(
 )
 ```
 
+Notre modèle de Gradient boosting semble donc être prometteur pour ce problème.
+
+A présent, comparons nos différents modèles pour choisir le meilleur (ou le plus adapté).
 # IV. Sélection de modèle
 
 ## 1. Comparaisons
+Nous nous sommes fixé comme métriques l'AUC (ROC) et l'Accuracy pour notre règle de décision.
+
+Une première comparaison est de visualiser, avec les courbes ROC, la performance de chaque modèle avec qu'on a optimisé pour classifier chaque infection contre les autres.  
+On note directement la compétition entre Random forest et Gradient boosting qui sont au coudes-à-coudes.  
+Pour classer `botnet` et `sms`, les deux modèles sont aussi performant que l'autre et sont d'ailleurs les meilleurs modèles pour classifier ces deux infections. Le Gradient boosting s'illustre dans sa performance pour classifier `ransomeware` par rapport aux 3 autres algorithmes qui se confondent. Random forest prend le dessus sur Gradient boosting dans sa capacité à bien classifier `adware`. 
+
+D'autre part, Logitboost est meilleur que le KNN pour classifier les `botnet`, et inversement pour les `adware`.
 
 ```{r}
 predicted <- tibble(Y = test_set$Label, KNN = pred_knn, RF = pred_rf, LGB = pred_lgb, GBM = pred_gbm)
@@ -883,7 +982,7 @@ for (label in unique(data$Label)){
         if_else(. == !!label, 1, 0)
     ))
     for (model in c('KNN', 'RF', 'LGB', 'GBM')){
-        roclist[[model]] <- roc(one_rest$Y, pull(one_rest, model))
+        roclist[[model]] <- roc(pull(one_rest, model), one_rest$Y)
     }
     plotlist[[label]] <- ggroc(roclist, aes = "color", size = 1.2, legacy.axes = TRUE) +
     labs(color = "Models", title = label, x = NULL, y = NULL) + geom_abline() +
@@ -905,6 +1004,30 @@ annotate_figure(
 )
 ```
 
+<!-- #region -->
+L'analyse des valeurs d'AUC et d'Accuracy devrait donc nous aider à trancher entre nos deux meilleurs modèles.
+
+
+Avec 
+$\left\{
+    \begin{array}{ll}
+        \text{AUC}_\text{RF} = 0.87 \\
+        \text{Accuracy}_\text{RF} = 0.65
+    \end{array}
+\right.$ 
+et 
+$\left\{
+    \begin{array}{ll}
+        \text{AUC}_\text{GBM} = 0.85 \\
+        \text{Accuracy}_\text{GBM} = 0.62
+    \end{array}
+\right.$
+le modèle **Random Forest l'emporte** sur les deux métriques. La différence de scores n'est presque pas significative entre les deux modèles.  
+D'un point de vue métier, le poids de l'erreur de classification d'une infection par rapport à une autre affecte grandement la prise de décision.
+
+Par exemple, dans une entreprise où les appareils recoivent des requêtes externes mais n'en renvoient pas, une infection par `botnet` est bénigne et donc sera ignorée alors qu'un `ransomeware` qui chiffre petit à petit les données serait fatal. Dans ce cas, on préfèrera le modèle de Gradient Boosting qui réduit l'erreur de classification entre ces deux infections.
+<!-- #endregion -->
+
 ```{r message=FALSE, warning=FALSE, fig.width=9.5, fig.height=3}
 result %>% 
 gather(metric, value, -Model) %>% 
@@ -915,3 +1038,15 @@ coord_flip(ylim = c(0, 1)) +
 labs(title = "Comparaison des modèles") +
 theme(plot.title = element_text(hjust = 0.5))
 ```
+
+Compte tenu de ces différentes analyses, nous retiendrons dans le cadre de ce document le modèle sur les forêts aléatoires.
+
+## 2. Pipeline
+Comme nous avons retenu les modèle Random Forest, nous revenons sur la structure de ses données `data_rf`, `train_rf` et `test_rf`.
+
+Pour pouvoir être interprétées par notre modèle et effectuer une préduction les nouvelles données doivent avoir:
+
+- la colonne `SPort` qui doit être factorisé selon les attribution de l'IANA et avoir soit "Private", soit "Microsoft RPC" ou autre
+- la colonne `DPort` qui doit être factorisé selon les attribution de l'IANA et avoir soit "HTTPS", soit "HTTP" ou autre
+- la colonne `IP` qui doit être splité en Net-ID et doit avoir soit "121", "172.217", "205.174" ou autre
+- les 11 colonnes quantitatives qui doivent être respectivement standardisées par les moyennes et variances de `Flow.Duration`, `Flow.Packets.s`, `Flow.IAT.Mean`, `Flow.IAT.Max`, `Flow.IAT.Min`, `Fwd.IAT.Mean`, `Fwd.IAT.Min`, `Fwd.Packets.s`, `Min.Packet.Length`, `Init_Win_bytes_forward` et `Init_Win_bytes_backward`, dans cet ordre.
