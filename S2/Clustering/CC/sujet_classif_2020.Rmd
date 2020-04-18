@@ -1,9 +1,11 @@
 ---
-title: "Classification : CC du 17 avril 2020"
+title: 'Classification : CC du 17 avril 2020'
 author: "Loïc Rakotoson"
-output: 
-  pdf_document: default
+output:
+  html_document:
+    df_print: paged
   highlight: tango
+  pdf_document: default
 jupyter:
   jupytext:
     formats: ipynb,Rmd
@@ -54,7 +56,7 @@ On considère le jeu de données **donnees1.csv**. Ce jeu contient 300 observati
 
   1. Importer les données et représenter le nuage de points
 
-```{r message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, fig.align='center', fig.width=8}
 ggplot(donnees1) +
 aes(X1, X2) + geom_point()
 ```
