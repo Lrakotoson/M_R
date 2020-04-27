@@ -1,0 +1,141 @@
+---
+title: "Analyse exploratoire des données"
+author: "Loïc"
+output:
+  pdf_document: default
+  html_notebook:
+    df_print: paged
+    highlight: tango
+    theme: cerulean
+jupyter:
+  jupytext:
+    formats: ipynb,Rmd
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.1'
+      jupytext_version: 1.2.4
+  kernelspec:
+    display_name: R
+    language: R
+    name: ir
+---
+
+```{r include=FALSE}
+library(tidyverse)
+library(ggfortify)
+```
+
+# I. Contexte
+Les données sont les enregistrements mensuels du nombre de morts, `death`, sur les accidents de la route au Royaume-Uni entre Janvier 1969 et Décembre 1983.  
+La loi sur le port obligatoire de la ceinture de sécurité, `law`, a été introduite en Février 1983.
+
+```{r message=FALSE, warning=FALSE}
+ukdeath <- read_delim("data.txt", delim = "  ", col_types = "if")
+period <- seq(as.Date('1969-01-01'), as.Date('1984-12-31'), by = "month")
+```
+
+```{r echo=FALSE}
+summary(ukdeath)
+```
+
+```{r echo=FALSE, fig.width=8, message=FALSE, warning=FALSE}
+ggplot(ukdeath) +
+aes(x = period, y = death, color = law) + 
+geom_point() + geom_line() + stat_smooth(method = "loess") +
+labs(title = "Nombre de morts sur les accidents de la route") +
+theme(plot.title = element_text(hjust = 0.5))
+```
+
+# II. Modèle additif global
+On ne prend pas en compte la variable `law`
+
+```{r}
+ts_ukdeath <- ts(data = ukdeath$death, start = c(1969, 1), frequency = 12)
+```
+
+## 1. Analyse des sègments
+En découpant la série en segments "homogènes" en moyenne et variance, on peut détecter 2 points de ruptures sans considérer celui de la limite, dont un à la promulgation de la loi.  
+Ainsi on a trois segments:
+
+- **1970 - 1975:** on sait pas, ça monte puis ça descend (mdr)
+- **1975 - 1983:** Période stable
+- **Après 1983:** Depuis la loi
+
+```{r echo=FALSE, fig.width=8, message=FALSE, warning=FALSE}
+ts_ukdeath %>%
+changepoint::cpt.meanvar(method = "PELT", minseglen = 11)  %>% 
+autoplot() + labs(
+    title = "Points de rupture",
+    x = "period", y = "death"
+) + theme(plot.title = element_text(hjust = 0.5))
+```
+\newpage
+
+## 2. Analyse de chaque décomposition
+
+```{r}
+stl_Add <- stl(ts_ukdeath, "periodic")
+```
+
+```{r echo=FALSE, fig.width=8, fig.height=8.5, message=FALSE, warning=FALSE}
+autoplot(stl_Add)
+```
+
+En visualisant la tendance globale (*trend*), on s'apperçoit qu'on obitient bien les 3 mêmes segments qu'avec le découpage par point de rupture ci-dessus.  
+On remarque aussi qu'il existe une saisonalité (*seasonal*) avec une forte hausse des accidents pendant les périodes de fêtes de fin d'année (et du nouvel An aussi du coup).  
+Le bruit (*remainder*) n'influe que peu sur les données (d'où la grande échelle à gauche).
+
+## 3. Analyse du bruit
+Procedons à l'analyse du bruit avec les fonctions d'autocorrélation et les tests de normalités.
+
+```{r}
+noise <- stl_Add$time.series[,3]
+```
+
+### a - Fonctions d'autocorrélation
+Visuellement, on ne détecte pas de motif sur les bruits. Ils seraient donc distribués aléatoirement.
+
+L'**ACF** montre qu'il y a globalement peu d'autocorrélation. A des intervalles de 3 et 4 mois, on a des autocorrélations négatives plus fortes.  
+Il s'agit de la forte différence de valeurs entre les débuts d'année en *février-mars-avril* et les derniers mois en *novembre-décembre-janvier*.
+
+le **PACF** montre que les autocorrélations partielles sont globalement négatives, compte tenu des valeurs des intervalles intermédiaires.  
+Il s'agit de la forte augmentation des valeurs à la fin par rapport à l'ensemble des données de l'année.
+
+
+```{r echo=FALSE, fig.width=8, fig.height=7, message=FALSE, warning=FALSE}
+forecast::ggtsdisplay(noise,lag.max = 12)
+```
+
+### b - Normalité du bruit
+Malgré la répartition du bruit preque normale, comme représentée ci-dessous, la p-value du test de Shapiro-Wilk est significative, 0.4 < 0.5.  
+On rejette donc l'hypothèse de la normalité du bruit.
+
+```{r}
+shapiro.test(noise)
+```
+
+```{r echo=FALSE, fig.width=8, message=FALSE, warning=FALSE}
+tibble(noise) %>% 
+ggplot() + aes(x = noise) +
+geom_histogram(aes(y=..density..), bins = 10, color = "#d35400", fill = "#f1c40f", alpha = 0.6) + 
+geom_density(color = "#c0392b", fill = "#e74c3c", alpha = 0.4) +
+labs(title = "Répartition du bruit") + xlim(c(-300, 300)) +
+theme(plot.title = element_text(hjust = 0.5))
+```
+\newpage
+
+# III. Modèle additif avec bruit
+
+```{r}
+ts_bruit <- ts(data = noise, start = c(1969, 1), frequency = 12)
+```
+
+```{r echo=FALSE, fig.width=8, fig.height=8.5, message=FALSE, warning=FALSE}
+stl_bruit <- stl(ts_bruit, "periodic")
+autoplot(stl_bruit)
+```
+
+On remarque que la saisonalité du bruit, même si elle existe, n'a quasiment pas d'effet sur celui-ci.  
+Il possède en revanche une tendance globale.  
+Toutefois, les données du bruit sont essentiellement expliquées par le bruit du bruit (*remainder*).
