@@ -34,6 +34,7 @@ This project follows the [all-contributors](https://github.com/all-contributors/
 Next, the list of projects *(redirection link)* with the participation of the contributors on this respository.  
 - [Happiness Word Report](https://github.com/Lrakotoson/M1R/tree/master/S1/M1Econometrie/Projet/HAPPINESS/Happiness_migration)
 - [Coronavirus Dashboard](https://github.com/Lrakotoson/M1R/tree/master/S2/Data%20Visualization/Coronavirus)
+- [Time series: UK roads deaths](https://github.com/Lrakotoson/M1R/tree/master/S2/Time%20Series/Projet)
 
 # License 🚩
 GNU GENERAL PUBLIC LICENSE  
