@@ -2,12 +2,41 @@ library(tidyverse)
 library(xml2)
 library(sp)
 library(rworldmap)
-#library(xlsx)
 
-T_cas <- read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv')
-T_retablis <- read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Recovered.csv')
-T_morts <- read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv')
-#T_france = read.xlsx("https://www.data.gouv.fr/fr/datasets/r/4150e586-4ebf-4b1d-b2e3-5646a8f8cf25", detectDates = TRUE)
+# T_cas <- read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv')
+# T_retablis <- read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Recovered.csv')
+# T_morts <- read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv')
+
+
+# fr: Il s'agit de données de transition
+# en: This is temporary transition data
+
+####################################################################
+
+big <- read_csv("https://raw.githubusercontent.com/ulklc/covid19-timeseries/master/countryReport/raw/rawReport.csv")
+big <- big %>% 
+  select(-c(countryCode, region)) %>% 
+  rename(Lat = lat,
+         Long = lon,
+         Country = countryName) %>% 
+  mutate(day = format(day, "%m/%d/%Y"),
+         State = Country) %>%
+  select(State, everything())
+
+
+T_retablis <<- big %>%
+  select(-c(confirmed, death)) %>%
+  pivot_wider(names_from = day, values_from = recovered)
+
+
+T_cas <<- big %>%
+  select(-c(recovered, death)) %>%
+  pivot_wider(names_from = day, values_from = confirmed)
+
+
+T_morts <<- big %>%
+  select(-c(confirmed, recovered)) %>%
+  pivot_wider(names_from = day, values_from = death)
 
 ####################################################################
 
@@ -18,9 +47,9 @@ clean <- function(data){
   return(data)
 }
   
-T_cas <<- clean(T_cas)
-T_retablis <<- clean(T_retablis)
-T_morts <<- clean(T_morts)
+# T_cas <<- clean(T_cas)
+# T_retablis <<- clean(T_retablis)
+# T_morts <<- clean(T_morts)
 ####################################################################
 
 continent <- function(lon, lat){
