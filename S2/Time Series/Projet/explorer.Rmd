@@ -111,6 +111,29 @@ forecast::ggtsdisplay(noise,lag.max = 12)
 Malgré la répartition du bruit preque normale, comme représentée ci-dessous, la p-value du test de Shapiro-Wilk est significative, 0.4 < 0.5.  
 On rejette donc l'hypothèse de la normalité du bruit.
 
+
+MU
+
+```{r}
+t.test(noise)
+```
+
+    VAR
+
+```{r}
+n <- length(noise)
+s <- sd(noise)**2
+a <- 0.05
+```
+
+```{r}
+s
+```
+
+```{r}
+(n-1)*s/c(qchisq(a/2,n-1,lower.tail=FALSE), qchisq(a/2,n-1,lower.tail=TRUE))
+```
+
 ```{r}
 shapiro.test(noise)
 ```
