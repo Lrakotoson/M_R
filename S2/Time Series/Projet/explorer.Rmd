@@ -139,8 +139,3 @@ autoplot(stl_bruit)
 On remarque que la saisonalité du bruit, même si elle existe, n'a quasiment pas d'effet sur celui-ci.  
 Il possède en revanche une tendance globale.  
 Toutefois, les données du bruit sont essentiellement expliquées par le bruit du bruit (*remainder*).
-
-```{r}
-?shapiro.test
-```
-
