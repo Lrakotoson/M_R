@@ -1,0 +1,297 @@
+---
+title: "TS Modèles v.1"
+author: "Loïc"
+output:
+  pdf_document: default
+  html_notebook:
+    df_print: paged
+    highlight: tango
+    theme: cerulean
+jupyter:
+  jupytext:
+    formats: ipynb,Rmd
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.1'
+      jupytext_version: 1.2.4
+  kernelspec:
+    display_name: R
+    language: R
+    name: ir
+---
+
+```{r include=FALSE}
+library(tidyverse) 
+library(ggExtra)
+library(ggthemes)
+library(forecast)
+library(ggfortify)
+```
+
+# Contexte
+
+```{r message=FALSE, warning=FALSE}
+uk <- read_table("../data.txt", col_types = "if")
+period <- seq(as.Date('1969-01-01'), as.Date('1984-12-31'), by = "month")
+uk_ts <- ts(uk$death, start = c(1969,1), frequency = 12)
+uk_df <- bind_cols(uk, t = period)
+```
+
+```{r echo=FALSE}
+ggplot(uk_df) + aes(t, death, color = law) +
+geom_line() + geom_point() +
+theme_economist() + scale_color_economist()
+```
+
+\newpage
+
+Ici, on cherche à démontrer que la périodicité est annuelle.  
+On peut remarquer sur chaque "petite série temporelle mensuelle" la tendance qui décroit.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggmonthplot(uk_ts) +
+theme_economist() +
+scale_color_economist()
+```
+
+# Modèle 1: Régression linéaire
+On cherche un modèle paramétrique de la forme:
+
+$$\text{death} = m_t + s_t + \epsilon_t$$
+
+## 1. Régression sur la tendance
+J'ai laissé le modèle "optimal" (*en bleu foncé*) sur chaque plot.  
+Les modèles qu'on ajuste s'appelle "fit" (*en bleu clair*).
+
+```{r include=FALSE}
+df_fit <- tibble(death = uk_df$death, t = 1:192) %>% 
+mutate(t2 = t^2, t3 = t^3, t4 = t^4, t5 = t^5,
+       t6 = t^6, t7 = t^7, t8 = t^8, t9 = t^9)
+```
+
+```{r message=FALSE, warning=FALSE}
+mod_fit <- lm(death ~ t + t2 + t3 + t4 + t8, data = df_fit)
+```
+
+J'ai essayé plusieurs modèles, j'ai essayé step aussi mais j'ai du réduire encore pour arriver à
+
+$$m_t = 1349 + 46.5t - 1.17t^2 + \frac{t^3}{100} -3.432*10^{-5}t^4 + 2.613*10^{-15}t^8$$
+
+On peut même enlever $t^4$ et $t^8$ puisque leur coefficient sont proches de $0$.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+summary(mod_fit)
+trend_fit <- mod_fit$fitted.values
+tibble(optimal = ma(uk_ts, order = 12), fit = trend_fit, t = 1:192) %>% gather("key", "trend", -t) %>% 
+ggplot() + aes(t, trend, color = key) + geom_line() + geom_point(alpha = 0.2) +
+theme_economist() + scale_color_economist()
+```
+
+## 2. Régression sur la saisonalité
+On part du même principe que les TP avec $cos(\frac{\pi k t}{6})$ et $sin(\frac{\pi k t}{6})$  
+Dans le code, quand c'est `cos k` = $cos(\frac{\pi k t}{6})$, pareil pour `sin k`
+
+```{r include=FALSE}
+season_fit <- (uk_ts - trend_fit)%>% 
+matrix(12) %>% t() %>% 
+colMeans(na.rm = T) %>% 
+rep(length(uk_ts)/12)
+
+sinusoides <- 1:192%o%c(rep(1:6,2)*pi/6)
+sinusoides[,1:5] <- sin(sinusoides[,1:5])
+sinusoides[,6:10] <- cos(sinusoides[,6:10])
+sinusoides <- as_tibble(sinusoides)
+names(sinusoides) <- c(paste0("sin",1:6),paste0("cos",1:6))
+
+df_fit <- bind_cols(season = season_fit, t = 1:192, sinusoides)
+```
+
+```{r message=FALSE, warning=FALSE}
+mod_fit_season <- lm(season ~ sin1 + cos1 + cos2 + cos3, data = df_fit)
+```
+
+Donc après plusieurs essais qui vont dans tous les sens, on arrive à un modèle qui fit bien:
+
+$$s_t = 199\,cos(\frac{\pi t}{6}) + 114\,cos(\frac{\pi t}{3}) + 57\,cos(\frac{\pi t}{2}) - 112\,sin(\frac{\pi t}{6})$$
+
+On remarque d'ailleurs que ça fit nettement bien avec l'optimal.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+summary(mod_fit_season)
+
+seasonal_fit <- mod_fit_season$fitted.values
+tibble(optimal = season_fit, fit = seasonal_fit, t = 1:192) %>% gather("key", "season", -t) %>% 
+ggplot() + aes(t, season, color = key) + geom_line() + geom_point(alpha = 0.2) +
+theme_economist() + scale_color_economist()
+```
+
+\newpage
+
+## 3. Résidus du modèle de régression
+Comme c'est un modèle additif, il s'agit de la part non expliquée par la tendance et la saisonalité.
+
+Ni l'ACF ni le PACF ne semblent décroitre du coup si on se base sur ce modèle ce sera ARMA ? ou ARIMA ?
+
+```{r message=FALSE, warning=FALSE}
+residual_fit <- uk_ts - trend_fit - seasonal_fit
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggtsdisplay(residual_fit, lag.max = 12)
+```
+
+\newpage
+
+```{r message=FALSE, warning=FALSE}
+shapiro.test(residual_fit)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+tibble(residual_fit) %>% 
+ggplot() + aes(x = residual_fit) +
+geom_histogram(aes(y=..density..), bins = 10, color = "#4834d4", fill = "#686de0", alpha = 0.6) + 
+geom_density(color = "#130f40", fill = "#30336b", alpha = 0.4) +
+labs(title = "Répartition du bruit") + xlim(c(-500, 500)) + theme_economist() +
+theme(plot.title = element_text(hjust = 0.5))
+```
+
+Donc ça suit une loi normale, et on obtient:
+
+$$\epsilon_t \sim \mathcal N(\mu = 0,\sigma^2 = 22 519)$$
+
+\newpage
+
+## 4. Décomposition
+Donc on a un modèle paramétrique de la forme
+
+$$\text{death} = m_t + s_t + \epsilon_t$$
+
+$$\text{avec}\left\{
+    \begin{array}{ll}
+        m_t = 1349 + 46.5t - 1.17t^2 + \frac{t^3}{100} -3.432*10^{-5}t^4 + 2.613*10^{-15}t^8 \\
+        s_t = 199\,cos(\frac{\pi t}{6}) + 114\,cos(\frac{\pi t}{3}) + 57\,cos(\frac{\pi t}{2}) - 112\,sin(\frac{\pi t}{6}) \\
+        \epsilon_t \sim \mathcal N(0, 22\,519)
+    \end{array}
+\right.$$
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+tibble(data = uk_ts, trend = trend_fit, season = seasonal_fit, residu = residual_fit, t = period) %>% 
+gather("key", "value", -t) %>% ggplot() + aes(t, value) + geom_line(color = "#2e86de") + 
+facet_wrap(.~key, ncol = 1, scales = "free_y") + theme_economist() + 
+labs(y = NULL, title = "Modèle 1: Régression") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+\newpage
+
+# Modèle 2: Filtre linéaire
+
+Alors le but ici c'est de ne pas passer par une régression linéaire mais plutôt par un filtre linéaire sur une moyenne mobile.  
+On n'aura pas forcément un modèle paramétrique dans ce cas, bien qu'on peut estimer les paramètres.
+
+## 1. Filtre sur la tendance
+Comme on a dit qu'il s'agit de périodes de 12 mois, on va donc appliquer un filtre linéaire à notre série temporelle avec une moyenne mobile sur 12 périodes.  
+J'ai pas mis la comparaison avec la tendance "optimale" puisque cette technique de filtre se superpose avec, du coup c'est l'optimale dans notre cas.
+
+```{r message=FALSE, warning=FALSE}
+trend_filter <- stats::filter(
+    uk_ts, rep(1/12, 12),
+    method = "convolution",
+    sides = 2
+)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+tibble(filter = trend_filter, t = 1:192) %>% gather("key", "trend", -t) %>% 
+ggplot() + aes(t, trend, color = key) + geom_line() + geom_point(alpha = 0.2) +
+theme_economist() + scale_color_economist()
+```
+
+\newpage
+
+## 2. Filtre sur la saisonalité
+L'idée ici est de calculer la saisonalité sur la série sans la tendance.  
+Comme au tout début on a noté une périodicité annuelle, on déduira la saisonalité par la moyenne mensuelle.
+
+```{r message=FALSE, warning=FALSE}
+seasonal_filter <- (uk_ts - trend_filter) %>% 
+matrix(12) %>% t() %>% 
+colMeans(na.rm = T) %>% 
+rep(length(uk_ts)/12)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+tibble(filter = seasonal_filter, t = 1:192) %>% gather("key", "season", -t) %>% 
+ggplot() + aes(t, season, color = key) + geom_line() + geom_point(alpha = 0.2) +
+theme_economist() + scale_color_economist()
+```
+
+On arrive quasiment à la saisonalité du *modèle 1 avec la Régression linéaire*, l'amplitude est juste plus grande sur ce modèle au mois de décembre.
+
+\newpage
+
+## 3. Filtre sur les résidus
+Comme précédement, c'est un modèle additif donc let's go.
+
+Là on a un ACF qui décroit, on part sur un MA avec un lag = $4$.
+
+```{r message=FALSE, warning=FALSE}
+residual_filter <- uk_ts - trend_filter - seasonal_filter
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggtsdisplay(residual_filter, lag.max = 12)
+```
+
+\newpage
+
+```{r message=FALSE, warning=FALSE}
+shapiro.test(residual_filter)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+tibble(residual_filter) %>% 
+ggplot() + aes(x = residual_filter) +
+geom_histogram(aes(y=..density..), bins = 10, color = "#4834d4", fill = "#686de0", alpha = 0.6) + 
+geom_density(color = "#130f40", fill = "#30336b", alpha = 0.4) +
+labs(title = "Répartition du bruit") + xlim(c(-500, 500)) + theme_economist() +
+theme(plot.title = element_text(hjust = 0.5))
+```
+
+Donc ça suit une loi normale, et on obtient:
+
+$$\epsilon_t \sim \mathcal N(\mu = 0,\sigma^2 = 12\;446)$$
+
+\newpage
+
+## 4. Décomposition
+Donc on a un modèle dont on connaît certains paramètres de la forme
+
+$$\text{death} = m_t + s_t + \epsilon_t$$
+
+$$\text{avec}\left\{
+    \begin{array}{ll}
+        s_t = \beta_0 + \beta_1\,cos(\frac{\pi t}{6}) + \beta_2\,cos(\frac{\pi t}{3}) + \beta_3\,cos(\frac{\pi t}{2}) - \beta_4\,sin(\frac{\pi t}{6}) + (\tau) \\
+        \epsilon_t \sim \mathcal N(0, 12\,446)
+    \end{array}
+\right.$$
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+tibble(data = uk_ts, trend = trend_filter, season = seasonal_filter, residu = residual_filter, t = period) %>% 
+gather("key", "value", -t) %>% ggplot() + aes(t, value) + geom_line(color = "#2e86de") + 
+facet_wrap(.~key, ncol = 1, scales = "free_y") + theme_economist() + 
+labs(y = NULL, title = "Modèle 2: Filtre") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+\newpage
+
+# Modèle 3: Décomposition automatique
+C'est ce qu'on a fait dans le pdf que j'ai envoyé (*explorer.pdf*), du coup je ne vais pas la refaire ici.  
+Il faut quand même noter que le modèle par filtre et la décomposition automatique donnent des résultats proches.
+
+<br><hr><br>
+
+**Remarque**:  
+Les modèles 2 et 3 sont meilleurs que 1 puisque leurs résidus capturent moins de données. Ca voudrait donc dire qu'on a plus de contrôle sur le modèle et qu'il y a moins d'aléa.
