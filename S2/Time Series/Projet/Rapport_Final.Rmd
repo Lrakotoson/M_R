@@ -123,7 +123,7 @@ ts_ukdeath_log <-
 ts_ukdeath_log %>%
   changepoint::cpt.meanvar(method = "PELT", minseglen = 11)  %>%
   autoplot() +
-  labs(title = "Points de rupture (log)", x = "period", y = "death") +
+  labs(title = "Points de rupture (log)", x = "period", y = "death_log") +
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
@@ -131,17 +131,40 @@ ts_ukdeath_log %>%
 
 Pour construire les modèles adéquats à notre problème, nous devons avoir une idée précise des caractéristiques de la série. Il s'agit ici de confirmer si la saisonalité des décès est bien de 12 mois, et de l'autocorrélation des données (lien ou similitude entre l'été 1963 et l'été 1973, par exemple).
 
-## *Lag Plot*, *Month Plot* et autocorrélation de la série
+## *Lag Plot*, *Month Plot* et autocorrélations de la série
 
+Les représentations graphiques de la variable d'intérêt par rapport au temps sont de bons indicateurs pour émettre des hypothèses quant à la saisonalité d'une série temporelle.
 
+* Le **Lag Plot**, mettant en perspective la valeur d'une variable à un instant $t$ et à un instant $t-h$ permet de visualiser le lien linéaire entre deux instants et l'on peut répondre au question du type : *"Est-ce qu'un même schéma se répète à 6 mois / 2 ans / 10 secondes d'intervalles" ? Cela se traduit par le plus ou moins bon alignement des points sur la première bissectrice.
+
+* Le **Month Plot** décompose la série par mois. C'est asssez utile lorsque les données sont renseignés mensuellement, on peut alors l'évolution de la variable par mois et au cours des années, avec par défaut l'indication de la valeur moyenne pour chaque mois. On peut alors constater les mois clés de la saisonalité d'une série.
+
+* Les graphiques de représentation de l'autocorrélation et de l'autocorrélation partielle, respectivement **ACF** et **PACF**, mettent eux en évidence le lien entre une valeur prise à un instant $t$ et celui à un instant $t-h$. L'autocorrélation partielle prend en compte en plus de cela le temps écoulé, en incluant les décalages précédents, donc les valeurs à $t-h-k, \space k<h$.
+
+Et donc, en ce qui nous concerne, le `lag.plot` mais bien en évidence le lien linéaire entre le nombre de décès à un mois $t$ et le nombre de décès à $t-12$ mois (et légèrement à $t-1$, mais probablement puisque les comportements individuelles ne change pas radicalement d'un mois sur l'autre).
 
 ```{r, fig.width=8, message=FALSE, warning=FALSE}
 lag.plot(ukdeath$death_log, lags = 16)
-ggmonthplot(ts_ukdeath_log) +
-  labs(title = "Points de rupture (log)",x = "period", y = "death")
-
-ggAcf(ts_ukdeath_log)
 ```
 
+C'est une information confirmé également par l'ACF. L'autocorrélation fini par s'annuler plus significativement qu'une passer le décalage seuil de environ 150 mois, correspondant à l'entrée en vigueur de la loi sur le port de la ceinture, et l'effondrement du nombre de décès.
 
-## 
+Le PACF montre également des signes de la saisonalité, mais avec pour nuance supplémentaire que l'ensemble des valeurs prises précédement par la série n'influe pas les valeurs futures. Les valeurs approchant 0 après un décalage seuil de 25 mois.
+
+```{r, fig.width=8, message=FALSE, warning=FALSE}
+ggAcf(ts_ukdeath_log, 72)
+ggAcf(ts_ukdeath_log, 191)
+ggPacf(ts_ukdeath_log, lag.max = 72)
+```
+
+Enfin le Month Plot fini de démontrer la tendance des décès par mois :
+
+* En année : une diminution brutale du nombre de décès vers les dernières années de mesure du nombre de décès.
+* En mois : un accroissement du nombre de décès pendant l'hiver et les fêtes de fin d'année (de octobre à janvier) et une période plus calme avec les beaux jours (de mars à août). 
+
+```{r, fig.width=8, message=FALSE, warning=FALSE}
+ggmonthplot(ts_ukdeath_log) +
+  labs(title = "Month Plot des décès (log)", x = "period", y = "death_log")
+```
+
+## Opérateurs de différence
