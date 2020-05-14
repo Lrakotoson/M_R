@@ -160,25 +160,54 @@ Enfin le Month Plot fini de démontrer la tendance des décès par mois :
 
 ```{r, fig.width=8, message=FALSE, warning=FALSE}
 ggmonthplot(ts_ukdeath_log) +
-  labs(title = "Month Plot des décès (log)", x = "period", y = "death_log")
+  labs(title = "Month Plot des décès (log)", x = "Mois", y = "death_log")
 ```
 
-## Opérateurs de différence
+## Opérateurs de différence pour le modèle additif
 
-### La période (`lag`)
+Pour construire un modèle additif, il est nécessaire de connaître la saisonalité de notre série, mais aussi le degré du polynômes composant le modèle. La série $x_t$ peut donc s'écrire sous cette forme :
+
+$$x_t=m_t+s_t+u_t$$
+
+* $m_t$ est associé au polynôme du temps (par exemple : $t + t^2 + t^3$)
+* $s_t$ est associé à la fonction de saisonalité, captant le phénomène oscillatoire (dont la définition sera notée ci-après).
+* $u_t$ est une suite de résidus indépendants, sans structure, réalisations de variables aléatoires indépendantes.
+
+Les résidus ne peuvent être obtenu, mais les deux termes composants $x_t$ peuvent s'obtenir en observant les variations de **l'opérateur différence** $\Delta$. Un opérateur dont on peut faire varier le décalage (ou *lag*) $h$.
+
+$$\Delta^hx_t = \sum_{j=0}^{h}\binom{h}{j}x_{t-j}$$
+
+Dans l'idéal, on souhaite trouver le décalage $h$ tel que $\Delta$ s'annule. Pour trouver le degré du polynôme, nous pouvons aussi passer cette opérateur à la puissance $q$ et choisir la puissance tel que $\Delta$ soit nul. Nous pouvons évaluer cela avec la fonction `diff` et ses arguments `lag` & `differencies`, correspondant respectivement à $h$ et $q$. NoS objectifs seront donc de :
+
+* Trouver le décalage $h$ minimale de la série telle que l'opérateur de différence s'annule en limitant la variabilité de cette suite généré.
+* Trouver la puissance $q$ optimale du polynôme $m_t$ en limitant également la variabilité des termes de $\Delta$.
+
+### La saisonalité ($h$ / `lag`)
+
+Dans un premier temps, c'est le paramètre $h$ / `lag` que nous allons faire varier, entre 1 et 191 (puisque la série est composé de 192).  mesure).
 
 ```{r, fig.width=8, message=FALSE, warning=FALSE}
 Lag_Mean <- NULL
 Lag_Var <- NULL
 
-for (ind in 1:36) {
+for (ind in 1:191) {
   diff <- diff(ukdeath$death_log, ind, 1)
-  Lag_Mean[ind] <- abs(mean(diff))
+  Lag_Mean[ind] <- mean(diff)
   Lag_Var[ind] <- var(diff)
 }
 
-ggplot() + aes(y = Lag_Mean, x = 1:36) + geom_point()
-ggplot() + aes(y = Lag_Var, x = 1:36) + geom_point()
+PLag_Mean <-
+  ggplot() +
+  aes(y = Lag_Mean, x = 1:191) +
+  geom_point()
+
+PLag_Var <- 
+  ggplot() +
+  aes(y = Lag_Var, x = 1:191) +
+  geom_point()
+
+PLag_Mean + labs(title = "Month Plot des décès (log)", x = "Mois", y = "death_log")
+PLag_Var + labs(title = "Month Plot des décès (log)", x = "Mois", y = "death_log")
 ```
 
 ### Le degré (`differencies`)
@@ -187,15 +216,20 @@ ggplot() + aes(y = Lag_Var, x = 1:36) + geom_point()
 Dif_Mean <- NULL
 Dif_Var <- NULL
 
-for (ind in 1:12) {
-  diff <- diff(ukdeath$death_log, 12, ind)
+for (ind in 1:36) {
+  diff <- diff(ukdeath$death_log, 1, ind)
   Dif_Mean[ind] <- abs(mean(diff))
   Dif_Var[ind] <- var(diff)
 }
 
-ggplot() + aes(y = Dif_Mean, x = 1:12) + geom_point()
-ggplot() + aes(y = Dif_Var, x = 1:12) + geom_point()
+ggplot() + aes(y = Dif_Mean, x = 1:36) + geom_point()
+ggplot() + aes(y = Dif_Var, x = 1:36) + geom_point()
 ```
+
+### Constatation avec les arguments optimaux
+
+lag : 12
+diff : 1 ou 2
 
 ```{r, fig.width=8, message=FALSE, warning=FALSE}
 exemple <- diff(ukdeath$death_log, 12 , 2)
@@ -206,9 +240,6 @@ pacf(exemple, 191)
 # Modélisations
 
 ## Modèle additif
-
-lag : 12
-diff : 1 ou 2
 
 ```{r}
 t <- 1:192
@@ -221,18 +252,18 @@ names(sinusoides) <-
 ```
 
 ```{r}
-log_death <- ukdeath$death_log
-df <- data.frame(log_death, t, t ^ 2, t ^ 3)
-df <- cbind(df, sinusoides)
-ModAddifitf <- lm(data = df, log_death ~ .)
-summary(ModAddifitf)
+death_log <- ukdeath$death_log
+ModAdd_df <- data.frame(death_log, t, t ^ 2, t ^ 3)
+ModAdd_df <- cbind(ModAdd_df, sinusoides)
+ModAdd_lm <- lm(data = df, log_death ~ .)
+summary(ModAdd_lm)
 ```
 
 ```{r, fig.width=8, message=FALSE, warning=FALSE}
-plot(ModAddifitf)
-plot(ModAddifitf$residuals)
-t.test(ModAddifitf$residuals)
-acf(ModAddifitf$residuals, 192)
+plot(ModAdd_lm)
+plot(ModAdd_lm$residuals)
+t.test(ModAdd_lm$residuals)
+acf(ModAdd_lm$residuals, 192)
 ```
 
 
