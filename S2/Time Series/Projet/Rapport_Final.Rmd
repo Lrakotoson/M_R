@@ -10,10 +10,6 @@ urlcolor: "blue"
 fontsize: "11pt"
 date: "Pour le 15 mai 2020"
 output:
-  pdf_document:
-    toc: true
-    toc_depth: 2
-    number_sections: true
   html_notebook:
     df_print: paged
     highlight: tango
@@ -168,3 +164,80 @@ ggmonthplot(ts_ukdeath_log) +
 ```
 
 ## Opérateurs de différence
+
+### La période (`lag`)
+
+```{r, fig.width=8, message=FALSE, warning=FALSE}
+Lag_Mean <- NULL
+Lag_Var <- NULL
+
+for (ind in 1:36) {
+  diff <- diff(ukdeath$death_log, ind, 1)
+  Lag_Mean[ind] <- abs(mean(diff))
+  Lag_Var[ind] <- var(diff)
+}
+
+ggplot() + aes(y = Lag_Mean, x = 1:36) + geom_point()
+ggplot() + aes(y = Lag_Var, x = 1:36) + geom_point()
+```
+
+### Le degré (`differencies`)
+
+```{r, fig.width=8, message=FALSE, warning=FALSE}
+Dif_Mean <- NULL
+Dif_Var <- NULL
+
+for (ind in 1:12) {
+  diff <- diff(ukdeath$death_log, 12, ind)
+  Dif_Mean[ind] <- abs(mean(diff))
+  Dif_Var[ind] <- var(diff)
+}
+
+ggplot() + aes(y = Dif_Mean, x = 1:12) + geom_point()
+ggplot() + aes(y = Dif_Var, x = 1:12) + geom_point()
+```
+
+```{r, fig.width=8, message=FALSE, warning=FALSE}
+exemple <- diff(ukdeath$death_log, 12 , 2)
+acf(exemple, 191)
+pacf(exemple, 191)
+```
+
+# Modélisations
+
+## Modèle additif
+
+lag : 12
+diff : 1 ou 2
+
+```{r}
+t <- 1:192
+sinusoides <- t %o% c(rep(1:5, 2)) * pi / 6
+sinusoides[, 1:5] <- sin(sinusoides[, 1:5])
+sinusoides[, 6:10] <- cos(sinusoides[, 6:10])
+sinusoides <- as.data.frame(sinusoides)
+names(sinusoides) <-
+  c(paste("sin_", 1:5, sep = ""), paste("cos_", 1:5, sep = ""))
+```
+
+```{r}
+log_death <- ukdeath$death_log
+df <- data.frame(log_death, t, t ^ 2, t ^ 3)
+df <- cbind(df, sinusoides)
+ModAddifitf <- lm(data = df, log_death ~ .)
+summary(ModAddifitf)
+```
+
+```{r, fig.width=8, message=FALSE, warning=FALSE}
+plot(ModAddifitf)
+plot(ModAddifitf$residuals)
+t.test(ModAddifitf$residuals)
+acf(ModAddifitf$residuals, 192)
+```
+
+
+```{r, fig.width=8, message=FALSE, warning=FALSE}
+MA <- arima(log_death, c(1, 2, 1))
+plot(MA$residuals)
+```
+
