@@ -1,20 +1,16 @@
 ---
 title: "Etude dans le temps des décès dût aux accidents de la route au Royaume-Uni"
-subtitle: "Master 1 MAS Rennes - Série Temporelle"
 author: "BERNARD Baptiste, MONFRET Dylan, RAKOTOSON Loïc"
-geometry: margin=2.5cm
-lang: "fr-FR"
-documentclass: article
-classoption: a4paper
-urlcolor: "blue"
-fontsize: "11pt"
 date: "Pour le 15 mai 2020"
 output:
+  pdf_document: default
   html_notebook:
     df_print: paged
     highlight: tango
+    number_sections: yes
     theme: cerulean
-    number_sections: true
+fontsize: 11pt
+geometry: margin=2.5cm
 jupyter:
   jupytext:
     formats: ipynb,Rmd
@@ -27,6 +23,10 @@ jupyter:
     display_name: R
     language: R
     name: ir
+documentclass: article
+subtitle: Master 1 MAS Rennes - Série Temporelle
+classoption: a4paper
+urlcolor: blue
 ---
 
 \pagenumbering{gobble}
