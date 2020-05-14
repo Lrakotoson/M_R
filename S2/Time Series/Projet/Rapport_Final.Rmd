@@ -1,0 +1,147 @@
+---
+title: "Etude dans le temps des décès dût aux accidents de la route au Royaume-Uni"
+subtitle: "Master 1 MAS Rennes - Série Temporelle"
+author: "BERNARD Baptiste, MONFRET Dylan, RAKOTOSON Loïc"
+geometry: margin=2.5cm
+lang: "fr-FR"
+documentclass: article
+classoption: a4paper
+urlcolor: "blue"
+fontsize: "11pt"
+date: "Pour le 15 mai 2020"
+output:
+  pdf_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+  html_notebook:
+    df_print: paged
+    highlight: tango
+    theme: cerulean
+    number_sections: true
+jupyter:
+  jupytext:
+    formats: ipynb,Rmd
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.1'
+      jupytext_version: 1.2.4
+  kernelspec:
+    display_name: R
+    language: R
+    name: ir
+---
+
+\pagenumbering{gobble}
+\newpage
+\pagenumbering{arabic} 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r include=FALSE}
+library(forecast)
+library(ggfortify)
+library(tidyverse)
+```
+
+# Contextualisation & Méthodologie
+
+Les données sont les enregistrements mensuels du nombre de morts, `death`, sur les accidents de la route au Royaume-Uni entre Janvier 1969 et Décembre 1984. La loi sur le port obligatoire de la ceinture de sécurité, `law`, a été introduite en Février 1983. La variable `law` prend alors la valeur 0 pour les mois où la loi n'est pas en vigueur, 1 lorsqu'elle est en vigueur.
+
+L'objectif de cette étude sera de proposer diverses modélisations de la série temporelle, qui permettraient par exemple de "simuler" le nombre de décès sur les routes britanniques arpès 1984.
+
+```{r}
+period <-
+  seq(as.Date('1969-01-01'), as.Date('1984-12-31'), by = "month")
+
+ukdeath <- 
+  read_delim("data.txt", delim = "  ", col_types = "if") %>%
+  mutate(death_log = log(death),
+         period = period)
+```
+
+```{r echo=FALSE}
+summary(ukdeath)
+head(ukdeath, 10)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(ukdeath) +
+  aes(x = period, y = death, color = law) +
+  geom_point() + geom_line() + stat_smooth(method = "loess") +
+  labs(title = "Nombre de décès lors d'accidents de la route au Royaume-Uni") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+Une première observation de la série, avec mise en évidence des périodes d'application de la loi sur le port de la ceinture, permet de visualiser deux éléments constitutifs de la série :
+
+* Le premier étant la périodicité du nombre de mort sur les routes, avec des accroissements significatifs à chaque fin d'année.
+* Le second étant la tendance générale de la série, bien mis en relief par la [régression locale (méthode non paramétrique, *LOESS*)](https://fr.wikipedia.org/wiki/R%C3%A9gression_locale). Le nombre de décès chaque année à tendance à __s'accroitre entre 1969 et 1973__, à __décroitre entre 1973 et 1976__, à __stagner de 1976 à 1983__, avant de __chuter brutalement avec la mise en application de la loi sur le port de la ceinture en Février 1983__.
+
+Intuitivement, nous pourrions construire nos modèles autour d'une saisonalité des décès sur les routes par rapport fin d'année (période des fêtes), soit __un pique de décès tous les 12 mois__ ; et  en prenant en compte 2 à 3 phases de la série temporelle (2 phases si l'on se ramène uniquements à la période sans la loi et la période avec application de celle-ci).
+
+C'est point de rupture sont aussi visualisable avec le package **`changepoint`** et sa fonction `cpt.meanvar`, et cela sans prendre en compte la variable `law`.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ts_ukdeath <-
+  ts(data = ukdeath$death,
+     start = c(1969, 1),
+     frequency = 12)
+
+ts_ukdeath %>%
+  changepoint::cpt.meanvar(method = "PELT", minseglen = 11)  %>%
+  autoplot() +
+  labs(title = "Points de rupture", x = "period", y = "death") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+Pour la suite de l'étude, nous travaillerons avec le nombre de décès passé au $\log$. Une variabilté réduite peut nous garantir un meilleur ajustement en concervant la forme de la série.
+
+```{r}
+var(ukdeath$death)
+var(ukdeath$death_log)
+```
+
+
+```{r,fig.width=8, message=FALSE, warning=FALSE}
+ggplot(ukdeath) +
+  aes(x = period, y = death_log, color = law) +
+  geom_point() + geom_line() + stat_smooth(method = "loess") +
+  labs(title = "Nombre de décès passé au log") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+ts_ukdeath_log <-
+  ts(
+    data = ukdeath$death_log,
+    start = c(1969, 1),
+    frequency = 12
+  )
+
+ts_ukdeath_log %>%
+  changepoint::cpt.meanvar(method = "PELT", minseglen = 11)  %>%
+  autoplot() +
+  labs(title = "Points de rupture (log)", x = "period", y = "death") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+# Visualiser et confirmer la saisonalité
+
+Pour construire les modèles adéquats à notre problème, nous devons avoir une idée précise des caractéristiques de la série. Il s'agit ici de confirmer si la saisonalité des décès est bien de 12 mois, et de l'autocorrélation des données (lien ou similitude entre l'été 1963 et l'été 1973, par exemple).
+
+## *Lag Plot*, *Month Plot* et autocorrélation de la série
+
+
+
+```{r, fig.width=8, message=FALSE, warning=FALSE}
+lag.plot(ukdeath$death_log, lags = 16)
+ggmonthplot(ts_ukdeath_log) +
+  labs(title = "Points de rupture (log)",x = "period", y = "death")
+
+ggAcf(ts_ukdeath_log)
+```
+
+
+## 

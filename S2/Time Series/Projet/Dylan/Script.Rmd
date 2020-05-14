@@ -125,7 +125,7 @@ diff : 1 ou 2
 
 ```{r}
 exemple <- diff(ukdeath$death_log, 12 , 2)
-acf(exemple, 24)
+acf(exemple, 25)
 ```
 
 # Reprod
@@ -154,5 +154,11 @@ plot(ModAddifitf)
 plot(ModAddifitf$residuals)
 t.test(ModAddifitf$residuals)
 acf(ModAddifitf$residuals, 192)
+```
+
+
+```{r}
+MA <- arima(log_death, c(1, 2, 1))
+plot(MA$residuals)
 ```
 
