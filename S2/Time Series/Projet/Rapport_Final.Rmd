@@ -82,7 +82,7 @@ Une première observation de la série, avec mise en évidence des périodes d'a
 * Le premier étant la périodicité du nombre de morts sur les routes, avec des accroissements significatifs à chaque fin d'année.
 * Le second étant la tendance générale de la série, bien mis en relief par la [régression locale (méthode non paramétrique, *LOESS*)](https://fr.wikipedia.org/wiki/R%C3%A9gression_locale). Le nombre de décès chaque année à tendance à __s'accroitre entre 1969 et 1973__, à __décroitre entre 1973 et 1976__, à __stagner de 1976 à 1983__, avant de __chuter brutalement avec la mise en application de la loi sur le port de la ceinture en février 1983__.
 
-Intuitivement, nous pourrions construire nos modèles autour d'une saisonnalité  des décès sur les routes avec la fin d'année (période des fêtes) comme point de référence, où l'on y constate chaque année __un pique de décès__ ; et  en prenant en compte 2 à 3 phases de la série temporelle (2 phases si l'on se ramène uniquement à la période sans la loi et la période avec application de celle-ci).
+Intuitivement, nous pourrions construire nos modèles autour d'une saisonnalité des décès sur les routes avec la fin d'année (période des fêtes) comme point de référence, où l'on y constate chaque année __un pique de décès__ ; et  en prenant en compte 2 à 3 phases de la série temporelle (2 phases si l'on se ramène uniquement à la période sans la loi et la période avec application de celle-ci).
 
 Ces points de rupture sont aussi visualisables avec le package **`changepoint`** et sa fonction `cpt.meanvar`, et cela sans prendre en compte la variable `law`.
 
@@ -134,13 +134,13 @@ ts_ukdeath_log %>%
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
-# Visualiser et confirmer la saisonnalité 
+# Visualiser et confirmer la saisonnalité
 
-Pour construire les modèles adéquats à notre problème, nous devons avoir une idée précise des caractéristiques de la série. Il s'agit ici de confirmer si la saisonnalité  des décès est bien de 12 mois, et de l'auto-corrélation des données (lien ou similitude entre l'été 1963 et l'été 1973, par exemple).
+Pour construire les modèles adéquats à notre problème, nous devons avoir une idée précise des caractéristiques de la série. Il s'agit ici de confirmer si la saisonnalité des décès est bien de 12 mois, et de l'auto-corrélation des données (lien ou similitude entre l'été 1963 et l'été 1973, par exemple).
 
 ## *Lag Plot*, *Month Plot* et auto-corrélations de la série
 
-Les représentations graphiques de la variable d'intérêt par rapport au temps sont de bons indicateurs pour émettre des hypothèses quant à la saisonnalité  d'une série temporelle.
+Les représentations graphiques de la variable d'intérêt par rapport au temps sont de bons indicateurs pour émettre des hypothèses quant à la saisonnalité d'une série temporelle.
 
 * Le **Lag Plot**, mettant en perspective la valeur d'une variable à un instant $t$ et à un instant $t-h$ permet de visualiser le lien linéaire entre deux instants et l'on peut répondre aux questions du type : *"Est-ce qu'un même schéma se répète à 6 mois / 2 ans / 10 secondes d'intervalles" ? Cela se traduit par le plus ou moins bon alignement des points sur la première bissectrice.
 
@@ -186,7 +186,7 @@ ggmonthplot(ts_ukdeath_log) +
 
 ## Opérateurs de différence pour le modèle additif
 
-Pour construire un modèle additif, il est nécessaire de connaître la saisonnalité  de notre série, mais aussi le degré du polynôme composant le modèle. La série $x_t$ peut donc s'écrire sous cette forme :
+Pour construire un modèle additif, il est nécessaire de connaître la saisonnalité de notre série, mais aussi le degré du polynôme composant le modèle. La série $x_t$ peut donc s'écrire sous cette forme :
 
 $$x_t=m_t+s_t+u_t$$
 
@@ -203,9 +203,9 @@ Dans l'idéal, on souhaite trouver le décalage $h$ tel que $\Delta$ s'annule. P
 * Trouver le décalage $h$ minimale de la série telle que l'opérateur de différence s'annule en limitant la variabilité de cette suite générée.
 * Trouver la puissance $q$ optimale du polynôme $m_t$ en limitant également la variabilité des termes de $\Delta$.
 
-### La saisonnalité  ($h$ / `lag`)
+### La saisonnalité ($h$ / `lag`)
 
-Dans un premier temps, c'est le paramètre $h$ / `lag` que nous allons faire varier, entre 1 et 191 (puisque la série est composée de 192 mesures). Le paramètre `differencies` est fixé a 1. Ni la moyenne ni la variance ne semble s'écarter significativement de 0, mais c'est définitivement une **saisonnalité  de 12 mois** que nous allons retenir.
+Dans un premier temps, c'est le paramètre $h$ / `lag` que nous allons faire varier, entre 1 et 191 (puisque la série est composée de 192 mesures). Le paramètre `differencies` est fixé a 1. Ni la moyenne ni la variance ne semble s'écarter significativement de 0, mais c'est définitivement une **saisonnalité de 12 mois** que nous allons retenir.
 
 ```{r, fig.width=8, message=FALSE, warning=FALSE}
 Lag_Mean <- NULL
@@ -317,11 +317,11 @@ ggAcf(delta_opti, lag.max = 191) +
 
 ### Fonction sinusoïdale
 
-La fonction de saisonnalité  $s_t$ que nous avions introduite précédemment s'écrit généralement comme la somme d'une série de fonctions trigonométriques, elle est écrite sous la forme suivante :
+La fonction de saisonnalité $s_t$ que nous avions introduite précédemment s'écrit généralement comme la somme d'une série de fonctions trigonométriques, elle est écrite sous la forme suivante :
 
 $$s_t = \begin{cases} \sum_{j=1}^{k} a_k \cos(\frac{2\pi jt}{P}) + b_k \sin(\frac{2\pi jt}{P}), & \mbox{si } P = 2k+1 \\ \sum_{j=1}^{k-1} a_k \cos(\frac{2\pi jt}{P}) + b_k \sin(\frac{2\pi jt}{P}), & \mbox{si } P = 2k \end{cases}$$
 
-Les coefficients $a$ et $b$ sont obtenables avec une régression linéaire, et $P$ correspond notre saisonnalité  $h$. La valeur de $k$ et l'indiçage de la somme dépende de la valeur et de la parité de $h$. Dans notre cas, $h = 12$, et est donc pair. La fonction de saisonnalité  vaut donc :
+Les coefficients $a$ et $b$ sont obtenables avec une régression linéaire, et $P$ correspond notre saisonnalité $h$. La valeur de $k$ et l'indiçage de la somme dépende de la valeur et de la parité de $h$. Dans notre cas, $h = 12$, et est donc pair. La fonction de saisonnalité vaut donc :
 
 $$s_t = \sum_{j=1}^{5} a_k \cos\left(\frac{\pi jt}{6}\right) + b_k \sin\left(\frac{\pi jt}{6}\right)$$
 
@@ -368,7 +368,8 @@ summary(ModAddLog_lm)
 
 **Tendance**
 
-On peut décomposer notre modèle linéaire pour obtenir la tendance sous la forme:
+On peut décomposer notre modèle linéaire pour obtenir la tendance sous la forme :
+
 $$\hat{m}(t) = 1541 + 24.95t - 0.53t^2 + \frac{t^3}{250} -9.907*10^{-6}t^4$$
 
 ```{r message=FALSE, warning=FALSE, echo=FALSE}
@@ -391,9 +392,9 @@ ggplot() + aes(t, trend, color = key) + geom_line() + geom_point(alpha = 0.2) +
 theme_economist() + scale_color_economist()
 ```
 
-**Saisonalité**
+**saisonnalité**
 
-De même pour la saisonalité:
+De même pour la saisonnalité :
 
 $$\hat{s}_t = \left\{
     \begin{array}{ll}
@@ -497,13 +498,24 @@ ts_estimated %>%
 ```
 
 
-Enfin, la décomposition de notre modèle additif avec la régression linéaire:
+Enfin, la décomposition de notre modèle additif avec la régression linéaire :
 
 ```{r message=FALSE, warning=FALSE}
-tibble(data = ts_ukdeath, trend = trend_fit, season = season_fil(1:192), residu = ModAdd_lm$residuals, t = period) %>% 
-gather("key", "value", -t) %>% ggplot() + aes(t, value) + geom_line(color = "#2e86de") + 
-facet_wrap(.~key, ncol = 1, scales = "free_y") + theme_economist() + 
-labs(y = NULL, title = "Modèle 1: Régression") + theme(plot.title = element_text(hjust = 0.5))
+tibble(
+  data = ts_ukdeath,
+  trend = trend_fit,
+  season = season_fil(1:192),
+  residu = ModAdd_lm$residuals,
+  t = period
+) %>%
+  gather("key", "value",-t) %>%
+  ggplot() +
+  aes(t, value) +
+  geom_line(color = "#2e86de") +
+  facet_wrap(. ~ key, ncol = 1, scales = "free_y") +
+  theme_economist() +
+  labs(y = NULL, title = "Modèle 1: Régression") +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 
@@ -513,7 +525,7 @@ Supposons toujours $\text{death} = x_t = m_t + s_t + u_t.$   Au lieu de passer p
 
 ### Filtre sur la tendance
 
-Comme dit précédemment, nous avons une saisonnalité  de 12 mois, nous allons donc appliquer un filtre linéaire à notre série temporelle avec une moyenne mobile sur 12 périodes.
+Comme dit précédemment, nous avons une saisonnalité de 12 mois, nous allons donc appliquer un filtre linéaire à notre série temporelle avec une moyenne mobile sur 12 périodes.
 
 ```{r message=FALSE, warning=FALSE}
 trend_filter <- stats::filter(ts_ukdeath, rep(1 / 12, 12),
@@ -532,7 +544,7 @@ tibble(filter = trend_filter, t = 1:192) %>%
   scale_color_economist()
 ```
 
-### Filtre sur la saisonnalité 
+### Filtre sur la saisonnalité
 
 L’idée ici est de calculer la saisonnalité sur la série sans la tendance. Puisque nous avons constaté une périodicité annuelle des décès, nous déduirons la saisonnalité par la moyenne arithmétique mensuelle.
 
@@ -556,7 +568,7 @@ tibble(filter = seasonal_filter, t = 1:192) %>%
   scale_color_economist()
 ```
 
-On arrive quasiment à la saisonnalité  du **modèle 1 avec la Régression linéaire**, mais avec une magnitude plus élevée.
+On arrive quasiment à la saisonnalité du **modèle 1 avec la Régression linéaire**, mais avec une magnitude plus élevée.
 
 ### Filtre sur les résidus
 
@@ -693,12 +705,10 @@ tibble(noise) %>%
 
 # Conclusion
 
-Notre démarche consiste essentiellement à décomposer notre série.  
-Deux méthodes principales ont été utilisées pour l'élimination de la tendance et la saisonalité: la régression et le filtrage.
+Notre démarche consiste essentiellement à décomposer notre série. Deux méthodes principales ont été utilisées pour l'élimination de la tendance et la saisonnalité : la régression et le filtrage.
 
-La première consiste à estimer la tendance et la saisonalité de la série par une régression polynomiale et à conserver les résidus pour l'analyse spectrale avec l'ACF et le PACF. L'absence d'information au niveau des composantes de la série et les coefficients du modèle constitue l'inconvénient majeur de cette procédure.  
-Le manque de données après l'introduction de la loi, variable `law`, ne permet pas d'analyser cette dernière.
+La première consiste à estimer la tendance et la saisonnalité de la série par une régression polynomiale et à conserver les résidus pour l'analyse spectrale avec l'ACF et le PACF. L'absence d'information au niveau des composantes de la série et les coefficients du modèle constitue l'inconvénient majeur de cette procédure. Le manque de données après l'introduction de la loi, variable `law`, ne permet pas d'analyser cette dernière.
 
-La deuxième consiste à appliquer un filtre, une opération linéaire, avec les moyennes arithmétiques mobiles pour obtenir la tendance. La saisonalité correspond donc à la moyenne mensuelle.
+La deuxième consiste à appliquer un filtre, une opération linéaire, avec les moyennes arithmétiques mobiles pour obtenir la tendance. La saisonnalité  correspond donc à la moyenne mensuelle.
 
 Enfin, nous avons un troisième modèle dont on ne connaît ni la méthode de décomposition ni les paramètres. Grâce à l'analyse des résidus de celui-ci, nous pouvons en déduire qu'il a utilisé un MA.
