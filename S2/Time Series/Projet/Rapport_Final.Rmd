@@ -2,17 +2,14 @@
 title: "Etude dans le temps des décès dût aux accidents de la route au Royaume-Uni"
 author: "BERNARD Baptiste, MONFRET Dylan, RAKOTOSON Loïc"
 date: "Pour le 15 mai 2020"
-documentclass: article
-subtitle: "Master 1 MAS Rennes - Série Temporelle"
-classoption: a4paper
-urlcolor: blue
 output:
+  pdf_document: default
   html_notebook:
+    css: style_serie_temp.css
     df_print: paged
     highlight: tango
     number_sections: yes
     theme: cerulean
-    css: "style_serie_temp.css"
 fontsize: 11pt
 geometry: margin=2.5cm
 jupyter:
@@ -27,6 +24,10 @@ jupyter:
     display_name: R
     language: R
     name: ir
+documentclass: article
+subtitle: Master 1 MAS Rennes - Série Temporelle
+classoption: a4paper
+urlcolor: blue
 ---
 
 \pagenumbering{gobble}
@@ -365,6 +366,53 @@ summary(ModAdd_lm)
 summary(ModAddLog_lm)
 ```
 
+**Tendance**
+
+On peut décomposer notre modèle linéaire pour obtenir la tendance sous la forme:
+$$\hat{m}(t) = 1541 + 24.95t - 0.53t^2 + \frac{t^3}{250} -9.907*10^{-6}t^4$$
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+trend_fil <- function(x){
+  m <- ModAdd_lm$coefficients
+  y <- m[1] + m[2]*x + m[3]*x^2 + m[4]*x^3 + m[5]*x^4
+  return(y)
+}
+
+season_fil <- function(x){
+  m <- ModAdd_lm$coefficients
+  y <- m[6]*sin(x*pi/6) + m[7]*sin(x*pi/3) + m[8]*sin(x*pi/2) + m[9]*sin(2*x*pi/3) + 
+    m[11]*cos(x*pi/6) + m[12]*cos(x*pi/3) + m[13]*cos(x*pi/2) + m[14]*cos(2*x*pi/3) + m[15]*cos(5*x*pi/6)
+  return(y)
+}
+
+trend_fit <- trend_fil(1:192)
+tibble(fit = trend_fit, t = 1:192) %>% gather("key", "trend", -t) %>% 
+ggplot() + aes(t, trend, color = key) + geom_line() + geom_point(alpha = 0.2) +
+theme_economist() + scale_color_economist()
+```
+
+**Saisonalité**
+
+De même pour la saisonalité:
+
+$$\hat{s}_t = \left\{
+    \begin{array}{ll}
+      201.5\,cos(\frac{\pi t}{6}) - 120.5\,sin(\frac{\pi t}{6}) \,+\\
+      116.5\,cos(\frac{\pi t}{3}) - 62.45\,sin(\frac{\pi t}{3}) \,+\\
+      59.4\,cos(\frac{\pi t}{2}) - 36.71\,sin(\frac{\pi t}{2}) \,+ \\
+      42\,cos(\frac{\pi 2t}{3}) - 22.95\,sin(\frac{\pi 2t}{3}) \,+ \\
+      46.22\,cos(\frac{\pi 5t}{6}) - 22.51\,sin(\frac{\pi 5t}{6})
+      \end{array}
+\right.$$
+
+```{r}
+tibble(fit = season_fil(1:192), t = 1:192) %>% gather("key", "season", -t) %>% 
+ggplot() + aes(t, season, color = key) + geom_line() + geom_point(alpha = 0.2) +
+theme_economist() + scale_color_economist()
+```
+
+**Résidus**
+
 A ce stade, nous ne constatons pas de structure sur les résidus $u_t$ des données.
 
 ```{r, fig.width=8, message=FALSE, warning=FALSE}
@@ -380,6 +428,7 @@ ggplot() +
   theme_economist() +
   theme(plot.title = element_text(hjust = 0.5))
 ```
+
 
 Et ces mêmes résidus sont centrés selon le test de Student au seuil $\alpha = 5\%$ (`p-value` de 1  : hypothèse nulle, *"la moyenne de la variable aléatoire est 0"*, est confirmée), et semble suivre une loi normale selon le test de Shapiro-Wilk au seuil $\alpha = 5\%$ (`p-value` de 0.779, supérieur à 0.05, l'hypothèse nulle, *"l'échantillon suit une loi normale"*, est confirmée).
 
@@ -447,6 +496,17 @@ ts_estimated %>%
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
+
+Enfin, la décomposition de notre modèle additif avec la régression linéaire:
+
+```{r message=FALSE, warning=FALSE}
+tibble(data = ts_ukdeath, trend = trend_fit, season = season_fil(1:192), residu = ModAdd_lm$residuals, t = period) %>% 
+gather("key", "value", -t) %>% ggplot() + aes(t, value) + geom_line(color = "#2e86de") + 
+facet_wrap(.~key, ncol = 1, scales = "free_y") + theme_economist() + 
+labs(y = NULL, title = "Modèle 1: Régression") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+
 ## Modèle 2 : Filtre linéaire
 
 Supposons toujours $\text{death} = x_t = m_t + s_t + u_t.$   Au lieu de passer par une régression linéaire, nous allons plutôt applique un filtre linéaire sur une moyenne mobile (MA). C'est une méthode locale non-paramétrique permettant de filtrer la tendance en éliminant la saisonnalité. Nous estimerons ensuite cette dernière avec la moyenne arithmétique des mois et on en déduira les résidus.
@@ -456,7 +516,7 @@ Supposons toujours $\text{death} = x_t = m_t + s_t + u_t.$   Au lieu de passer p
 Comme dit précédemment, nous avons une saisonnalité  de 12 mois, nous allons donc appliquer un filtre linéaire à notre série temporelle avec une moyenne mobile sur 12 périodes.
 
 ```{r message=FALSE, warning=FALSE}
-trend_filter <- stats::filter(uk_ts, rep(1 / 12, 12),
+trend_filter <- stats::filter(ts_ukdeath, rep(1 / 12, 12),
                               method = "convolution",
                               sides = 2)
 ```
@@ -478,11 +538,11 @@ L’idée ici est de calculer la saisonnalité sur la série sans la tendance. P
 
 ```{r message=FALSE, warning=FALSE}
 seasonal_filter <-
-  (uk_ts - trend_filter) %>%
+  (ts_ukdeath - trend_filter) %>%
   matrix(12) %>%
   t() %>%
   colMeans(na.rm = T) %>%
-  rep(length(uk_ts) / 12)
+  rep(length(ts_ukdeath) / 12)
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -503,7 +563,7 @@ On arrive quasiment à la saisonnalité  du **modèle 1 avec la Régression lin�
 Nous avons notre modèle de tendance et de saisonnalité, nous en déduisons alors les résidus: $\hat{u}_t = x_t - \hat{m}_t - \hat{s}_t$. Avec l'ACF qui décroit, nous partons sur un MA avec un `lag` = $12$.
 
 ```{r message=FALSE, warning=FALSE}
-residual_filter <- uk_ts - trend_filter - seasonal_filter
+residual_filter <- ts_ukdeath - trend_filter - seasonal_filter
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -555,7 +615,7 @@ Ce modèle détecte dans sa tendance un changement avec l'entrée en vigueur de 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 tibble(
-  data = uk_ts,
+  data = ts_ukdeath,
   trend = trend_filter,
   season = seasonal_filter,
   residu = residual_filter,
@@ -566,7 +626,7 @@ tibble(
   geom_line(color = "#2e86de") +
   facet_wrap(. ~ key, ncol = 1, scales = "free_y") +
   theme_economist() +
-  labs(y = NULL, title = "Modèle 3: Filtre") +
+  labs(y = NULL, title = "Modèle 2: Filtre") +
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
@@ -575,13 +635,16 @@ tibble(
 Le modèle par filtre et la décomposition automatique donnent des résultats proches.
 
 ### Analyse de chaque décomposition
-
-
-```{r echo=FALSE, fig.width=8, fig.height=8, message=FALSE, warning=FALSE}
+```{r}
 stl_Add <- stl(ts_ukdeath, "periodic")
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 autoplot(stl_Add) +
   theme_economist() +
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(hjust = 0.5)) +
+  labs(y = NULL, title = "Modèle 3: Décomposition automatique")
 ```
 
 En visualisant la tendance globale (*trend*), nous apercevons bien les 3 mêmes segments qu'avec le découpage par point de rupture ci-dessus.  On remarque aussi qu'il existe une saisonnalité  (*seasonal*) avec une forte hausse des accidents pendant les périodes de fêtes de fin d'année (et du nouvel An aussi du coup). Le bruit (*remainder*) n'influe que peu sur les données (d'où la grande échelle à gauche).
@@ -613,12 +676,12 @@ tibble(noise) %>%
   geom_histogram(
     aes(y = ..density..),
     bins = 10,
-    color = "#d35400",
-    fill = "#f1c40f",
+    color = "#4834d4",
+    fill = "#686de0",
     alpha = 0.6
   ) +
-  geom_density(color = "#c0392b",
-               fill = "#e74c3c",
+  geom_density(color = "#130f40",
+               fill = "#30336b",
                alpha = 0.4) +
   labs(title = "Répartition du bruit") +
   xlim(c(-300, 300)) +
@@ -629,3 +692,13 @@ tibble(noise) %>%
 <br><hr><br>
 
 # Conclusion
+
+Notre démarche consiste essentiellement à décomposer notre série.  
+Deux méthodes principales ont été utilisées pour l'élimination de la tendance et la saisonalité: la régression et le filtrage.
+
+La première consiste à estimer la tendance et la saisonalité de la série par une régression polynomiale et à conserver les résidus pour l'analyse spectrale avec l'ACF et le PACF. L'absence d'information au niveau des composantes de la série et les coefficients du modèle constitue l'inconvénient majeur de cette procédure.  
+Le manque de données après l'introduction de la loi, variable `law`, ne permet pas d'analyser cette dernière.
+
+La deuxième consiste à appliquer un filtre, une opération linéaire, avec les moyennes arithmétiques mobiles pour obtenir la tendance. La saisonalité correspond donc à la moyenne mensuelle.
+
+Enfin, nous avons un troisième modèle dont on ne connaît ni la méthode de décomposition ni les paramètres. Grâce à l'analyse des résidus de celui-ci, nous pouvons en déduire qu'il a utilisé un MA.
