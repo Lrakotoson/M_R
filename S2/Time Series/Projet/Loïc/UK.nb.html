@@ -1844,61 +1844,61 @@ On peut remarquer sur chaque “petite série temporelle mensuelle” la tendanc
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 </div>
-<div id="modèle-1-régression-linéaire" class="section level1">
-<h1>Modèle 1: Régression linéaire</h1>
+<div id="coucou-dylan-on-commence-ici-pour-moi-du-coup-comme-tu-as-une-meilleure-analyse-de-donnees" class="section level1">
+<h1>COUCOU DYLAN !!! ON COMMENCE ICI POUR MOI DU COUP COMME TU AS UNE MEILLEURE ANALYSE DE DONNEES !</h1>
+</div>
+<div id="modélisation" class="section level1">
+<h1>Modélisation</h1>
+<div id="modèle-1-régression-linéaire" class="section level2">
+<h2>Modèle 1: Régression linéaire</h2>
 <p>On cherche un modèle paramétrique de la forme:</p>
 <p><span class="math display">\[\text{death} = m_t + s_t + \epsilon_t\]</span></p>
-<div id="régression-sur-la-tendance" class="section level2">
-<h2>1. Régression sur la tendance</h2>
+<div id="régression-sur-la-tendance" class="section level3">
+<h3>1. Régression sur la tendance</h3>
 <p>J’ai laissé le modèle “optimal” (<em>en bleu foncé</em>) sur chaque plot.<br />
 Les modèles qu’on ajuste s’appelle “fit” (<em>en bleu clair</em>).</p>
 <!-- rnb-text-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubW9kX2ZpdCA8LSBsbShkZWF0aCB+IHQgKyB0MiArIHQzICsgdDQgKyB0OCwgZGF0YSA9IGRmX2ZpdClcbmBgYCJ9 -->
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1">mod_fit &lt;-<span class="st"> </span><span class="kw">lm</span>(death <span class="op">~</span><span class="st"> </span>t <span class="op">+</span><span class="st"> </span>t2 <span class="op">+</span><span class="st"> </span>t3 <span class="op">+</span><span class="st"> </span>t4 <span class="op">+</span><span class="st"> </span>t8, <span class="dt">data =</span> df_fit)</a></code></pre></div>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubW9kX2ZpdCA8LSBsbShkZWF0aCB+IC4sIGRhdGEgPSBkZl9maXQpXG5iZXN0bG0gPC0gc3RlcChtb2RfZml0LCB0cmFjZSA9IEYsIGRpcmVjdGlvbiA9IFwiYm90aFwiKVxuYGBgIn0= -->
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1">mod_fit &lt;-<span class="st"> </span><span class="kw">lm</span>(death <span class="op">~</span><span class="st"> </span>., <span class="dt">data =</span> df_fit)</a>
+<a class="sourceLine" id="cb2-2" title="2">bestlm &lt;-<span class="st"> </span><span class="kw">step</span>(mod_fit, <span class="dt">trace =</span> F, <span class="dt">direction =</span> <span class="st">&quot;both&quot;</span>)</a></code></pre></div>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <p>J’ai essayé plusieurs modèles, j’ai essayé step aussi mais j’ai du réduire encore pour arriver à</p>
-<p><span class="math display">\[m_t = 1349 + 46.5t - 1.17t^2 + \frac{t^3}{100} -3.432*10^{-5}t^4 + 2.613*10^{-15}t^8\]</span></p>
-<p>On peut même enlever <span class="math inline">\(t^4\)</span> et <span class="math inline">\(t^8\)</span> puisque leur coefficient sont proches de <span class="math inline">\(0\)</span>.</p>
+<p><span class="math display">\[\hat{m}(t) = 1538 + 25.07t - 0.54t^2 + \frac{249t^3}{62500} -9.906*10^{-6}t^4\]</span></p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 </div>
-<div id="régression-sur-la-saisonalité" class="section level2">
-<h2>2. Régression sur la saisonalité</h2>
-<p>On part du même principe que les TP avec <span class="math inline">\(cos(\frac{\pi k t}{6})\)</span> et <span class="math inline">\(sin(\frac{\pi k t}{6})\)</span><br />
-Dans le code, quand c’est <code>cos k</code> = <span class="math inline">\(cos(\frac{\pi k t}{6})\)</span>, pareil pour <code>sin k</code></p>
-<!-- rnb-text-end -->
-<!-- rnb-text-begin -->
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubW9kX2ZpdF9zZWFzb24gPC0gbG0oc2Vhc29uIH4gc2luMSArIGNvczEgKyBjb3MyICsgY29zMywgZGF0YSA9IGRmX2ZpdClcbmBgYCJ9 -->
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1">mod_fit_season &lt;-<span class="st"> </span><span class="kw">lm</span>(season <span class="op">~</span><span class="st"> </span>sin1 <span class="op">+</span><span class="st"> </span>cos1 <span class="op">+</span><span class="st"> </span>cos2 <span class="op">+</span><span class="st"> </span>cos3, <span class="dt">data =</span> df_fit)</a></code></pre></div>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<p>Donc après plusieurs essais qui vont dans tous les sens, on arrive à un modèle qui fit bien:</p>
-<p><span class="math display">\[s_t = 199\,cos(\frac{\pi t}{6}) + 114\,cos(\frac{\pi t}{3}) + 57\,cos(\frac{\pi t}{2}) - 112\,sin(\frac{\pi t}{6})\]</span></p>
-<p>On remarque d’ailleurs que ça fit nettement bien avec l’optimal.</p>
+<div id="régression-sur-la-saisonalité" class="section level3">
+<h3>2. Régression sur la saisonalité</h3>
+<p>D’après notre modèle de régression, on estime la saisonalité comme suit:</p>
+<p><span class="math display">\[\hat{s}_t = \left\{
+    \begin{array}{ll}
+      201\,cos(\frac{\pi t}{6}) - 120\,sin(\frac{\pi t}{6}) \,+\\
+      116\,cos(\frac{\pi t}{3}) - 62.41\,sin(\frac{\pi t}{3}) \,+\\
+      59.38\,cos(\frac{\pi t}{2}) - 36.69\,sin(\frac{\pi t}{2}) \,+ \\
+      41.97\,cos(\frac{\pi 2t}{3}) - 22.94\,sin(\frac{\pi 2t}{3})
+      \end{array}
+\right.\]</span></p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <div style="page-break-after: always;"></div>
 </div>
-<div id="résidus-du-modèle-de-régression" class="section level2">
-<h2>3. Résidus du modèle de régression</h2>
+<div id="résidus-du-modèle-de-régression" class="section level3">
+<h3>3. Résidus du modèle de régression</h3>
 <p>Comme c’est un modèle additif, il s’agit de la part non expliquée par la tendance et la saisonalité.</p>
-<p>Ni l’ACF ni le PACF ne semblent décroitre du coup si on se base sur ce modèle ce sera ARMA ? ou ARIMA ?</p>
+<p>L’ACF décroit rapidement.</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucmVzaWR1YWxfZml0IDwtIHVrX3RzIC0gdHJlbmRfZml0IC0gc2Vhc29uYWxfZml0XG5gYGAifQ== -->
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" title="1">residual_fit &lt;-<span class="st"> </span>uk_ts <span class="op">-</span><span class="st"> </span>trend_fit <span class="op">-</span><span class="st"> </span>seasonal_fit</a></code></pre></div>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucmVzaWR1YWxfZml0IDwtIGJlc3RsbSRyZXNpZHVhbHNcbmBgYCJ9 -->
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1">residual_fit &lt;-<span class="st"> </span>bestlm<span class="op">$</span>residuals</a></code></pre></div>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
@@ -1907,10 +1907,11 @@ Dans le code, quand c’est <code>cos k</code> = <span class="math inline">\(cos
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <div style="page-break-after: always;"></div>
+<p>Le test de Shapiro-Wilk ne rejette pas l’hypothèse de la normalité de nos résidus.</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc2hhcGlyby50ZXN0KHJlc2lkdWFsX2ZpdClcbmBgYCJ9 -->
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" title="1"><span class="kw">shapiro.test</span>(residual_fit)</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">shapiro.test</span>(residual_fit)</a></code></pre></div>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
@@ -1918,19 +1919,19 @@ Dans le code, quand c’est <code>cos k</code> = <span class="math inline">\(cos
 <!-- rnb-chunk-begin -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
-<p>Donc ça suit une loi normale, et on obtient:</p>
-<p><span class="math display">\[\epsilon_t \sim \mathcal N(\mu = 0,\sigma^2 = 22 519)\]</span></p>
+<p>Donc <span class="math inline">\(\hat{\epsilon}\)</span> suit une loi normale, et on obtient:</p>
+<p><span class="math display">\[\hat{\epsilon}_t \sim \mathcal N(\mu = 0,\sigma^2 = 19\,451)\]</span></p>
 <div style="page-break-after: always;"></div>
 </div>
-<div id="décomposition" class="section level2">
-<h2>4. Décomposition</h2>
-<p>Donc on a un modèle paramétrique de la forme</p>
-<p><span class="math display">\[\text{death} = m_t + s_t + \epsilon_t\]</span></p>
+<div id="décomposition" class="section level3">
+<h3>4. Décomposition</h3>
+<p>Nous obtenons ainsi un premier modèle, paramétrique, de la forme</p>
+<p><span class="math display">\[\text{death} = \hat{m}(t) + \hat{s}_t + \hat{\epsilon}_t\]</span></p>
 <p><span class="math display">\[\text{avec}\left\{
     \begin{array}{ll}
-        m_t = 1349 + 46.5t - 1.17t^2 + \frac{t^3}{100} -3.432*10^{-5}t^4 + 2.613*10^{-15}t^8 \\
-        s_t = 199\,cos(\frac{\pi t}{6}) + 114\,cos(\frac{\pi t}{3}) + 57\,cos(\frac{\pi t}{2}) - 112\,sin(\frac{\pi t}{6}) \\
-        \epsilon_t \sim \mathcal N(0, 22\,519)
+        \hat{m}(t) = 1538 + 25.07t - 0.54t^2 + \frac{249t^3}{62500} -9.906*10^{-6}t^4 \\
+        \hat{s}_t = ...\\
+        \epsilon_t \sim \mathcal N(0, 19\,451)
     \end{array}
 \right.\]</span></p>
 <!-- rnb-text-end -->
@@ -1940,22 +1941,29 @@ Dans le code, quand c’est <code>cos k</code> = <span class="math inline">\(cos
 <div style="page-break-after: always;"></div>
 </div>
 </div>
-<div id="modèle-2-filtre-linéaire" class="section level1">
-<h1>Modèle 2: Filtre linéaire</h1>
-<p>Alors le but ici c’est de ne pas passer par une régression linéaire mais plutôt par un filtre linéaire sur une moyenne mobile.<br />
-On n’aura pas forcément un modèle paramétrique dans ce cas, bien qu’on peut estimer les paramètres.</p>
-<div id="filtre-sur-la-tendance" class="section level2">
-<h2>1. Filtre sur la tendance</h2>
-<p>Comme on a dit qu’il s’agit de périodes de 12 mois, on va donc appliquer un filtre linéaire à notre série temporelle avec une moyenne mobile sur 12 périodes.<br />
-J’ai pas mis la comparaison avec la tendance “optimale” puisque cette technique de filtre se superpose avec, du coup c’est l’optimale dans notre cas.</p>
+<div id="modèle-2-régression-linéaire-sur-le-log" class="section level2">
+<h2>Modèle 2: Régression linéaire sur le log</h2>
+</div>
+</div>
+<div id="coucou-dylan-du-coup-ce-sera-ici-pour-le-log-je-passe-direct-au-filtre" class="section level1">
+<h1>COUCOU DYLAN DU COUP CE SERA ICI POUR LE LOG, JE PASSE DIRECT AU FILTRE ! ;)</h1>
+<div id="modèle-3-filtre-linéaire" class="section level2">
+<h2>Modèle 3: Filtre linéaire</h2>
+<p>On suppose toujours <span class="math inline">\(\text{death} = m_t + s_t + \epsilon_t.\)</span><br />
+Au lieu de passer par une régression linéaire on applique plutôt un filtre linéaire sur une moyenne mobile (MA).<br />
+C’est une méthode locale non-paramétrique permettant de filtrer la tendance en éliminant la saisonalité.<br />
+On estimera ensuite cette dernière avec la moyenne arithmétique des mois et on en déduira les résidus.</p>
+<div id="filtre-sur-la-tendance" class="section level3">
+<h3>1. Filtre sur la tendance</h3>
+<p>Comme on a dit qu’il s’agit de périodes de 12 mois, on va donc appliquer un filtre linéaire à notre série temporelle avec une moyenne mobile sur 12 périodes.</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxudHJlbmRfZmlsdGVyIDwtIHN0YXRzOjpmaWx0ZXIoXG4gICAgdWtfdHMsIHJlcCgxLzEyLCAxMiksXG4gICAgbWV0aG9kID0gXCJjb252b2x1dGlvblwiLFxuICAgIHNpZGVzID0gMlxuKVxuYGBgIn0= -->
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" title="1">trend_filter &lt;-<span class="st"> </span>stats<span class="op">::</span><span class="kw">filter</span>(</a>
-<a class="sourceLine" id="cb6-2" title="2">    uk_ts, <span class="kw">rep</span>(<span class="dv">1</span><span class="op">/</span><span class="dv">12</span>, <span class="dv">12</span>),</a>
-<a class="sourceLine" id="cb6-3" title="3">    <span class="dt">method =</span> <span class="st">&quot;convolution&quot;</span>,</a>
-<a class="sourceLine" id="cb6-4" title="4">    <span class="dt">sides =</span> <span class="dv">2</span></a>
-<a class="sourceLine" id="cb6-5" title="5">)</a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" title="1">trend_filter &lt;-<span class="st"> </span>stats<span class="op">::</span><span class="kw">filter</span>(</a>
+<a class="sourceLine" id="cb5-2" title="2">    uk_ts, <span class="kw">rep</span>(<span class="dv">1</span><span class="op">/</span><span class="dv">12</span>, <span class="dv">12</span>),</a>
+<a class="sourceLine" id="cb5-3" title="3">    <span class="dt">method =</span> <span class="st">&quot;convolution&quot;</span>,</a>
+<a class="sourceLine" id="cb5-4" title="4">    <span class="dt">sides =</span> <span class="dv">2</span></a>
+<a class="sourceLine" id="cb5-5" title="5">)</a></code></pre></div>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
@@ -1965,17 +1973,17 @@ J’ai pas mis la comparaison avec la tendance “optimale” puisque cette tech
 <!-- rnb-text-begin -->
 <div style="page-break-after: always;"></div>
 </div>
-<div id="filtre-sur-la-saisonalité" class="section level2">
-<h2>2. Filtre sur la saisonalité</h2>
+<div id="filtre-sur-la-saisonalité" class="section level3">
+<h3>2. Filtre sur la saisonalité</h3>
 <p>L’idée ici est de calculer la saisonalité sur la série sans la tendance.<br />
-Comme au tout début on a noté une périodicité annuelle, on déduira la saisonalité par la moyenne mensuelle.</p>
+Comme au tout début on a noté une périodicité annuelle, on déduira la saisonalité par la moyenne arithmétique mensuelle.</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc2Vhc29uYWxfZmlsdGVyIDwtICh1a190cyAtIHRyZW5kX2ZpbHRlcikgJT4lIFxubWF0cml4KDEyKSAlPiUgdCgpICU+JSBcbmNvbE1lYW5zKG5hLnJtID0gVCkgJT4lIFxucmVwKGxlbmd0aCh1a190cykvMTIpXG5gYGAifQ== -->
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1">seasonal_filter &lt;-<span class="st"> </span>(uk_ts <span class="op">-</span><span class="st"> </span>trend_filter) <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb7-2" title="2"><span class="kw">matrix</span>(<span class="dv">12</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">t</span>() <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb7-3" title="3"><span class="kw">colMeans</span>(<span class="dt">na.rm =</span> T) <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb7-4" title="4"><span class="kw">rep</span>(<span class="kw">length</span>(uk_ts)<span class="op">/</span><span class="dv">12</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" title="1">seasonal_filter &lt;-<span class="st"> </span>(uk_ts <span class="op">-</span><span class="st"> </span>trend_filter) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="kw">matrix</span>(<span class="dv">12</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">t</span>() <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="kw">colMeans</span>(<span class="dt">na.rm =</span> T) <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb6-4" title="4"><span class="kw">rep</span>(<span class="kw">length</span>(uk_ts)<span class="op">/</span><span class="dv">12</span>)</a></code></pre></div>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
@@ -1983,17 +1991,17 @@ Comme au tout début on a noté une périodicité annuelle, on déduira la saiso
 <!-- rnb-chunk-begin -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
-<p>On arrive quasiment à la saisonalité du <em>modèle 1 avec la Régression linéaire</em>, l’amplitude est juste plus grande sur ce modèle au mois de décembre.</p>
+<p>On arrive quasiment à la saisonalité du <em>modèle 1 avec la Régression linéaire</em>, mais avec une magnitude plus élevée.</p>
 <div style="page-break-after: always;"></div>
 </div>
-<div id="filtre-sur-les-résidus" class="section level2">
-<h2>3. Filtre sur les résidus</h2>
-<p>Comme précédement, c’est un modèle additif donc let’s go.</p>
-<p>Là on a un ACF qui décroit, on part sur un MA avec un lag = <span class="math inline">\(4\)</span>.</p>
+<div id="filtre-sur-les-résidus" class="section level3">
+<h3>3. Filtre sur les résidus</h3>
+<p>Nous avons notre modèle de tendance et de saisonalité. On en déduit alors les résidus: <span class="math inline">\(\hat{\epsilon} = \text{death} - \hat{m}(t) - \hat{s}_t\)</span></p>
+<p>Avec ACF qui décroit, on part sur un MA avec un lag = <span class="math inline">\(4\)</span>.</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucmVzaWR1YWxfZmlsdGVyIDwtIHVrX3RzIC0gdHJlbmRfZmlsdGVyIC0gc2Vhc29uYWxfZmlsdGVyXG5gYGAifQ== -->
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" title="1">residual_filter &lt;-<span class="st"> </span>uk_ts <span class="op">-</span><span class="st"> </span>trend_filter <span class="op">-</span><span class="st"> </span>seasonal_filter</a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1">residual_filter &lt;-<span class="st"> </span>uk_ts <span class="op">-</span><span class="st"> </span>trend_filter <span class="op">-</span><span class="st"> </span>seasonal_filter</a></code></pre></div>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
@@ -2002,10 +2010,11 @@ Comme au tout début on a noté une périodicité annuelle, on déduira la saiso
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <div style="page-break-after: always;"></div>
+<p>On ne rejette pas l’hypothèse de la normalité de nos résidus</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc2hhcGlyby50ZXN0KHJlc2lkdWFsX2ZpbHRlcilcbmBgYCJ9 -->
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">shapiro.test</span>(residual_filter)</a></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">shapiro.test</span>(residual_filter)</a></code></pre></div>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
@@ -2013,20 +2022,20 @@ Comme au tout début on a noté une périodicité annuelle, on déduira la saiso
 <!-- rnb-chunk-begin -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
-<p>Donc ça suit une loi normale, et on obtient:</p>
+<p>Donc <span class="math inline">\(\hat{\epsilon}\)</span> suit une loi normale, et on obtient:</p>
 <p><span class="math display">\[\epsilon_t \sim \mathcal N(\mu = 0,\sigma^2 = 12\;446)\]</span></p>
 <div style="page-break-after: always;"></div>
 </div>
-<div id="décomposition-1" class="section level2">
-<h2>4. Décomposition</h2>
+<div id="décomposition-1" class="section level3">
+<h3>4. Décomposition</h3>
 <p>Donc on a un modèle dont on connaît certains paramètres de la forme</p>
 <p><span class="math display">\[\text{death} = m_t + s_t + \epsilon_t\]</span></p>
 <p><span class="math display">\[\text{avec}\left\{
     \begin{array}{ll}
-        s_t = \beta_0 + \beta_1\,cos(\frac{\pi t}{6}) + \beta_2\,cos(\frac{\pi t}{3}) + \beta_3\,cos(\frac{\pi t}{2}) - \beta_4\,sin(\frac{\pi t}{6}) + (\tau) \\
         \epsilon_t \sim \mathcal N(0, 12\,446)
     \end{array}
 \right.\]</span></p>
+<p>Ce modèle détecte dans sa tendance le changement avec l’entrée en vigueur de la loi sur le port de ceinture.</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
 <!-- rnb-chunk-end -->
@@ -2034,8 +2043,8 @@ Comme au tout début on a noté une périodicité annuelle, on déduira la saiso
 <div style="page-break-after: always;"></div>
 </div>
 </div>
-<div id="modèle-3-décomposition-automatique" class="section level1">
-<h1>Modèle 3: Décomposition automatique</h1>
+<div id="modèle-4-décomposition-automatique" class="section level2">
+<h2>Modèle 4: Décomposition automatique</h2>
 <p>C’est ce qu’on a fait dans le pdf que j’ai envoyé (<em>explorer.pdf</em>), du coup je ne vais pas la refaire ici.<br />
 Il faut quand même noter que le modèle par filtre et la décomposition automatique donnent des résultats proches.</p>
 <br>
@@ -2045,8 +2054,9 @@ Il faut quand même noter que le modèle par filtre et la décomposition automat
 Les modèles 2 et 3 sont meilleurs que 1 puisque leurs résidus capturent moins de données. Ca voudrait donc dire qu’on a plus de contrôle sur le modèle et qu’il y a moins d’aléa.</p>
 <!-- rnb-text-end -->
 </div>
+</div>
 
-<div id="rmd-source-code">LS0tDQp0aXRsZTogIlRTIE1vZMOobGVzIHYuMSINCmF1dGhvcjogIkxvw69jIg0Kb3V0cHV0Og0KICBwZGZfZG9jdW1lbnQ6IGRlZmF1bHQNCiAgaHRtbF9ub3RlYm9vazoNCiAgICBkZl9wcmludDogcGFnZWQNCiAgICBoaWdobGlnaHQ6IHRhbmdvDQogICAgdGhlbWU6IGNlcnVsZWFuDQpqdXB5dGVyOg0KICBqdXB5dGV4dDoNCiAgICBmb3JtYXRzOiBpcHluYixSbWQNCiAgICB0ZXh0X3JlcHJlc2VudGF0aW9uOg0KICAgICAgZXh0ZW5zaW9uOiAuUm1kDQogICAgICBmb3JtYXRfbmFtZTogcm1hcmtkb3duDQogICAgICBmb3JtYXRfdmVyc2lvbjogJzEuMScNCiAgICAgIGp1cHl0ZXh0X3ZlcnNpb246IDEuMi40DQogIGtlcm5lbHNwZWM6DQogICAgZGlzcGxheV9uYW1lOiBSDQogICAgbGFuZ3VhZ2U6IFINCiAgICBuYW1lOiBpcg0KLS0tDQoNCmBgYHtyIGluY2x1ZGU9Rn0NCmxpYnJhcnkodGlkeXZlcnNlKSANCmxpYnJhcnkoZ2dFeHRyYSkNCmxpYnJhcnkoZ2d0aGVtZXMpDQpsaWJyYXJ5KGZvcmVjYXN0KQ0KbGlicmFyeShnZ2ZvcnRpZnkpDQpgYGANCg0KIyBDb250ZXh0ZQ0KDQpgYGB7ciBtZXNzYWdlPUZBTFNFLCB3YXJuaW5nPUZBTFNFfQ0KdWsgPC0gcmVhZF90YWJsZSgiLi4vZGF0YS50eHQiLCBjb2xfdHlwZXMgPSAiaWYiKQ0KcGVyaW9kIDwtIHNlcShhcy5EYXRlKCcxOTY5LTAxLTAxJyksIGFzLkRhdGUoJzE5ODQtMTItMzEnKSwgYnkgPSAibW9udGgiKQ0KdWtfdHMgPC0gdHModWskZGVhdGgsIHN0YXJ0ID0gYygxOTY5LDEpLCBmcmVxdWVuY3kgPSAxMikNCnVrX2RmIDwtIGJpbmRfY29scyh1aywgdCA9IHBlcmlvZCkNCmBgYA0KDQpgYGB7ciBlY2hvPUZBTFNFfQ0KZ2dwbG90KHVrX2RmKSArIGFlcyh0LCBkZWF0aCwgY29sb3IgPSBsYXcpICsNCmdlb21fbGluZSgpICsgZ2VvbV9wb2ludCgpICsNCnRoZW1lX2Vjb25vbWlzdCgpICsgc2NhbGVfY29sb3JfZWNvbm9taXN0KCkNCmBgYA0KDQpcbmV3cGFnZQ0KDQpJY2ksIG9uIGNoZXJjaGUgw6AgZMOpbW9udHJlciBxdWUgbGEgcMOpcmlvZGljaXTDqSBlc3QgYW5udWVsbGUuICANCk9uIHBldXQgcmVtYXJxdWVyIHN1ciBjaGFxdWUgInBldGl0ZSBzw6lyaWUgdGVtcG9yZWxsZSBtZW5zdWVsbGUiIGxhIHRlbmRhbmNlIHF1aSBkw6ljcm9pdC4NCg0KYGBge3IgZWNobz1GQUxTRSwgbWVzc2FnZT1GLCB3YXJuaW5nPUZ9DQpnZ21vbnRocGxvdCh1a190cykgKw0KdGhlbWVfZWNvbm9taXN0KCkgKw0Kc2NhbGVfY29sb3JfZWNvbm9taXN0KCkNCmBgYA0KDQojIE1vZMOobGUgMTogUsOpZ3Jlc3Npb24gbGluw6lhaXJlDQpPbiBjaGVyY2hlIHVuIG1vZMOobGUgcGFyYW3DqXRyaXF1ZSBkZSBsYSBmb3JtZToNCg0KJCRcdGV4dHtkZWF0aH0gPSBtX3QgKyBzX3QgKyBcZXBzaWxvbl90JCQNCg0KIyMgMS4gUsOpZ3Jlc3Npb24gc3VyIGxhIHRlbmRhbmNlDQpKJ2FpIGxhaXNzw6kgbGUgbW9kw6hsZSAib3B0aW1hbCIgKCplbiBibGV1IGZvbmPDqSopIHN1ciBjaGFxdWUgcGxvdC4gIA0KTGVzIG1vZMOobGVzIHF1J29uIGFqdXN0ZSBzJ2FwcGVsbGUgImZpdCIgKCplbiBibGV1IGNsYWlyKikuDQoNCmBgYHtyIGluY2x1ZGU9Rn0NCmRmX2ZpdCA8LSB0aWJibGUoZGVhdGggPSB1a19kZiRkZWF0aCwgdCA9IDE6MTkyKSAlPiUgDQptdXRhdGUodDIgPSB0XjIsIHQzID0gdF4zLCB0NCA9IHReNCwgdDUgPSB0XjUsDQogICAgICAgdDYgPSB0XjYsIHQ3ID0gdF43LCB0OCA9IHReOCwgdDkgPSB0XjkpDQpgYGANCg0KYGBge3IgbWVzc2FnZT1GQUxTRSwgd2FybmluZz1GQUxTRX0NCm1vZF9maXQgPC0gbG0oZGVhdGggfiB0ICsgdDIgKyB0MyArIHQ0ICsgdDgsIGRhdGEgPSBkZl9maXQpDQpgYGANCg0KSidhaSBlc3NhecOpIHBsdXNpZXVycyBtb2TDqGxlcywgaidhaSBlc3NhecOpIHN0ZXAgYXVzc2kgbWFpcyBqJ2FpIGR1IHLDqWR1aXJlIGVuY29yZSBwb3VyIGFycml2ZXIgw6ANCg0KJCRtX3QgPSAxMzQ5ICsgNDYuNXQgLSAxLjE3dF4yICsgXGZyYWN7dF4zfXsxMDB9IC0zLjQzMioxMF57LTV9dF40ICsgMi42MTMqMTBeey0xNX10XjgkJA0KDQpPbiBwZXV0IG3Dqm1lIGVubGV2ZXIgJHReNCQgZXQgJHReOCQgcHVpc3F1ZSBsZXVyIGNvZWZmaWNpZW50IHNvbnQgcHJvY2hlcyBkZSAkMCQuDQoNCmBgYHtyIGVjaG89RkFMU0UsIG1lc3NhZ2U9Riwgd2FybmluZz1GfQ0Kc3VtbWFyeShtb2RfZml0KQ0KdHJlbmRfZml0IDwtIG1vZF9maXQkZml0dGVkLnZhbHVlcw0KdGliYmxlKG9wdGltYWwgPSBtYSh1a190cywgb3JkZXIgPSAxMiksIGZpdCA9IHRyZW5kX2ZpdCwgdCA9IDE6MTkyKSAlPiUgZ2F0aGVyKCJrZXkiLCAidHJlbmQiLCAtdCkgJT4lIA0KZ2dwbG90KCkgKyBhZXModCwgdHJlbmQsIGNvbG9yID0ga2V5KSArIGdlb21fbGluZSgpICsgZ2VvbV9wb2ludChhbHBoYSA9IDAuMikgKw0KdGhlbWVfZWNvbm9taXN0KCkgKyBzY2FsZV9jb2xvcl9lY29ub21pc3QoKQ0KYGBgDQoNCiMjIDIuIFLDqWdyZXNzaW9uIHN1ciBsYSBzYWlzb25hbGl0w6kNCk9uIHBhcnQgZHUgbcOqbWUgcHJpbmNpcGUgcXVlIGxlcyBUUCBhdmVjICRjb3MoXGZyYWN7XHBpIGsgdH17Nn0pJCBldCAkc2luKFxmcmFje1xwaSBrIHR9ezZ9KSQgIA0KRGFucyBsZSBjb2RlLCBxdWFuZCBjJ2VzdCBgY29zIGtgID0gJGNvcyhcZnJhY3tccGkgayB0fXs2fSkkLCBwYXJlaWwgcG91ciBgc2luIGtgDQoNCmBgYHtyIGluY2x1ZGU9Rn0NCnNlYXNvbl9maXQgPC0gKHVrX3RzIC0gdHJlbmRfZml0KSU+JSANCm1hdHJpeCgxMikgJT4lIHQoKSAlPiUgDQpjb2xNZWFucyhuYS5ybSA9IFQpICU+JSANCnJlcChsZW5ndGgodWtfdHMpLzEyKQ0KDQpzaW51c29pZGVzIDwtIDE6MTkyJW8lYyhyZXAoMTo2LDIpKnBpLzYpDQpzaW51c29pZGVzWywxOjVdIDwtIHNpbihzaW51c29pZGVzWywxOjVdKQ0Kc2ludXNvaWRlc1ssNjoxMF0gPC0gY29zKHNpbnVzb2lkZXNbLDY6MTBdKQ0Kc2ludXNvaWRlcyA8LSBhc190aWJibGUoc2ludXNvaWRlcykNCm5hbWVzKHNpbnVzb2lkZXMpIDwtIGMocGFzdGUwKCJzaW4iLDE6NikscGFzdGUwKCJjb3MiLDE6NikpDQoNCmRmX2ZpdCA8LSBiaW5kX2NvbHMoc2Vhc29uID0gc2Vhc29uX2ZpdCwgdCA9IDE6MTkyLCBzaW51c29pZGVzKQ0KYGBgDQoNCmBgYHtyIG1lc3NhZ2U9RkFMU0UsIHdhcm5pbmc9RkFMU0V9DQptb2RfZml0X3NlYXNvbiA8LSBsbShzZWFzb24gfiBzaW4xICsgY29zMSArIGNvczIgKyBjb3MzLCBkYXRhID0gZGZfZml0KQ0KYGBgDQoNCkRvbmMgYXByw6hzIHBsdXNpZXVycyBlc3NhaXMgcXVpIHZvbnQgZGFucyB0b3VzIGxlcyBzZW5zLCBvbiBhcnJpdmUgw6AgdW4gbW9kw6hsZSBxdWkgZml0IGJpZW46DQoNCiQkc190ID0gMTk5XCxjb3MoXGZyYWN7XHBpIHR9ezZ9KSArIDExNFwsY29zKFxmcmFje1xwaSB0fXszfSkgKyA1N1wsY29zKFxmcmFje1xwaSB0fXsyfSkgLSAxMTJcLHNpbihcZnJhY3tccGkgdH17Nn0pJCQNCg0KT24gcmVtYXJxdWUgZCdhaWxsZXVycyBxdWUgw6dhIGZpdCBuZXR0ZW1lbnQgYmllbiBhdmVjIGwnb3B0aW1hbC4NCg0KYGBge3IgZWNobz1GQUxTRSwgbWVzc2FnZT1GLCB3YXJuaW5nPUZ9DQpzdW1tYXJ5KG1vZF9maXRfc2Vhc29uKQ0KDQpzZWFzb25hbF9maXQgPC0gbW9kX2ZpdF9zZWFzb24kZml0dGVkLnZhbHVlcw0KdGliYmxlKG9wdGltYWwgPSBzZWFzb25fZml0LCBmaXQgPSBzZWFzb25hbF9maXQsIHQgPSAxOjE5MikgJT4lIGdhdGhlcigia2V5IiwgInNlYXNvbiIsIC10KSAlPiUgDQpnZ3Bsb3QoKSArIGFlcyh0LCBzZWFzb24sIGNvbG9yID0ga2V5KSArIGdlb21fbGluZSgpICsgZ2VvbV9wb2ludChhbHBoYSA9IDAuMikgKw0KdGhlbWVfZWNvbm9taXN0KCkgKyBzY2FsZV9jb2xvcl9lY29ub21pc3QoKQ0KYGBgDQoNClxuZXdwYWdlDQoNCiMjIDMuIFLDqXNpZHVzIGR1IG1vZMOobGUgZGUgcsOpZ3Jlc3Npb24NCkNvbW1lIGMnZXN0IHVuIG1vZMOobGUgYWRkaXRpZiwgaWwgcydhZ2l0IGRlIGxhIHBhcnQgbm9uIGV4cGxpcXXDqWUgcGFyIGxhIHRlbmRhbmNlIGV0IGxhIHNhaXNvbmFsaXTDqS4NCg0KTmkgbCdBQ0YgbmkgbGUgUEFDRiBuZSBzZW1ibGVudCBkw6ljcm9pdHJlIGR1IGNvdXAgc2kgb24gc2UgYmFzZSBzdXIgY2UgbW9kw6hsZSBjZSBzZXJhIEFSTUEgPyBvdSBBUklNQSA/DQoNCmBgYHtyIG1lc3NhZ2U9RkFMU0UsIHdhcm5pbmc9RkFMU0V9DQpyZXNpZHVhbF9maXQgPC0gdWtfdHMgLSB0cmVuZF9maXQgLSBzZWFzb25hbF9maXQNCmBgYA0KDQpgYGB7ciBlY2hvPUZBTFNFLCBtZXNzYWdlPUYsIHdhcm5pbmc9Rn0NCmdndHNkaXNwbGF5KHJlc2lkdWFsX2ZpdCwgbGFnLm1heCA9IDEyKQ0KYGBgDQoNClxuZXdwYWdlDQoNCmBgYHtyIG1lc3NhZ2U9RkFMU0UsIHdhcm5pbmc9RkFMU0V9DQpzaGFwaXJvLnRlc3QocmVzaWR1YWxfZml0KQ0KYGBgDQoNCmBgYHtyIGVjaG89RkFMU0UsIG1lc3NhZ2U9Riwgd2FybmluZz1GfQ0KdGliYmxlKHJlc2lkdWFsX2ZpdCkgJT4lIA0KZ2dwbG90KCkgKyBhZXMoeCA9IHJlc2lkdWFsX2ZpdCkgKw0KZ2VvbV9oaXN0b2dyYW0oYWVzKHk9Li5kZW5zaXR5Li4pLCBiaW5zID0gMTAsIGNvbG9yID0gIiM0ODM0ZDQiLCBmaWxsID0gIiM2ODZkZTAiLCBhbHBoYSA9IDAuNikgKyANCmdlb21fZGVuc2l0eShjb2xvciA9ICIjMTMwZjQwIiwgZmlsbCA9ICIjMzAzMzZiIiwgYWxwaGEgPSAwLjQpICsNCmxhYnModGl0bGUgPSAiUsOpcGFydGl0aW9uIGR1IGJydWl0IikgKyB4bGltKGMoLTUwMCwgNTAwKSkgKyB0aGVtZV9lY29ub21pc3QoKSArDQp0aGVtZShwbG90LnRpdGxlID0gZWxlbWVudF90ZXh0KGhqdXN0ID0gMC41KSkNCmBgYA0KDQpEb25jIMOnYSBzdWl0IHVuZSBsb2kgbm9ybWFsZSwgZXQgb24gb2J0aWVudDoNCg0KJCRcZXBzaWxvbl90IFxzaW0gXG1hdGhjYWwgTihcbXUgPSAwLFxzaWdtYV4yID0gMjIgNTE5KSQkDQoNClxuZXdwYWdlDQoNCiMjIDQuIETDqWNvbXBvc2l0aW9uDQpEb25jIG9uIGEgdW4gbW9kw6hsZSBwYXJhbcOpdHJpcXVlIGRlIGxhIGZvcm1lDQoNCiQkXHRleHR7ZGVhdGh9ID0gbV90ICsgc190ICsgXGVwc2lsb25fdCQkDQoNCiQkXHRleHR7YXZlY31cbGVmdFx7DQogICAgXGJlZ2lue2FycmF5fXtsbH0NCiAgICAgICAgbV90ID0gMTM0OSArIDQ2LjV0IC0gMS4xN3ReMiArIFxmcmFje3ReM317MTAwfSAtMy40MzIqMTBeey01fXReNCArIDIuNjEzKjEwXnstMTV9dF44IFxcDQogICAgICAgIHNfdCA9IDE5OVwsY29zKFxmcmFje1xwaSB0fXs2fSkgKyAxMTRcLGNvcyhcZnJhY3tccGkgdH17M30pICsgNTdcLGNvcyhcZnJhY3tccGkgdH17Mn0pIC0gMTEyXCxzaW4oXGZyYWN7XHBpIHR9ezZ9KSBcXA0KICAgICAgICBcZXBzaWxvbl90IFxzaW0gXG1hdGhjYWwgTigwLCAyMlwsNTE5KQ0KICAgIFxlbmR7YXJyYXl9DQpccmlnaHQuJCQNCg0KDQpgYGB7ciBlY2hvPUZBTFNFLCBtZXNzYWdlPUYsIHdhcm5pbmc9Rn0NCnRpYmJsZShkYXRhID0gdWtfdHMsIHRyZW5kID0gdHJlbmRfZml0LCBzZWFzb24gPSBzZWFzb25hbF9maXQsIHJlc2lkdSA9IHJlc2lkdWFsX2ZpdCwgdCA9IHBlcmlvZCkgJT4lIA0KZ2F0aGVyKCJrZXkiLCAidmFsdWUiLCAtdCkgJT4lIGdncGxvdCgpICsgYWVzKHQsIHZhbHVlKSArIGdlb21fbGluZShjb2xvciA9ICIjMmU4NmRlIikgKyANCmZhY2V0X3dyYXAoLn5rZXksIG5jb2wgPSAxLCBzY2FsZXMgPSAiZnJlZV95IikgKyB0aGVtZV9lY29ub21pc3QoKSArIA0KbGFicyh5ID0gTlVMTCwgdGl0bGUgPSAiTW9kw6hsZSAxOiBSw6lncmVzc2lvbiIpICsgdGhlbWUocGxvdC50aXRsZSA9IGVsZW1lbnRfdGV4dChoanVzdCA9IDAuNSkpDQpgYGANCg0KXG5ld3BhZ2UNCg0KIyBNb2TDqGxlIDI6IEZpbHRyZSBsaW7DqWFpcmUNCg0KQWxvcnMgbGUgYnV0IGljaSBjJ2VzdCBkZSBuZSBwYXMgcGFzc2VyIHBhciB1bmUgcsOpZ3Jlc3Npb24gbGluw6lhaXJlIG1haXMgcGx1dMO0dCBwYXIgdW4gZmlsdHJlIGxpbsOpYWlyZSBzdXIgdW5lIG1veWVubmUgbW9iaWxlLiAgDQpPbiBuJ2F1cmEgcGFzIGZvcmPDqW1lbnQgdW4gbW9kw6hsZSBwYXJhbcOpdHJpcXVlIGRhbnMgY2UgY2FzLCBiaWVuIHF1J29uIHBldXQgZXN0aW1lciBsZXMgcGFyYW3DqHRyZXMuDQoNCiMjIDEuIEZpbHRyZSBzdXIgbGEgdGVuZGFuY2UNCkNvbW1lIG9uIGEgZGl0IHF1J2lsIHMnYWdpdCBkZSBww6lyaW9kZXMgZGUgMTIgbW9pcywgb24gdmEgZG9uYyBhcHBsaXF1ZXIgdW4gZmlsdHJlIGxpbsOpYWlyZSDDoCBub3RyZSBzw6lyaWUgdGVtcG9yZWxsZSBhdmVjIHVuZSBtb3llbm5lIG1vYmlsZSBzdXIgMTIgcMOpcmlvZGVzLiAgDQpKJ2FpIHBhcyBtaXMgbGEgY29tcGFyYWlzb24gYXZlYyBsYSB0ZW5kYW5jZSAib3B0aW1hbGUiIHB1aXNxdWUgY2V0dGUgdGVjaG5pcXVlIGRlIGZpbHRyZSBzZSBzdXBlcnBvc2UgYXZlYywgZHUgY291cCBjJ2VzdCBsJ29wdGltYWxlIGRhbnMgbm90cmUgY2FzLg0KDQpgYGB7ciBtZXNzYWdlPUZBTFNFLCB3YXJuaW5nPUZBTFNFfQ0KdHJlbmRfZmlsdGVyIDwtIHN0YXRzOjpmaWx0ZXIoDQogICAgdWtfdHMsIHJlcCgxLzEyLCAxMiksDQogICAgbWV0aG9kID0gImNvbnZvbHV0aW9uIiwNCiAgICBzaWRlcyA9IDINCikNCmBgYA0KDQpgYGB7ciBlY2hvPUZBTFNFLCBtZXNzYWdlPUYsIHdhcm5pbmc9Rn0NCnRpYmJsZShmaWx0ZXIgPSB0cmVuZF9maWx0ZXIsIHQgPSAxOjE5MikgJT4lIGdhdGhlcigia2V5IiwgInRyZW5kIiwgLXQpICU+JSANCmdncGxvdCgpICsgYWVzKHQsIHRyZW5kLCBjb2xvciA9IGtleSkgKyBnZW9tX2xpbmUoKSArIGdlb21fcG9pbnQoYWxwaGEgPSAwLjIpICsNCnRoZW1lX2Vjb25vbWlzdCgpICsgc2NhbGVfY29sb3JfZWNvbm9taXN0KCkNCmBgYA0KDQpcbmV3cGFnZQ0KDQojIyAyLiBGaWx0cmUgc3VyIGxhIHNhaXNvbmFsaXTDqQ0KTCdpZMOpZSBpY2kgZXN0IGRlIGNhbGN1bGVyIGxhIHNhaXNvbmFsaXTDqSBzdXIgbGEgc8OpcmllIHNhbnMgbGEgdGVuZGFuY2UuICANCkNvbW1lIGF1IHRvdXQgZMOpYnV0IG9uIGEgbm90w6kgdW5lIHDDqXJpb2RpY2l0w6kgYW5udWVsbGUsIG9uIGTDqWR1aXJhIGxhIHNhaXNvbmFsaXTDqSBwYXIgbGEgbW95ZW5uZSBtZW5zdWVsbGUuDQoNCmBgYHtyIG1lc3NhZ2U9RkFMU0UsIHdhcm5pbmc9RkFMU0V9DQpzZWFzb25hbF9maWx0ZXIgPC0gKHVrX3RzIC0gdHJlbmRfZmlsdGVyKSAlPiUgDQptYXRyaXgoMTIpICU+JSB0KCkgJT4lIA0KY29sTWVhbnMobmEucm0gPSBUKSAlPiUgDQpyZXAobGVuZ3RoKHVrX3RzKS8xMikNCmBgYA0KDQpgYGB7ciBlY2hvPUZBTFNFLCBtZXNzYWdlPUYsIHdhcm5pbmc9Rn0NCnRpYmJsZShmaWx0ZXIgPSBzZWFzb25hbF9maWx0ZXIsIHQgPSAxOjE5MikgJT4lIGdhdGhlcigia2V5IiwgInNlYXNvbiIsIC10KSAlPiUgDQpnZ3Bsb3QoKSArIGFlcyh0LCBzZWFzb24sIGNvbG9yID0ga2V5KSArIGdlb21fbGluZSgpICsgZ2VvbV9wb2ludChhbHBoYSA9IDAuMikgKw0KdGhlbWVfZWNvbm9taXN0KCkgKyBzY2FsZV9jb2xvcl9lY29ub21pc3QoKQ0KYGBgDQoNCk9uIGFycml2ZSBxdWFzaW1lbnQgw6AgbGEgc2Fpc29uYWxpdMOpIGR1ICptb2TDqGxlIDEgYXZlYyBsYSBSw6lncmVzc2lvbiBsaW7DqWFpcmUqLCBsJ2FtcGxpdHVkZSBlc3QganVzdGUgcGx1cyBncmFuZGUgc3VyIGNlIG1vZMOobGUgYXUgbW9pcyBkZSBkw6ljZW1icmUuDQoNClxuZXdwYWdlDQoNCiMjIDMuIEZpbHRyZSBzdXIgbGVzIHLDqXNpZHVzDQpDb21tZSBwcsOpY8OpZGVtZW50LCBjJ2VzdCB1biBtb2TDqGxlIGFkZGl0aWYgZG9uYyBsZXQncyBnby4NCg0KTMOgIG9uIGEgdW4gQUNGIHF1aSBkw6ljcm9pdCwgb24gcGFydCBzdXIgdW4gTUEgYXZlYyB1biBsYWcgPSAkNCQuDQoNCmBgYHtyIG1lc3NhZ2U9RkFMU0UsIHdhcm5pbmc9RkFMU0V9DQpyZXNpZHVhbF9maWx0ZXIgPC0gdWtfdHMgLSB0cmVuZF9maWx0ZXIgLSBzZWFzb25hbF9maWx0ZXINCmBgYA0KDQpgYGB7ciBlY2hvPUZBTFNFLCBtZXNzYWdlPUYsIHdhcm5pbmc9Rn0NCmdndHNkaXNwbGF5KHJlc2lkdWFsX2ZpbHRlciwgbGFnLm1heCA9IDEyKQ0KYGBgDQoNClxuZXdwYWdlDQoNCmBgYHtyIG1lc3NhZ2U9RkFMU0UsIHdhcm5pbmc9RkFMU0V9DQpzaGFwaXJvLnRlc3QocmVzaWR1YWxfZmlsdGVyKQ0KYGBgDQoNCmBgYHtyIGVjaG89RkFMU0UsIG1lc3NhZ2U9Riwgd2FybmluZz1GfQ0KdGliYmxlKHJlc2lkdWFsX2ZpbHRlcikgJT4lIA0KZ2dwbG90KCkgKyBhZXMoeCA9IHJlc2lkdWFsX2ZpbHRlcikgKw0KZ2VvbV9oaXN0b2dyYW0oYWVzKHk9Li5kZW5zaXR5Li4pLCBiaW5zID0gMTAsIGNvbG9yID0gIiM0ODM0ZDQiLCBmaWxsID0gIiM2ODZkZTAiLCBhbHBoYSA9IDAuNikgKyANCmdlb21fZGVuc2l0eShjb2xvciA9ICIjMTMwZjQwIiwgZmlsbCA9ICIjMzAzMzZiIiwgYWxwaGEgPSAwLjQpICsNCmxhYnModGl0bGUgPSAiUsOpcGFydGl0aW9uIGR1IGJydWl0IikgKyB4bGltKGMoLTUwMCwgNTAwKSkgKyB0aGVtZV9lY29ub21pc3QoKSArDQp0aGVtZShwbG90LnRpdGxlID0gZWxlbWVudF90ZXh0KGhqdXN0ID0gMC41KSkNCmBgYA0KDQpEb25jIMOnYSBzdWl0IHVuZSBsb2kgbm9ybWFsZSwgZXQgb24gb2J0aWVudDoNCg0KJCRcZXBzaWxvbl90IFxzaW0gXG1hdGhjYWwgTihcbXUgPSAwLFxzaWdtYV4yID0gMTJcOzQ0NikkJA0KDQpcbmV3cGFnZQ0KDQojIyA0LiBEw6ljb21wb3NpdGlvbg0KRG9uYyBvbiBhIHVuIG1vZMOobGUgZG9udCBvbiBjb25uYcOudCBjZXJ0YWlucyBwYXJhbcOodHJlcyBkZSBsYSBmb3JtZQ0KDQokJFx0ZXh0e2RlYXRofSA9IG1fdCArIHNfdCArIFxlcHNpbG9uX3QkJA0KDQokJFx0ZXh0e2F2ZWN9XGxlZnRcew0KICAgIFxiZWdpbnthcnJheX17bGx9DQogICAgICAgIHNfdCA9IFxiZXRhXzAgKyBcYmV0YV8xXCxjb3MoXGZyYWN7XHBpIHR9ezZ9KSArIFxiZXRhXzJcLGNvcyhcZnJhY3tccGkgdH17M30pICsgXGJldGFfM1wsY29zKFxmcmFje1xwaSB0fXsyfSkgLSBcYmV0YV80XCxzaW4oXGZyYWN7XHBpIHR9ezZ9KSArIChcdGF1KSBcXA0KICAgICAgICBcZXBzaWxvbl90IFxzaW0gXG1hdGhjYWwgTigwLCAxMlwsNDQ2KQ0KICAgIFxlbmR7YXJyYXl9DQpccmlnaHQuJCQNCg0KDQpgYGB7ciBlY2hvPUZBTFNFLCBtZXNzYWdlPUYsIHdhcm5pbmc9Rn0NCnRpYmJsZShkYXRhID0gdWtfdHMsIHRyZW5kID0gdHJlbmRfZmlsdGVyLCBzZWFzb24gPSBzZWFzb25hbF9maWx0ZXIsIHJlc2lkdSA9IHJlc2lkdWFsX2ZpbHRlciwgdCA9IHBlcmlvZCkgJT4lIA0KZ2F0aGVyKCJrZXkiLCAidmFsdWUiLCAtdCkgJT4lIGdncGxvdCgpICsgYWVzKHQsIHZhbHVlKSArIGdlb21fbGluZShjb2xvciA9ICIjMmU4NmRlIikgKyANCmZhY2V0X3dyYXAoLn5rZXksIG5jb2wgPSAxLCBzY2FsZXMgPSAiZnJlZV95IikgKyB0aGVtZV9lY29ub21pc3QoKSArIA0KbGFicyh5ID0gTlVMTCwgdGl0bGUgPSAiTW9kw6hsZSAyOiBGaWx0cmUiKSArIHRoZW1lKHBsb3QudGl0bGUgPSBlbGVtZW50X3RleHQoaGp1c3QgPSAwLjUpKQ0KYGBgDQoNClxuZXdwYWdlDQoNCiMgTW9kw6hsZSAzOiBEw6ljb21wb3NpdGlvbiBhdXRvbWF0aXF1ZQ0KQydlc3QgY2UgcXUnb24gYSBmYWl0IGRhbnMgbGUgcGRmIHF1ZSBqJ2FpIGVudm95w6kgKCpleHBsb3Jlci5wZGYqKSwgZHUgY291cCBqZSBuZSB2YWlzIHBhcyBsYSByZWZhaXJlIGljaS4gIA0KSWwgZmF1dCBxdWFuZCBtw6ptZSBub3RlciBxdWUgbGUgbW9kw6hsZSBwYXIgZmlsdHJlIGV0IGxhIGTDqWNvbXBvc2l0aW9uIGF1dG9tYXRpcXVlIGRvbm5lbnQgZGVzIHLDqXN1bHRhdHMgcHJvY2hlcy4NCg0KPGJyPjxocj48YnI+DQoNCioqUmVtYXJxdWUqKjogIA0KTGVzIG1vZMOobGVzIDIgZXQgMyBzb250IG1laWxsZXVycyBxdWUgMSBwdWlzcXVlIGxldXJzIHLDqXNpZHVzIGNhcHR1cmVudCBtb2lucyBkZSBkb25uw6llcy4gQ2Egdm91ZHJhaXQgZG9uYyBkaXJlIHF1J29uIGEgcGx1cyBkZSBjb250csO0bGUgc3VyIGxlIG1vZMOobGUgZXQgcXUnaWwgeSBhIG1vaW5zIGQnYWzDqWEu</div>
+<div id="rmd-source-code">LS0tDQp0aXRsZTogIlRTIE1vZMOobGVzIHYuMSINCmF1dGhvcjogIkxvw69jIg0Kb3V0cHV0Og0KICBwZGZfZG9jdW1lbnQ6IGRlZmF1bHQNCiAgaHRtbF9ub3RlYm9vazoNCiAgICBkZl9wcmludDogcGFnZWQNCiAgICBoaWdobGlnaHQ6IHRhbmdvDQogICAgdGhlbWU6IGNlcnVsZWFuDQpqdXB5dGVyOg0KICBqdXB5dGV4dDoNCiAgICBmb3JtYXRzOiBpcHluYixSbWQNCiAgICB0ZXh0X3JlcHJlc2VudGF0aW9uOg0KICAgICAgZXh0ZW5zaW9uOiAuUm1kDQogICAgICBmb3JtYXRfbmFtZTogcm1hcmtkb3duDQogICAgICBmb3JtYXRfdmVyc2lvbjogJzEuMScNCiAgICAgIGp1cHl0ZXh0X3ZlcnNpb246IDEuMi40DQogIGtlcm5lbHNwZWM6DQogICAgZGlzcGxheV9uYW1lOiBSDQogICAgbGFuZ3VhZ2U6IFINCiAgICBuYW1lOiBpcg0KLS0tDQoNCmBgYHtyIGluY2x1ZGU9RkFMU0V9DQpsaWJyYXJ5KHRpZHl2ZXJzZSkgDQpsaWJyYXJ5KGdnRXh0cmEpDQpsaWJyYXJ5KGdndGhlbWVzKQ0KbGlicmFyeShmb3JlY2FzdCkNCmxpYnJhcnkoZ2dmb3J0aWZ5KQ0KYGBgDQoNCiMgQ29udGV4dGUNCg0KYGBge3IgbWVzc2FnZT1GQUxTRSwgd2FybmluZz1GQUxTRX0NCnVrIDwtIHJlYWRfdGFibGUoIi4uL2RhdGEudHh0IiwgY29sX3R5cGVzID0gImlmIikNCnBlcmlvZCA8LSBzZXEoYXMuRGF0ZSgnMTk2OS0wMS0wMScpLCBhcy5EYXRlKCcxOTg0LTEyLTMxJyksIGJ5ID0gIm1vbnRoIikNCnVrX3RzIDwtIHRzKHVrJGRlYXRoLCBzdGFydCA9IGMoMTk2OSwxKSwgZnJlcXVlbmN5ID0gMTIpDQp1a19kZiA8LSBiaW5kX2NvbHModWssIHQgPSBwZXJpb2QpDQpgYGANCg0KYGBge3IgZWNobz1GQUxTRX0NCmdncGxvdCh1a19kZikgKyBhZXModCwgZGVhdGgsIGNvbG9yID0gbGF3KSArDQpnZW9tX2xpbmUoKSArIGdlb21fcG9pbnQoKSArDQp0aGVtZV9lY29ub21pc3QoKSArIHNjYWxlX2NvbG9yX2Vjb25vbWlzdCgpDQpgYGANCg0KXG5ld3BhZ2UNCg0KSWNpLCBvbiBjaGVyY2hlIMOgIGTDqW1vbnRyZXIgcXVlIGxhIHDDqXJpb2RpY2l0w6kgZXN0IGFubnVlbGxlLiAgDQpPbiBwZXV0IHJlbWFycXVlciBzdXIgY2hhcXVlICJwZXRpdGUgc8OpcmllIHRlbXBvcmVsbGUgbWVuc3VlbGxlIiBsYSB0ZW5kYW5jZSBxdWkgZMOpY3JvaXQuDQoNCmBgYHtyIGVjaG89RkFMU0UsIG1lc3NhZ2U9RkFMU0UsIHdhcm5pbmc9RkFMU0V9DQpnZ21vbnRocGxvdCh1a190cykgKw0KdGhlbWVfZWNvbm9taXN0KCkgKw0Kc2NhbGVfY29sb3JfZWNvbm9taXN0KCkNCmBgYA0KDQojIENPVUNPVSBEWUxBTiAhISEgT04gQ09NTUVOQ0UgSUNJIFBPVVIgTU9JIERVIENPVVAgQ09NTUUgVFUgQVMgVU5FIE1FSUxMRVVSRSBBTkFMWVNFIERFIERPTk5FRVMgIQ0KDQojIE1vZMOpbGlzYXRpb24NCg0KIyMgTW9kw6hsZSAxOiBSw6lncmVzc2lvbiBsaW7DqWFpcmUNCk9uIGNoZXJjaGUgdW4gbW9kw6hsZSBwYXJhbcOpdHJpcXVlIGRlIGxhIGZvcm1lOg0KDQokJFx0ZXh0e2RlYXRofSA9IG1fdCArIHNfdCArIFxlcHNpbG9uX3QkJA0KDQojIyMgMS4gUsOpZ3Jlc3Npb24gc3VyIGxhIHRlbmRhbmNlDQpKJ2FpIGxhaXNzw6kgbGUgbW9kw6hsZSAib3B0aW1hbCIgKCplbiBibGV1IGZvbmPDqSopIHN1ciBjaGFxdWUgcGxvdC4gIA0KTGVzIG1vZMOobGVzIHF1J29uIGFqdXN0ZSBzJ2FwcGVsbGUgImZpdCIgKCplbiBibGV1IGNsYWlyKikuDQoNCmBgYHtyIGluY2x1ZGU9RkFMU0V9DQpzaW51c29pZGVzIDwtIDE6MTkyJW8lYyhyZXAoMTo2LDIpKnBpLzYpDQpzaW51c29pZGVzWywxOjVdIDwtIHNpbihzaW51c29pZGVzWywxOjVdKQ0Kc2ludXNvaWRlc1ssNjoxMF0gPC0gY29zKHNpbnVzb2lkZXNbLDY6MTBdKQ0Kc2ludXNvaWRlcyA8LSBhc190aWJibGUoc2ludXNvaWRlcykNCm5hbWVzKHNpbnVzb2lkZXMpIDwtIGMocGFzdGUwKCJzaW4iLDE6NikscGFzdGUwKCJjb3MiLDE6NikpDQoNCmRmX2ZpdCA8LSB0aWJibGUoZGVhdGggPSB1a19kZiRkZWF0aCwgdCA9IDE6MTkyKSAlPiUgDQptdXRhdGUodDIgPSB0XjIsIHQzID0gdF4zLCB0NCA9IHReNCkgJT4lIA0KYmluZF9jb2xzKHNpbnVzb2lkZXMpDQpgYGANCg0KYGBge3IgbWVzc2FnZT1GQUxTRSwgd2FybmluZz1GQUxTRX0NCm1vZF9maXQgPC0gbG0oZGVhdGggfiAuLCBkYXRhID0gZGZfZml0KQ0KYmVzdGxtIDwtIHN0ZXAobW9kX2ZpdCwgdHJhY2UgPSBGLCBkaXJlY3Rpb24gPSAiYm90aCIpDQpgYGANCg0KSidhaSBlc3NhecOpIHBsdXNpZXVycyBtb2TDqGxlcywgaidhaSBlc3NhecOpIHN0ZXAgYXVzc2kgbWFpcyBqJ2FpIGR1IHLDqWR1aXJlIGVuY29yZSBwb3VyIGFycml2ZXIgw6ANCg0KJCRcaGF0e219KHQpID0gMTUzOCArIDI1LjA3dCAtIDAuNTR0XjIgKyBcZnJhY3syNDl0XjN9ezYyNTAwfSAtOS45MDYqMTBeey02fXReNCQkDQoNCg0KYGBge3IgZWNobz1GQUxTRSwgbWVzc2FnZT1GQUxTRSwgd2FybmluZz1GQUxTRX0NCnN1bW1hcnkoYmVzdGxtKQ0KdHJlbmRfZml0IDwtIDE1MzggKyAyNS4wNyAqIDE6MTkyIC0gMC41NCAqICgxOjE5MileMiArICgyNDkgKiAoMToxOTIpXjMpLzYyNTAwIC0gKDkuOTA2KjEwXigtNikpICogKDE6MTkyKV40DQp0aWJibGUoZml0ID0gdHJlbmRfZml0LCB0ID0gMToxOTIpICU+JSBnYXRoZXIoImtleSIsICJ0cmVuZCIsIC10KSAlPiUgDQpnZ3Bsb3QoKSArIGFlcyh0LCB0cmVuZCwgY29sb3IgPSBrZXkpICsgZ2VvbV9saW5lKCkgKyBnZW9tX3BvaW50KGFscGhhID0gMC4yKSArDQp0aGVtZV9lY29ub21pc3QoKSArIHNjYWxlX2NvbG9yX2Vjb25vbWlzdCgpDQpgYGANCg0KIyMjIDIuIFLDqWdyZXNzaW9uIHN1ciBsYSBzYWlzb25hbGl0w6kNCg0KRCdhcHLDqHMgbm90cmUgbW9kw6hsZSBkZSByw6lncmVzc2lvbiwgb24gZXN0aW1lIGxhIHNhaXNvbmFsaXTDqSBjb21tZSBzdWl0Og0KDQokJFxoYXR7c31fdCA9IFxsZWZ0XHsNCiAgICBcYmVnaW57YXJyYXl9e2xsfQ0KICAgICAgMjAxXCxjb3MoXGZyYWN7XHBpIHR9ezZ9KSAtIDEyMFwsc2luKFxmcmFje1xwaSB0fXs2fSkgXCwrXFwNCiAgICAgIDExNlwsY29zKFxmcmFje1xwaSB0fXszfSkgLSA2Mi40MVwsc2luKFxmcmFje1xwaSB0fXszfSkgXCwrXFwNCiAgICAgIDU5LjM4XCxjb3MoXGZyYWN7XHBpIHR9ezJ9KSAtIDM2LjY5XCxzaW4oXGZyYWN7XHBpIHR9ezJ9KSBcLCsgXFwNCiAgICAgIDQxLjk3XCxjb3MoXGZyYWN7XHBpIDJ0fXszfSkgLSAyMi45NFwsc2luKFxmcmFje1xwaSAydH17M30pDQogICAgICBcZW5ke2FycmF5fQ0KXHJpZ2h0LiQkDQoNCg0KDQpgYGB7ciBlY2hvPUZBTFNFLCBtZXNzYWdlPUZBTFNFLCB3YXJuaW5nPUZBTFNFfQ0Kc2Vhc29uYWxfZml0IDwtIGZ1bmN0aW9uKHgpezIwMSpjb3MocGkqeC82KSAtIDEyMCpzaW4ocGkqeC82KSArIDExNipjb3MocGkqeC8zKSAtIDYyLjQxKnNpbihwaSp4LzMpICsgNTkuMzgqY29zKHBpKngvMikgLSAzNi42OSpzaW4ocGkqeC8yKSArIDQxLjk3KmNvcyhwaSoyKngvMykgLSAyMi45NCpzaW4ocGkqMip4LzMpfQ0KdGliYmxlKGZpdCA9IHNlYXNvbmFsX2ZpdCgxOjE5MiksIHQgPSAxOjE5MikgJT4lIGdhdGhlcigia2V5IiwgInNlYXNvbiIsIC10KSAlPiUgDQpnZ3Bsb3QoKSArIGFlcyh0LCBzZWFzb24sIGNvbG9yID0ga2V5KSArIGdlb21fbGluZSgpICsgZ2VvbV9wb2ludChhbHBoYSA9IDAuMikgKw0KdGhlbWVfZWNvbm9taXN0KCkgKyBzY2FsZV9jb2xvcl9lY29ub21pc3QoKQ0KYGBgDQoNClxuZXdwYWdlDQoNCiMjIyAzLiBSw6lzaWR1cyBkdSBtb2TDqGxlIGRlIHLDqWdyZXNzaW9uDQpDb21tZSBjJ2VzdCB1biBtb2TDqGxlIGFkZGl0aWYsIGlsIHMnYWdpdCBkZSBsYSBwYXJ0IG5vbiBleHBsaXF1w6llIHBhciBsYSB0ZW5kYW5jZSBldCBsYSBzYWlzb25hbGl0w6kuDQoNCkwnQUNGIGTDqWNyb2l0IHJhcGlkZW1lbnQuDQoNCmBgYHtyIG1lc3NhZ2U9RkFMU0UsIHdhcm5pbmc9RkFMU0V9DQpyZXNpZHVhbF9maXQgPC0gYmVzdGxtJHJlc2lkdWFscw0KYGBgDQoNCmBgYHtyIGVjaG89RkFMU0UsIG1lc3NhZ2U9RkFMU0UsIHdhcm5pbmc9RkFMU0V9DQpnZ3RzZGlzcGxheShyZXNpZHVhbF9maXQsIGxhZy5tYXggPSAxMikNCmBgYA0KDQpcbmV3cGFnZQ0KTGUgdGVzdCBkZSBTaGFwaXJvLVdpbGsgbmUgcmVqZXR0ZSBwYXMgbCdoeXBvdGjDqHNlIGRlIGxhIG5vcm1hbGl0w6kgZGUgbm9zIHLDqXNpZHVzLg0KDQpgYGB7ciBtZXNzYWdlPUZBTFNFLCB3YXJuaW5nPUZBTFNFfQ0Kc2hhcGlyby50ZXN0KHJlc2lkdWFsX2ZpdCkNCmBgYA0KDQpgYGB7ciBlY2hvPUZBTFNFLCBtZXNzYWdlPUZBTFNFLCB3YXJuaW5nPUZBTFNFfQ0KdGliYmxlKHJlc2lkdWFsX2ZpdCkgJT4lIA0KZ2dwbG90KCkgKyBhZXMoeCA9IHJlc2lkdWFsX2ZpdCkgKw0KZ2VvbV9oaXN0b2dyYW0oYWVzKHk9Li5kZW5zaXR5Li4pLCBiaW5zID0gMTAsIGNvbG9yID0gIiM0ODM0ZDQiLCBmaWxsID0gIiM2ODZkZTAiLCBhbHBoYSA9IDAuNikgKyANCmdlb21fZGVuc2l0eShjb2xvciA9ICIjMTMwZjQwIiwgZmlsbCA9ICIjMzAzMzZiIiwgYWxwaGEgPSAwLjQpICsNCmxhYnModGl0bGUgPSAiUsOpcGFydGl0aW9uIGR1IGJydWl0IikgKyB4bGltKGMoLTUwMCwgNTAwKSkgKyB0aGVtZV9lY29ub21pc3QoKSArDQp0aGVtZShwbG90LnRpdGxlID0gZWxlbWVudF90ZXh0KGhqdXN0ID0gMC41KSkNCmBgYA0KDQpEb25jICRcaGF0e1xlcHNpbG9ufSQgc3VpdCB1bmUgbG9pIG5vcm1hbGUsIGV0IG9uIG9idGllbnQ6DQoNCiQkXGhhdHtcZXBzaWxvbn1fdCBcc2ltIFxtYXRoY2FsIE4oXG11ID0gMCxcc2lnbWFeMiA9IDE5XCw0NTEpJCQNCg0KXG5ld3BhZ2UNCg0KIyMjIDQuIETDqWNvbXBvc2l0aW9uDQpOb3VzIG9idGVub25zIGFpbnNpIHVuIHByZW1pZXIgbW9kw6hsZSwgcGFyYW3DqXRyaXF1ZSwgZGUgbGEgZm9ybWUNCg0KJCRcdGV4dHtkZWF0aH0gPSBcaGF0e219KHQpICsgXGhhdHtzfV90ICsgXGhhdHtcZXBzaWxvbn1fdCQkDQoNCiQkXHRleHR7YXZlY31cbGVmdFx7DQogICAgXGJlZ2lue2FycmF5fXtsbH0NCiAgICAgICAgXGhhdHttfSh0KSA9IDE1MzggKyAyNS4wN3QgLSAwLjU0dF4yICsgXGZyYWN7MjQ5dF4zfXs2MjUwMH0gLTkuOTA2KjEwXnstNn10XjQgXFwNCiAgICAgICAgXGhhdHtzfV90ID0gLi4uXFwNCiAgICAgICAgXGVwc2lsb25fdCBcc2ltIFxtYXRoY2FsIE4oMCwgMTlcLDQ1MSkNCiAgICBcZW5ke2FycmF5fQ0KXHJpZ2h0LiQkDQoNCg0KYGBge3IgZWNobz1GQUxTRSwgbWVzc2FnZT1GQUxTRSwgd2FybmluZz1GQUxTRX0NCnRpYmJsZShkYXRhID0gdWtfdHMsIHRyZW5kID0gdHJlbmRfZml0LCBzZWFzb24gPSBzZWFzb25hbF9maXQoMToxOTIpLCByZXNpZHUgPSByZXNpZHVhbF9maXQsIHQgPSBwZXJpb2QpICU+JSANCmdhdGhlcigia2V5IiwgInZhbHVlIiwgLXQpICU+JSBnZ3Bsb3QoKSArIGFlcyh0LCB2YWx1ZSkgKyBnZW9tX2xpbmUoY29sb3IgPSAiIzJlODZkZSIpICsgDQpmYWNldF93cmFwKC5+a2V5LCBuY29sID0gMSwgc2NhbGVzID0gImZyZWVfeSIpICsgdGhlbWVfZWNvbm9taXN0KCkgKyANCmxhYnMoeSA9IE5VTEwsIHRpdGxlID0gIk1vZMOobGUgMTogUsOpZ3Jlc3Npb24iKSArIHRoZW1lKHBsb3QudGl0bGUgPSBlbGVtZW50X3RleHQoaGp1c3QgPSAwLjUpKQ0KYGBgDQoNClxuZXdwYWdlDQoNCiMjIE1vZMOobGUgMjogUsOpZ3Jlc3Npb24gbGluw6lhaXJlIHN1ciBsZSBsb2cNCg0KIyBDT1VDT1UgRFlMQU4gRFUgQ09VUCBDRSBTRVJBIElDSSBQT1VSIExFIExPRywgSkUgUEFTU0UgRElSRUNUIEFVIEZJTFRSRSAhIDspDQoNCiMjIE1vZMOobGUgMzogRmlsdHJlIGxpbsOpYWlyZQ0KDQpPbiBzdXBwb3NlIHRvdWpvdXJzICRcdGV4dHtkZWF0aH0gPSBtX3QgKyBzX3QgKyBcZXBzaWxvbl90LiQgIA0KQXUgbGlldSBkZSBwYXNzZXIgcGFyIHVuZSByw6lncmVzc2lvbiBsaW7DqWFpcmUgb24gYXBwbGlxdWUgcGx1dMO0dCB1biBmaWx0cmUgbGluw6lhaXJlIHN1ciB1bmUgbW95ZW5uZSBtb2JpbGUgKE1BKS4gIA0KQydlc3QgdW5lIG3DqXRob2RlIGxvY2FsZSBub24tcGFyYW3DqXRyaXF1ZSBwZXJtZXR0YW50IGRlIGZpbHRyZXIgbGEgdGVuZGFuY2UgZW4gw6lsaW1pbmFudCBsYSBzYWlzb25hbGl0w6kuICANCk9uIGVzdGltZXJhIGVuc3VpdGUgY2V0dGUgZGVybmnDqHJlIGF2ZWMgbGEgbW95ZW5uZSBhcml0aG3DqXRpcXVlIGRlcyBtb2lzIGV0IG9uIGVuIGTDqWR1aXJhIGxlcyByw6lzaWR1cy4NCg0KIyMjIDEuIEZpbHRyZSBzdXIgbGEgdGVuZGFuY2UNCkNvbW1lIG9uIGEgZGl0IHF1J2lsIHMnYWdpdCBkZSBww6lyaW9kZXMgZGUgMTIgbW9pcywgb24gdmEgZG9uYyBhcHBsaXF1ZXIgdW4gZmlsdHJlIGxpbsOpYWlyZSDDoCBub3RyZSBzw6lyaWUgdGVtcG9yZWxsZSBhdmVjIHVuZSBtb3llbm5lIG1vYmlsZSBzdXIgMTIgcMOpcmlvZGVzLiAgDQoNCmBgYHtyIG1lc3NhZ2U9RkFMU0UsIHdhcm5pbmc9RkFMU0V9DQp0cmVuZF9maWx0ZXIgPC0gc3RhdHM6OmZpbHRlcigNCiAgICB1a190cywgcmVwKDEvMTIsIDEyKSwNCiAgICBtZXRob2QgPSAiY29udm9sdXRpb24iLA0KICAgIHNpZGVzID0gMg0KKQ0KYGBgDQoNCmBgYHtyIGVjaG89RkFMU0UsIG1lc3NhZ2U9RkFMU0UsIHdhcm5pbmc9RkFMU0V9DQp0aWJibGUoZmlsdGVyID0gdHJlbmRfZmlsdGVyLCB0ID0gMToxOTIpICU+JSBnYXRoZXIoImtleSIsICJ0cmVuZCIsIC10KSAlPiUgDQpnZ3Bsb3QoKSArIGFlcyh0LCB0cmVuZCwgY29sb3IgPSBrZXkpICsgZ2VvbV9saW5lKCkgKyBnZW9tX3BvaW50KGFscGhhID0gMC4yKSArDQp0aGVtZV9lY29ub21pc3QoKSArIHNjYWxlX2NvbG9yX2Vjb25vbWlzdCgpDQpgYGANCg0KXG5ld3BhZ2UNCg0KIyMjIDIuIEZpbHRyZSBzdXIgbGEgc2Fpc29uYWxpdMOpDQpMJ2lkw6llIGljaSBlc3QgZGUgY2FsY3VsZXIgbGEgc2Fpc29uYWxpdMOpIHN1ciBsYSBzw6lyaWUgc2FucyBsYSB0ZW5kYW5jZS4gIA0KQ29tbWUgYXUgdG91dCBkw6lidXQgb24gYSBub3TDqSB1bmUgcMOpcmlvZGljaXTDqSBhbm51ZWxsZSwgb24gZMOpZHVpcmEgbGEgc2Fpc29uYWxpdMOpIHBhciBsYSBtb3llbm5lIGFyaXRobcOpdGlxdWUgbWVuc3VlbGxlLg0KDQpgYGB7ciBtZXNzYWdlPUZBTFNFLCB3YXJuaW5nPUZBTFNFfQ0Kc2Vhc29uYWxfZmlsdGVyIDwtICh1a190cyAtIHRyZW5kX2ZpbHRlcikgJT4lIA0KbWF0cml4KDEyKSAlPiUgdCgpICU+JSANCmNvbE1lYW5zKG5hLnJtID0gVCkgJT4lIA0KcmVwKGxlbmd0aCh1a190cykvMTIpDQpgYGANCg0KYGBge3IgZWNobz1GQUxTRSwgbWVzc2FnZT1GQUxTRSwgd2FybmluZz1GQUxTRX0NCnRpYmJsZShmaWx0ZXIgPSBzZWFzb25hbF9maWx0ZXIsIHQgPSAxOjE5MikgJT4lIGdhdGhlcigia2V5IiwgInNlYXNvbiIsIC10KSAlPiUgDQpnZ3Bsb3QoKSArIGFlcyh0LCBzZWFzb24sIGNvbG9yID0ga2V5KSArIGdlb21fbGluZSgpICsgZ2VvbV9wb2ludChhbHBoYSA9IDAuMikgKw0KdGhlbWVfZWNvbm9taXN0KCkgKyBzY2FsZV9jb2xvcl9lY29ub21pc3QoKQ0KYGBgDQoNCk9uIGFycml2ZSBxdWFzaW1lbnQgw6AgbGEgc2Fpc29uYWxpdMOpIGR1ICptb2TDqGxlIDEgYXZlYyBsYSBSw6lncmVzc2lvbiBsaW7DqWFpcmUqLCBtYWlzIGF2ZWMgdW5lIG1hZ25pdHVkZSBwbHVzIMOpbGV2w6llLg0KDQpcbmV3cGFnZQ0KDQojIyMgMy4gRmlsdHJlIHN1ciBsZXMgcsOpc2lkdXMNCk5vdXMgYXZvbnMgbm90cmUgbW9kw6hsZSBkZSB0ZW5kYW5jZSBldCBkZSBzYWlzb25hbGl0w6kuIE9uIGVuIGTDqWR1aXQgYWxvcnMgbGVzIHLDqXNpZHVzOiAkXGhhdHtcZXBzaWxvbn0gPSBcdGV4dHtkZWF0aH0gLSBcaGF0e219KHQpIC0gXGhhdHtzfV90JA0KDQpBdmVjIEFDRiBxdWkgZMOpY3JvaXQsIG9uIHBhcnQgc3VyIHVuIE1BIGF2ZWMgdW4gbGFnID0gJDQkLg0KDQpgYGB7ciBtZXNzYWdlPUZBTFNFLCB3YXJuaW5nPUZBTFNFfQ0KcmVzaWR1YWxfZmlsdGVyIDwtIHVrX3RzIC0gdHJlbmRfZmlsdGVyIC0gc2Vhc29uYWxfZmlsdGVyDQpgYGANCg0KYGBge3IgZWNobz1GQUxTRSwgbWVzc2FnZT1GQUxTRSwgd2FybmluZz1GQUxTRX0NCmdndHNkaXNwbGF5KHJlc2lkdWFsX2ZpbHRlciwgbGFnLm1heCA9IDEyKQ0KYGBgDQoNClxuZXdwYWdlDQpPbiBuZSByZWpldHRlIHBhcyBsJ2h5cG90aMOoc2UgZGUgbGEgbm9ybWFsaXTDqSBkZSBub3MgcsOpc2lkdXMNCg0KYGBge3IgbWVzc2FnZT1GQUxTRSwgd2FybmluZz1GQUxTRX0NCnNoYXBpcm8udGVzdChyZXNpZHVhbF9maWx0ZXIpDQpgYGANCg0KYGBge3IgZWNobz1GQUxTRSwgbWVzc2FnZT1GQUxTRSwgd2FybmluZz1GQUxTRX0NCnRpYmJsZShyZXNpZHVhbF9maWx0ZXIpICU+JSANCmdncGxvdCgpICsgYWVzKHggPSByZXNpZHVhbF9maWx0ZXIpICsNCmdlb21faGlzdG9ncmFtKGFlcyh5PS4uZGVuc2l0eS4uKSwgYmlucyA9IDEwLCBjb2xvciA9ICIjNDgzNGQ0IiwgZmlsbCA9ICIjNjg2ZGUwIiwgYWxwaGEgPSAwLjYpICsgDQpnZW9tX2RlbnNpdHkoY29sb3IgPSAiIzEzMGY0MCIsIGZpbGwgPSAiIzMwMzM2YiIsIGFscGhhID0gMC40KSArDQpsYWJzKHRpdGxlID0gIlLDqXBhcnRpdGlvbiBkdSBicnVpdCIpICsgeGxpbShjKC01MDAsIDUwMCkpICsgdGhlbWVfZWNvbm9taXN0KCkgKw0KdGhlbWUocGxvdC50aXRsZSA9IGVsZW1lbnRfdGV4dChoanVzdCA9IDAuNSkpDQpgYGANCg0KRG9uYyAkXGhhdHtcZXBzaWxvbn0kIHN1aXQgdW5lIGxvaSBub3JtYWxlLCBldCBvbiBvYnRpZW50Og0KDQokJFxlcHNpbG9uX3QgXHNpbSBcbWF0aGNhbCBOKFxtdSA9IDAsXHNpZ21hXjIgPSAxMlw7NDQ2KSQkDQoNClxuZXdwYWdlDQoNCiMjIyA0LiBEw6ljb21wb3NpdGlvbg0KRG9uYyBvbiBhIHVuIG1vZMOobGUgZG9udCBvbiBjb25uYcOudCBjZXJ0YWlucyBwYXJhbcOodHJlcyBkZSBsYSBmb3JtZQ0KDQokJFx0ZXh0e2RlYXRofSA9IG1fdCArIHNfdCArIFxlcHNpbG9uX3QkJA0KDQokJFx0ZXh0e2F2ZWN9XGxlZnRcew0KICAgIFxiZWdpbnthcnJheX17bGx9DQogICAgICAgIFxlcHNpbG9uX3QgXHNpbSBcbWF0aGNhbCBOKDAsIDEyXCw0NDYpDQogICAgXGVuZHthcnJheX0NClxyaWdodC4kJA0KDQpDZSBtb2TDqGxlIGTDqXRlY3RlIGRhbnMgc2EgdGVuZGFuY2UgbGUgY2hhbmdlbWVudCBhdmVjIGwnZW50csOpZSBlbiB2aWd1ZXVyIGRlIGxhIGxvaSBzdXIgbGUgcG9ydCBkZSBjZWludHVyZS4NCg0KYGBge3IgZWNobz1GQUxTRSwgbWVzc2FnZT1GQUxTRSwgd2FybmluZz1GQUxTRX0NCnRpYmJsZShkYXRhID0gdWtfdHMsIHRyZW5kID0gdHJlbmRfZmlsdGVyLCBzZWFzb24gPSBzZWFzb25hbF9maWx0ZXIsIHJlc2lkdSA9IHJlc2lkdWFsX2ZpbHRlciwgdCA9IHBlcmlvZCkgJT4lIA0KZ2F0aGVyKCJrZXkiLCAidmFsdWUiLCAtdCkgJT4lIGdncGxvdCgpICsgYWVzKHQsIHZhbHVlKSArIGdlb21fbGluZShjb2xvciA9ICIjMmU4NmRlIikgKyANCmZhY2V0X3dyYXAoLn5rZXksIG5jb2wgPSAxLCBzY2FsZXMgPSAiZnJlZV95IikgKyB0aGVtZV9lY29ub21pc3QoKSArIA0KbGFicyh5ID0gTlVMTCwgdGl0bGUgPSAiTW9kw6hsZSAzOiBGaWx0cmUiKSArIHRoZW1lKHBsb3QudGl0bGUgPSBlbGVtZW50X3RleHQoaGp1c3QgPSAwLjUpKQ0KYGBgDQoNClxuZXdwYWdlDQoNCiMjIE1vZMOobGUgNDogRMOpY29tcG9zaXRpb24gYXV0b21hdGlxdWUNCkMnZXN0IGNlIHF1J29uIGEgZmFpdCBkYW5zIGxlIHBkZiBxdWUgaidhaSBlbnZvecOpICgqZXhwbG9yZXIucGRmKiksIGR1IGNvdXAgamUgbmUgdmFpcyBwYXMgbGEgcmVmYWlyZSBpY2kuICANCklsIGZhdXQgcXVhbmQgbcOqbWUgbm90ZXIgcXVlIGxlIG1vZMOobGUgcGFyIGZpbHRyZSBldCBsYSBkw6ljb21wb3NpdGlvbiBhdXRvbWF0aXF1ZSBkb25uZW50IGRlcyByw6lzdWx0YXRzIHByb2NoZXMuDQoNCjxicj48aHI+PGJyPg0KDQoqKlJlbWFycXVlKio6ICANCkxlcyBtb2TDqGxlcyAyIGV0IDMgc29udCBtZWlsbGV1cnMgcXVlIDEgcHVpc3F1ZSBsZXVycyByw6lzaWR1cyBjYXB0dXJlbnQgbW9pbnMgZGUgZG9ubsOpZXMuIENhIHZvdWRyYWl0IGRvbmMgZGlyZSBxdSdvbiBhIHBsdXMgZGUgY29udHLDtGxlIHN1ciBsZSBtb2TDqGxlIGV0IHF1J2lsIHkgYSBtb2lucyBkJ2Fsw6lhLg0K</div>
 
 
 
