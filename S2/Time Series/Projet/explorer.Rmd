@@ -64,11 +64,9 @@ Ainsi on a trois segments:
 
 ```{r echo=FALSE, fig.width=8, message=FALSE, warning=FALSE}
 ts_ukdeath %>%
-changepoint::cpt.meanvar(method = "PELT", minseglen = 11)  %>% 
-autoplot() + labs(
-    title = "Points de rupture",
-    x = "period", y = "death"
-) + theme(plot.title = element_text(hjust = 0.5))
+  changepoint::cpt.meanvar(method = "PELT", minseglen = 11)  %>%
+  autoplot() + labs(title = "Points de rupture",
+                    x = "period", y = "death") + theme(plot.title = element_text(hjust = 0.5))
 ```
 \newpage
 

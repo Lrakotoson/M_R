@@ -192,6 +192,7 @@ C'est une méthode locale non-paramétrique permettant de filtrer la tendance en
 On estimera ensuite cette dernière avec la moyenne arithmétique des mois et on en déduira les résidus.
 
 ### 1. Filtre sur la tendance
+
 Comme on a dit qu'il s'agit de périodes de 12 mois, on va donc appliquer un filtre linéaire à notre série temporelle avec une moyenne mobile sur 12 périodes.  
 
 ```{r message=FALSE, warning=FALSE}
@@ -211,8 +212,7 @@ theme_economist() + scale_color_economist()
 \newpage
 
 ### 2. Filtre sur la saisonalité
-L'idée ici est de calculer la saisonalité sur la série sans la tendance.  
-Comme au tout début on a noté une périodicité annuelle, on déduira la saisonalité par la moyenne arithmétique mensuelle.
+L'idée ici est de calculer la saisonalité sur la série sans la tendance. Comme au tout début on a noté une périodicité annuelle, on déduira la saisonalité par la moyenne arithmétique mensuelle.
 
 ```{r message=FALSE, warning=FALSE}
 seasonal_filter <- (uk_ts - trend_filter) %>% 
