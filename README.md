@@ -1,5 +1,4 @@
 # M_R
-Master MAS, R
 
 <div align='center'>
 
