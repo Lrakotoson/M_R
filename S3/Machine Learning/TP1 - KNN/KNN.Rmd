@@ -1,0 +1,93 @@
+---
+jupyter:
+  jupytext:
+    formats: ipynb,Rmd
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.1'
+      jupytext_version: 1.2.4
+  kernelspec:
+    display_name: R
+    language: R
+    name: ir
+---
+
+Algorithme des $k$ plus proches voisins pour la discrimination binaire
+---
+Importer les données simulées des fichiers `nearsep1.txt`, `nearsep2.txt` et `nonsep.txt`.
+
+```{r}
+suppressWarnings(suppressMessages(library(tidyverse)))
+suppressWarnings(library(e1071))
+suppressWarnings(library(caret))
+suppressWarnings(library(ggpubr))
+library(class)
+```
+
+```{r}
+datasep <- list()
+for (data in c("nearsep1", "nearsep2", "nonsep")){
+    datasep[[data]] <- read_delim(paste0("../data/",data,".txt"), delim = ";", col_types = "_fdd")
+}
+```
+
+Transformer la variable d’intérêt `Y` en facteur si besoin, représenter graphiquement les points de coordonnées `X1` et `X2`, en distinguant par des symboles et/ou des couleurs différents les points correspondant aux sorties égales à 1 des points correspondant aux sorties égales à -1.
+
+```{r}
+plotlist <- list()
+for (data in c("nearsep1", "nearsep2", "nonsep")){
+    plotlist[[data]] <- ggplot(datasep[[data]]) +
+    aes(X1, X2, color = Y) +
+    geom_point() + labs(title = data)
+}
+
+ggarrange(plotlist = plotlist)
+```
+
+Estimer le risque moyen de l’algorithme $k$ plus proches voisins par validation hold out pour $k$ = 1,3,96 en utilisant la fonction `knn` du package `class`.
+
+```{r}
+result <- tibble(k = numeric(), dt = character(), Rp = numeric())
+for (data in c("nearsep1", "nearsep2", "nonsep")){
+    df <- datasep[[data]]
+    part <- createDataPartition(df$Y, p = 2/3)
+    X_train <- df[part$Resample1, 2:3]
+    X_test <- df[-part$Resample1, 2:3]
+    y_train <- df[part$Resample1, 1, drop = T]
+    y_test <- df[-part$Resample1, 1, drop = T] %>% as.character %>% as.numeric
+    
+    for (k in c(1,3,96)){
+        y_pred <- knn(X_train, X_test, cl = y_train, k = k) %>% 
+            as.character %>% as.numeric
+        risk <- mean((y_test - y_pred)^2/4)
+        result <- result  %>% bind_rows(tibble(
+            k = k, dt = data, Rp = risk
+        ))
+    }
+}
+
+result %>% 
+ggplot() + aes(x = k, y = Rp, color = dt) + 
+geom_line() + geom_text(aes(label = sprintf("%0.2f", Rp)))
+```
+
+Faire la même chose à l’aide des fonctions `tune.knn` et `plot.tune` du package `e1071` pour $k$ = 1,...,120. Que remarque-t-on ? Était-ce prévisible ?
+
+```{r}
+result <- tibble(k = numeric(), error = numeric(), dt = character())
+for (data in c("nearsep1", "nearsep2", "nonsep")){
+    df <- datasep[[data]]
+    tuned <- suppressWarnings(tune.knn(
+        x = df[,2:3], y = df[,1, drop = T],
+        k = 1:120, tunecontrol = tune.control(sampling = "fix")))
+    performances <- tuned$performances %>% 
+        select(-dispersion) %>% 
+        mutate(dt = data)
+    result <- result %>% bind_rows(performances)
+}
+
+result %>% 
+ggplot() + aes(x = k, y = error, color = dt) + 
+geom_line()
+```
