@@ -22,6 +22,7 @@ suppressWarnings(suppressMessages(library(tidyverse)))
 suppressWarnings(library(e1071))
 suppressWarnings(library(caret))
 suppressWarnings(library(ggpubr))
+suppressWarnings(library(doParallel))
 library(class)
 ```
 
@@ -90,4 +91,60 @@ for (data in c("nearsep1", "nearsep2", "nonsep")){
 result %>% 
 ggplot() + aes(x = k, y = error, color = dt) + 
 geom_line()
+```
+
+Estimer le risque moyen de l’algorithme des $k$ plus proches voisins par validation croisée 10-fold, puis par validation croisée Leave-One-Out pour $k$ = 1,...,120 à l’aide des fonctions `tune.knn` et `plot.tune`
+
+```{r}
+result <- tibble(k = numeric(), error = numeric(), dt = character(), cv = character())
+for (data in c("nearsep1", "nearsep2", "nonsep")){
+    df <- datasep[[data]]
+    cl <- makePSOCKcluster(6)
+    registerDoParallel(cl)
+    fold <- suppressWarnings(tune.knn(
+        x = df[,2:3], y = df[,1, drop = T],
+        k = 1:120, tunecontrol = tune.control(sampling = "cross"), cross = 10))
+    loo <- suppressWarnings(tune.knn(
+        x = df[,2:3], y = df[,1, drop = T],
+        k = 1:120, tunecontrol = tune.control(sampling = "cross"), cross = nrow(df)))
+    on.exit(stopCluster(cl))
+    performances <- fold$performances %>% 
+        mutate(cv = "10-Fold") %>% 
+        bind_rows((loo$performances %>% mutate(cv = "LOO"))) %>% 
+        select(-dispersion) %>% 
+        mutate(dt = data)
+    result <- result %>% bind_rows(performances)
+}
+
+result %>% 
+ggplot() + aes(x = k, y = error, color = dt) + 
+geom_line() + facet_grid(cv~.)
+```
+
+Pareil, à l’aide de la fonction `train` du package `caret`.
+
+```{r}
+result <- tibble(k = numeric(), error = numeric(), dt = character(), cv = character())
+for (data in c("nearsep1", "nearsep2", "nonsep")){
+    df <- datasep[[data]]
+    cl <- makePSOCKcluster(6)
+    registerDoParallel(cl)
+    fold <- suppressWarnings(train(
+        Y~., data = df, method = "knn",
+        trControl = trainControl(method = "cv", number = 10), tuneGrid = data.frame(k = 1:120)))
+    loo <- suppressWarnings(train(
+        Y~., data = df, method = "knn",
+        trControl = trainControl(method = "LOOCV"), tuneGrid = data.frame(k = 1:120)))
+    on.exit(stopCluster(cl))
+    performances <- fold$results %>% 
+        mutate(cv = "10-Fold", error = 1-Accuracy) %>% 
+        bind_rows((loo$results %>% mutate(cv = "LOO", error = 1-Accuracy))) %>% 
+        mutate(dt = data) %>% 
+        select(k, error, dt, cv)
+    result <- result %>% bind_rows(performances)
+}
+
+result %>% 
+ggplot() + aes(x = k, y = error, color = dt) + 
+geom_line() + facet_grid(cv~.)
 ```
