@@ -1,0 +1,188 @@
+---
+jupyter:
+  jupytext:
+    formats: ipynb,Rmd
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.1'
+      jupytext_version: 1.2.4
+  kernelspec:
+    display_name: R
+    language: R
+    name: ir
+---
+
+# SVM pour la discrimination binaire
+Les codes informatiques seront implémentés sous R à l’aide des deux packages `e1071` et `kernlab` dédiés essentiellement aux SVM, puis à l’aide du package généraliste `caret`.
+
+```{r}
+suppressWarnings(suppressMessages(library(tidyverse)))
+suppressWarnings(library(e1071))
+suppressWarnings(suppressMessages(library(kernlab)))
+suppressWarnings(library(caret))
+suppressWarnings(library(doParallel))
+```
+
+```{r}
+datasep <- list()
+for (data in c("nearsep1", "nearsep2", "nonsep")){
+    datasep[[data]] <- read_delim(paste0("../data/",data,".txt"), delim = ";", col_types = "_fdd")
+}
+```
+
+## Partie 1 : SVM linéaire sur données presque linéairement séparables
+Lancer à l’aide de la fonction `ksvm` et/ou `svm` une SVM linéaire sur les données du fichier `nearsep1.txt`, avec uneconstante de tolérance $C$ égale à 1. Représenter graphiquement le résultat obtenu. Repérer les vecteurs supports, et donner une interprétation de ces vecteurs supports.
+
+```{r}
+svm_1 <- kernlab::ksvm(
+    Y~., data = datasep[['nearsep1']],
+    type = "C-svc", kernlabel = "vanilladot",
+    C = 1, scaled = F
+)
+
+kernlab::plot(svm_1, data = datasep[['nearsep1']])
+```
+
+```{r}
+svm_2 <- e1071::svm(
+    Y~., data = datasep[['nearsep1']],
+    type = 'C-classification', kernel = 'linear',
+    cost = 1, scale = F
+)
+
+svm_2 %>% plot(data = datasep[['nearsep1']], grid = 300)
+```
+
+Afficher un résumé du modèle de SVM linéaire obtenu à l’aide de `summary( )`.
+
+```{r}
+cat('##### kernlab #####')
+summary(svm_1)
+cat('##### e1071 #####')
+summary(svm_2)
+```
+
+Extraire le vecteur orthogonal $w$ et $b$ pour définir l’hyperplan separateur dont l’équation est donnée par : $$\langle w, (x_1, x_2)\rangle + b = 0$$
+
+```{r}
+Y <- datasep$nearsep1 %>% pull(Y)
+X <- datasep$nearsep1[,2:3]
+w <- colSums(svm_1@coef[[1]] * X[svm_1@alphaindex[[1]],]); w
+paste('b:', svm_1@b)
+```
+
+```{r}
+w <-colSums(as.vector(svm_2$coefs) * svm_2$SV); w
+paste('b:', svm_2$rho)
+```
+
+Afficher les sorties prédites par la SVM, et les confronter avec les vraies sorties. En déduire son risque apparent.
+
+```{r}
+table(svm_1@fitted, Y)
+paste('Train accuracy:', 1-mean(svm_1@fitted!=Y))
+```
+
+Estimer le risque moyen de la SVM par validation croisée 5-fold
+
+```{r}
+svm_3 <- kernlab::ksvm(
+    Y~., data = datasep[['nearsep1']],
+    type = "C-svc", kernlabel = "vanilladot",
+    C = 1, scaled = F, cross = 5
+)
+paste('Mean accuracy:', 1-svm_3@error)
+```
+
+```{r}
+svm_4 <- e1071::svm(
+    Y~., data = datasep[['nearsep1']],
+    type = 'C-classification', kernel = 'linear',
+    cost = 1, scale = F, cross = 5
+)
+paste('Mean accuracy:', mean(svm_4$accuracies), "%")
+```
+
+Déterminer la sortie prédite pour les points de coordonnées (0,0) et (−1,0) à l’aide de la fonction `predict`.
+
+```{r}
+cat('##### kernlab #####')
+predict(svm_3, newdata = tibble(X1 = c(0,-1), X2 = c(0,0)))
+cat('##### e1071 #####')
+predict(svm_4, newdata = tibble(X1 = c(0,-1), X2 = c(0,0)))
+```
+
+Séparer les données en un échantillon d’apprentissage et un échantillon de validation de son choix. Lancer la SVM linéaire sur l’échantillon d’apprentissage. Estimer son risque moyen sur l’échantillon de validation.
+
+```{r}
+part <- createDataPartition(Y, p = 2/3)
+data_train <- datasep[['nearsep1']][part$Resample1,]
+X_test <- X[-part$Resample1,]
+y_test <- Y[-part$Resample1]
+
+svm_5 <- kernlab::ksvm(
+    Y~., data = data_train,
+    type = "C-svc", kernlabel = "vanilladot",
+    C = 1, scaled = F, cross = 5
+)
+paste(
+    'Test accuracy:',
+    1 - mean(predict(svm_5, newdata = X_test)!=y_test)
+)
+```
+
+Ajuster la valeur de $C$ par validation croisée 5-fold et par validation hold out, à l’aide de la fonction `tune.svm` du package `e1071`.
+
+```{r}
+cl <- makePSOCKcluster(6)
+time <- proc.time()
+registerDoParallel(cl)
+
+svm_6 <- tune.svm(
+    Y~., data = data_train,
+    kernel = 'linear', type = 'C-classification',
+    scale = F, tune.control(sampling = "cross", cross = 5),
+    cost = seq(.001, 1, by = .001)
+)
+
+on.exit(stopCluster(cl))
+proc.time() - time
+
+svm_6
+
+ggplot(svm_6$performances) +
+aes(cost, 1-error) + geom_point()
+
+paste(
+    'Test accuracy:',
+    1 - mean(predict(svm_6$best.model, newdata = X_test)!=y_test)
+)
+```
+
+Même chose à l’aide de la fonction `train` du package `caret`.
+
+```{r}
+cl <- makePSOCKcluster(6)
+time <- proc.time()
+registerDoParallel(cl)
+
+svm_7 <- caret::train(
+    Y~., data = data_train, method = 'svmLinear',
+    trControl = trainControl("cv", number = 5),
+    tuneGrid = expand.grid(C = seq(.001, 1, by = .001))
+)
+
+on.exit(stopCluster(cl))
+proc.time() - time
+
+svm_7$finalModel
+
+ggplot(svm_7$results) +
+aes(C, Accuracy) + geom_point()
+
+paste(
+    'Test accuracy:',
+    1 - mean(predict(svm_7$finalModel, newdata = X_test)!=y_test)
+)
+```
