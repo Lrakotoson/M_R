@@ -186,3 +186,126 @@ paste(
     1 - mean(predict(svm_7$finalModel, newdata = X_test)!=y_test)
 )
 ```
+
+## Partie 2: SVM non linéaire sur données simulées non linéairement séparables
+Sur les données des fichiers `nearsep2.txt` et `nonsep.txt`.
+
+Lancer à l’aide de la fonction `ksvm` et/ou `svm` une SVM linéaire avec une constante de tolérance $C$ égale à 1.  
+Représenter graphiquement le résultat obtenu
+
+```{r}
+for (data in c('nearsep2', 'nonsep')){
+    model_1 <- kernlab::ksvm(
+        Y~., data = datasep[[data]],
+        type = "C-svc", kernlabel = "vanilladot",
+        C = 1, scaled = F
+    )
+
+    kernlab::plot(model_1, data = datasep[[data]])
+}
+```
+
+```{r}
+for (data in c('nearsep2', 'nonsep')){
+    model_2 <- e1071::svm(
+        Y~., data = datasep[[data]],
+        type = 'C-classification', kernel = 'linear',
+        cost = 1, scale = F
+    )
+
+    model_2 %>% plot(data = datasep[[data]], grid = 300)
+}
+```
+
+Ajuster la valeur de $C$ par validation croisée 5-fold. Comparer le risque moyen estimé de la SVM choisie avec celui de l’algorithme des $k$ plus proches voisins choisi dans l’atelier `KNN` 
+
+```{r}
+results <- tibble(C = numeric(), Accuracy = numeric(), dt = character())
+for (dt in c('nearsep2', 'nonsep')){
+    cl <- makePSOCKcluster(10)
+    registerDoParallel(cl)
+    model_3 <- train(
+        Y~., data = datasep[[dt]], method = 'svmLinear',
+        trControl = trainControl("cv", number = 5),
+        tuneGrid = expand.grid(C = seq(.001, 1, by = .001))
+    )
+    on.exit(stopCluster(cl))
+    results <- model_3$results %>% 
+    select(C, Accuracy) %>% mutate(dt = dt) %>% 
+    bind_rows(results)
+}
+
+results %>% mutate(error = 1-Accuracy) %>% 
+ggplot() + aes(x = C, y = error, color = dt) + 
+geom_line() + facet_grid(dt~.) + ylim(.1,.4)
+```
+
+Lancer une SVM non linéaire avec un noyau polynômial de degré $d$ pour plusieurs valeurs de $d$ ($C = 1$), et représenter graphiquement les résultats obtenus
+
+```{r}
+results <- tibble(d = numeric(), Accuracy = numeric(), dt = character())
+for (dt in c('nearsep2', 'nonsep')){
+    cl <- makePSOCKcluster(10)
+    registerDoParallel(cl)
+    model_4 <- train(
+        Y~., data = datasep[[dt]], method = 'svmPoly',
+        trControl = trainControl("LGOCV"),
+        tuneGrid = expand.grid(C = 1, scale = F, degree = 1:10)
+    )
+    on.exit(stopCluster(cl))
+    results <- model_4$results %>% 
+    select(d = degree, Accuracy) %>% mutate(dt = dt) %>% 
+    bind_rows(results)
+}
+
+results %>% mutate(error = 1-Accuracy) %>% 
+ggplot() + aes(x = d, y = error, color = dt) + 
+geom_line() + facet_grid(dt~.)
+```
+
+Lancer une SVM non linéaire avec un noyau gaussien ou radial de paramètre $\sigma^2$ pour plusieurs valeurs de $\sigma^2$ ($C= 1$), représenter graphiquement les résultats obtenus.
+
+```{r}
+results <- tibble(sigma = numeric(), Accuracy = numeric(), dt = character())
+for (dt in c('nearsep2', 'nonsep')){
+    cl <- makePSOCKcluster(10)
+    registerDoParallel(cl)
+    model_5 <- train(
+        Y~., data = datasep[[dt]], method = 'svmRadial',
+        trControl = trainControl("LGOCV"),
+        tuneGrid = expand.grid(sigma = seq(.01, 2, by = .01), C = 1)
+    )
+    on.exit(stopCluster(cl))
+    results <- model_5$results %>% 
+    select(sigma, Accuracy) %>% mutate(dt = dt) %>% 
+    bind_rows(results)
+}
+
+results %>% mutate(error = 1-Accuracy) %>% 
+ggplot() + aes(x = sigma, y = error, color = dt) + 
+geom_line() + facet_grid(dt~.)
+```
+
+Ajuster les valeurs de $\sigma^2$ et $C$ par validation croisée 5-fold.
+
+```{r}
+results <- tibble(sigma = numeric(), Accuracy = numeric(), dt = character())
+for (dt in c('nearsep2', 'nonsep')){
+    cl <- makePSOCKcluster(10)
+    registerDoParallel(cl)
+    model_6 <- train(
+        Y~., data = datasep[[dt]], method = 'svmRadial',
+        trControl = trainControl("cv", number = 5),
+        tuneGrid = expand.grid(sigma = seq(0, 1, by = .2), C = seq(.01, 1, by = .01))
+    )
+    on.exit(stopCluster(cl))
+    results <- model_6$results %>% 
+    select(C, sigma, Accuracy) %>% mutate(dt = dt) %>% 
+    bind_rows(results)
+}
+
+results %>% mutate(error = 1-Accuracy) %>% 
+ggplot() + aes(x = C, y = error, color = dt) + 
+geom_line() + facet_grid(sigma~dt) + 
+ggtitle('Error by C and sigma2')
+```
