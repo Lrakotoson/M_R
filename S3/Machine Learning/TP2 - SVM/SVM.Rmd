@@ -304,8 +304,8 @@ for (dt in c('nearsep2', 'nonsep')){
     bind_rows(results)
 }
 
-results %>% mutate(error = 1-Accuracy) %>% 
-ggplot() + aes(x = C, y = error, color = dt) + 
-geom_line() + facet_grid(sigma~dt) + 
+results %>% mutate(error = 1-Accuracy, sigma = as.factor(sigma)) %>% 
+ggplot() + aes(x = C, y = error, color = sigma) + 
+geom_line() + facet_grid(dt~.) + 
 ggtitle('Error by C and sigma2')
 ```
