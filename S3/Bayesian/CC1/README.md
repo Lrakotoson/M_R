@@ -1,0 +1,1 @@
+Infarctus à l'hôpital public
