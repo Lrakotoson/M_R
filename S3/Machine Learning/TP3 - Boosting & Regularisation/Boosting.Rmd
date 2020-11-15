@@ -19,8 +19,14 @@ jupyter:
 ```{r}
 suppressWarnings(suppressMessages(library(tidyverse)))
 suppressWarnings(suppressMessages(library(kernlab)))
-suppressWarnings(library(caret))
-suppressWarnings(library(doParallel))
+suppressWarnings(suppressMessages(library(caret)))
+suppressWarnings(suppressMessages(library(doParallel)))
+suppressWarnings(suppressMessages(library(pROC)))
+```
+
+```{r}
+roclist <- list()
+results <- tibble(model = character(), accuracy = double(), auc = double())
 ```
 
 Importer le jeu de données `spam` du package `kernlab` à l’aide de la commande `data(spam)`. Afficher les informations sur ce jeu de données à l’aide de la commande `help(spam)`, ainsi qu’un résumé de ce jeu de données.  
@@ -34,7 +40,7 @@ data_train <- spam[part$Resample1,]
 data_test <- spam[-part$Resample1,]
 ```
 
-Lancer sur l’échantillon d’apprentissage une SVM linéaire en ajustant sa constante de tolérance C par validation croisée 10-fold.
+Lancer sur l’échantillon d’apprentissage une SVM linéaire en ajustant sa constante de tolérance C par validation croisée 5-fold.
 
 ```{r}
 cl <- makePSOCKcluster(10)
@@ -42,21 +48,36 @@ registerDoParallel(cl)
 
 svm_1 <- caret::train(
     Y~., data = data_train, method = 'svmLinear',
-    trControl = trainControl("cv", number = 10),
+    trControl = trainControl("cv", number = 5, allowParallel = T),
     tuneGrid = expand.grid(C = seq(.001, 1.001, by = .01))
 )
 on.exit(stopCluster(cl))
+```
 
+```{r}
+results %>% print
+```
+
+```{r}
 ggplot(svm_1$results) +
 aes(C, Accuracy) + geom_line()
 
-paste(
-    'Test accuracy:',
-    1 - mean(predict(svm_1$finalModel, newdata = select(data_test, -Y)) != pull(data_test, Y))
+test <- pull(data_test, Y) %>% as.numeric
+pred <- predict(svm_1$finalModel, newdata = select(data_test, -Y)) %>% as.numeric
+acc <- 1 - mean(pred != test)
+rc <- roc(test, pred)
+roclist[['svmLinear']] <- rc
+results <- results %>% bind_rows(
+    tibble(model = 'svmLinear', accuracy = acc, auc = rc$auc %>% as.double)
 )
+
+cat(paste(
+    'Test accuracy:', acc,
+    '\nTest AUC: ', rc$auc
+))
 ```
 
-Lancer sur l’échantillon d’apprentissage une SVM à noyau gaussien (radial) en ajustant ses paramètres parvalidation croisée 10-fold.
+Lancer sur l’échantillon d’apprentissage une SVM à noyau gaussien (radial) en ajustant ses paramètres par validation croisée 5-fold.
 
 ```{r}
 cl <- makePSOCKcluster(10)
@@ -64,20 +85,213 @@ registerDoParallel(cl)
 
 svm_2 <- caret::train(
     Y~., data = data_train, method = 'svmRadial',
-    trControl = trainControl("cv", number = 10),
+    trControl = trainControl("cv", number = 5, allowParallel = T),
     tuneGrid = expand.grid(sigma = seq(0, 1, by = .2), C = seq(.01, 1, by = .01))
 )
 on.exit(stopCluster(cl))
+```
 
+```{r}
 svm_2$results %>% mutate(sigma = as.factor(sigma)) %>% 
 ggplot() + aes(x = C, y = Accuracy, color = sigma) + 
 geom_line() +
 ggtitle('Error by C and sigma2')
 
-paste(
-    'Test accuracy:',
-    1 - mean(predict(svm_2$finalModel, newdata = select(data_test, -Y)) != pull(data_test, Y))
+pred <- predict(svm_2$finalModel, newdata = select(data_test, -Y)) %>% as.numeric
+acc <- 1 - mean(pred != test)
+rc <- roc(test, pred)
+roclist[['svmRadial']] <- rc
+results <- results %>% bind_rows(
+    tibble(model = 'svmRadial', accuracy = acc, auc = rc$auc %>% as.double)
 )
+
+cat(paste(
+    'Test accuracy:', acc,
+    '\nTest AUC: ', rc$auc
+))
 ```
 
 Lancer sur l’échantillon d’apprentissage un algorithme de forêt aléatoire en ajustant ses paramètres par la méthode Out Of Bag.
+
+```{r}
+cl <- makePSOCKcluster(10)
+registerDoParallel(cl)
+
+rf_1 <- caret::train(
+    Y~., data = data_train, method = 'ranger', importance = 'impurity_corrected',
+    trControl = trainControl(method = "oob", allowParallel = T),
+    tuneGrid = expand.grid(
+        mtry = seq(1, length(data_train)-1),
+        splitrule = "gini", min.node.size = 1
+    )
+)
+on.exit(stopCluster(cl))
+```
+
+```{r}
+rf_1$results %>% 
+ggplot() + aes(x = mtry, y = Accuracy) + 
+geom_line() +
+ggtitle('Error by mtry')
+
+pred <- predict(rf_1$finalModel, data = select(data_test, -Y))$prediction %>% as.numeric
+acc <- 1 - mean(pred != test)
+rc <- roc(test, pred)
+roclist[['RF']] <- rc
+results <- results %>% bind_rows(
+    tibble(model = 'RF', accuracy = acc, auc = rc$auc %>% as.double)
+)
+
+cat(paste(
+    'Test accuracy:', acc,
+    '\nTest AUC: ', rc$auc
+))
+```
+
+```{r}
+rf_naive_vars <- rf_1$finalModel$variable.importance
+rf_naive_vars <- tibble(variable = names(rf_naive_vars), importance = rf_naive_vars) %>% 
+    arrange(importance) %>% mutate(variable = factor(variable, levels = variable)) %>% 
+    top_frac(0.25)
+
+ggplot(rf_naive_vars) + coord_flip() + 
+  aes(x = variable, y = importance, fill = importance) + geom_bar(stat = "identity") + 
+  labs(title = "25% des variables classées par importance", x = "") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+Lancer sur l’échantillon d’apprentissage des algorithmes de Gradient Boosting (Adaboost et Logitboost), puis un algorithme d’eXtreme Gradient Boosting (XGBoost) en ajustant leurs paramètres par validation croisée 5-fold.
+
+```{r}
+cl <- makePSOCKcluster(10)
+registerDoParallel(cl)
+
+ada_1 <- caret::train(
+    Y~., data = data_train, method = 'gbm', distribution = "adaboost",
+    trControl = trainControl("cv", number = 5, allowParallel = T),
+    tuneGrid = expand.grid(
+        n.trees = c(2000, 5000), interaction.depth = 1,
+        shrinkage = c(.01, .025, .05,.075,.1),
+        n.minobsinnode = 10
+    ), verbose = F
+)
+on.exit(stopCluster(cl))
+```
+
+```{r}
+ada_1$results %>%
+ggplot() + aes(x = shrinkage, y = Accuracy, color = as.factor(n.trees)) + 
+geom_line() +
+ggtitle('Error by shrinkage and n.trees')
+
+test <- (data_test$Y == "nonspam") %>% as.factor %>% as.numeric
+pred <- (predict(ada_1$finalModel, newdata = select(data_test, -Y), ada_1$finalModel$n.trees) > 0) %>% as.factor %>% as.numeric
+acc <- 1 - mean(pred != test)
+rc <- roc(test, pred)
+roclist[['adaboost']] <- rc
+results <- results %>% bind_rows(
+    tibble(model = 'adaboost', accuracy = acc, auc = rc$auc %>% as.double)
+)
+
+cat(paste(
+    'Test accuracy:', acc,
+    '\nTest AUC: ', rc$auc
+))
+```
+
+```{r}
+cl <- makePSOCKcluster(10)
+registerDoParallel(cl)
+
+logit_1 <- caret::train(
+    Y~., data = data_train, method = 'gbm', distribution = "bernoulli",
+    trControl = trainControl("cv", number = 5, allowParallel = T),
+    tuneGrid = expand.grid(
+        n.trees = c(2000, 5000), interaction.depth = 1,
+        shrinkage = c(.01, .025, .05,.075,.1, .15),
+        n.minobsinnode = 10
+    ), verbose = F
+)
+on.exit(stopCluster(cl))
+```
+
+```{r}
+logit_1$results %>%
+ggplot() + aes(x = shrinkage, y = Accuracy, color = as.factor(n.trees)) + 
+geom_line() +
+ggtitle('Error by shrinkage and n.trees')
+
+pred <- (predict(logit_1$finalModel, newdata = select(data_test, -Y), logit_1$finalModel$n.trees) > 0) %>% as.factor %>% as.numeric
+acc <- 1 - mean(pred != test)
+rc <- roc(test, pred)
+roclist[['logitboost']] <- rc
+results <- results %>% bind_rows(
+    tibble(model = 'logitboost', accuracy = acc, auc = rc$auc %>% as.double)
+)
+
+cat(paste(
+    'Test accuracy:', acc,
+    '\nTest AUC: ', rc$auc
+))
+```
+
+```{r}
+cl <- makePSOCKcluster(10)
+registerDoParallel(cl)
+
+xgb_1 <- caret::train(
+    Y~., data = data_train, method = 'xgbTree',
+    trControl = trainControl("cv", number = 5, allowParallel = T),
+    tuneGrid = expand.grid(
+        nrounds = seq(1, 100, by=10), eta = c(.025, .05, .1, .2),
+        max_depth = c(2,4,6), gamma = c(0, .05, .1, .5, .75, 1),
+        colsample_bytree = 1, min_child_weight = 1, subsample = 1
+    )
+)
+on.exit(stopCluster(cl))
+```
+
+```{r}
+xgb_1$results %>% 
+mutate(
+    eta = as.factor(eta),
+    max_depth = as.factor(max_depth),
+    gamma = as.factor(gamma)
+) %>% ggplot() + aes(nrounds, Accuracy, color = gamma, shape=eta) +
+geom_line() + geom_point() + facet_grid(.~max_depth) +
+ggtitle('Error by max_depth (2,4,6) and nrounds')
+
+pred <- (predict(xgb_1$finalModel, newdata = select(data_test, -Y) %>% as.matrix) > .5) %>% as.factor %>% as.numeric
+acc <- 1 - mean(pred != test)
+rc <- roc(test, pred)
+roclist[['xgboost']] <- rc
+results <- results %>% bind_rows(
+    tibble(model = 'xgboost', accuracy = acc, auc = rc$auc %>% as.double)
+)
+
+cat(paste(
+    'Test accuracy:', acc,
+    '\nTest AUC: ', rc$auc
+))
+```
+
+Comparer les performances des différents algorithmes retenus sur l’échantillon de validation.
+
+```{r}
+results
+
+results %>% 
+gather(metric, value, -model) %>% 
+ggplot() +
+aes(fill = metric, y = value, x = model) +
+geom_bar(position = "dodge", stat = "identity") +
+coord_flip(ylim = c(.8, 1)) +
+labs(title = "Comparaison des modèles") +
+theme(plot.title = element_text(hjust = 0.5))
+```
+
+Tracer les courbes ROC des algorithmes retenus, et les comparer.
+
+```{r}
+ggroc(roclist)
+```
