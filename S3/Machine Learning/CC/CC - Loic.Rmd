@@ -1,0 +1,335 @@
+---
+jupyter:
+  jupytext:
+    formats: ipynb,Rmd
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.1'
+      jupytext_version: 1.2.4
+  kernelspec:
+    display_name: R
+    language: R
+    name: ir
+output: pdf_document
+---
+
+# CC - ML
+Loïc Rakotoson
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+suppressWarnings(suppressMessages(library(tidyverse)))
+suppressWarnings(suppressMessages(library(kernlab)))
+suppressWarnings(suppressMessages(library(caret)))
+suppressWarnings(suppressMessages(library(doParallel)))
+suppressWarnings(suppressMessages(library(pROC)))
+```
+
+```{r}
+roclist <- list()
+results <- tibble(model = character(), accuracy = double(), auc = double())
+```
+
+## Question 1
+
+```{r}
+dtrain <- read.csv("Hitters_train.csv",row.names=1)
+dval <- read.csv("Hitters_test.csv",row.names=1)
+
+names_train <- rownames(dtrain)
+names_test <- rownames(dval)
+
+dtrain <- dtrain %>% mutate(Salary = as.factor(Salary))
+dval <- dval %>% mutate(Salary = as.factor(Salary))
+```
+
+## Question 2
+
+```{r}
+cl <- makePSOCKcluster(10)
+registerDoParallel(cl)
+
+glm_1 <- caret::train(
+    Salary~., data = dtrain, method = 'glm',
+    trControl = trainControl("none")
+)
+on.exit(stopCluster(cl))
+```
+
+```{r}
+test <- pull(dval, Salary) %>% as.numeric
+pred <- predict(glm_1, newdata = select(dval, -Salary)) %>% as.numeric
+acc <- 1 - mean(pred != test)
+rc <- roc(test, pred)
+roclist[['glm']] <- rc
+results <- results %>% bind_rows(
+    tibble(model = 'glm', accuracy = acc, auc = rc$auc %>% as.double)
+)
+
+cat(paste(
+    'Risque moyen:', 1 - acc,
+    '\nValidation AUC: ', rc$auc
+))
+```
+
+## Question 3
+
+```{r}
+cl <- makePSOCKcluster(10)
+registerDoParallel(cl)
+
+knn_1 <- caret::train(
+    Salary~., data = dtrain, method = 'knn',
+    trControl = trainControl("cv", number = 5, repeats = 5, allowParallel = T),
+    tuneGrid = expand.grid(k = 1:100)
+)
+
+result <- tibble(k = numeric(), Rempirique = double())
+for (k in 1:100){
+    y_pred <- class::knn(select(dtrain, -Salary), select(dtrain, -Salary), cl = pull(dtrain, Salary), k = k)
+    risk <- mean((pull(dtrain, Salary) != y_pred))
+    result <- result  %>% bind_rows(tibble(
+        k = k, Rempirique = risk
+    ))
+}
+on.exit(stopCluster(cl))
+```
+
+```{r}
+knn_1$results %>% mutate(Rval = 1-Accuracy) %>% 
+select(Rval) %>% bind_cols(result) %>% gather(risk, value, -k) %>% 
+ggplot() + aes(k, value, color = risk) + geom_line() + 
+ggtitle("risques en fonction de k")
+```
+
+```{r}
+pred <- predict(knn_1, newdata = select(dval, -Salary)) %>% as.numeric
+acc <- 1 - mean(pred != test)
+rc <- roc(test, pred)
+roclist[['knn']] <- rc
+results <- results %>% bind_rows(
+    tibble(model = 'knn', accuracy = acc, auc = rc$auc %>% as.double)
+)
+
+cat(paste(
+    'Risque moyen:', 1 - acc,
+    '\nValidation AUC: ', rc$auc
+))
+```
+
+## Question 4
+
+```{r}
+cl <- makePSOCKcluster(10)
+registerDoParallel(cl)
+
+svm_1 <- caret::train(
+    Salary~., data = dtrain, method = 'svmLinear',
+    trControl = trainControl("cv", number = 5, repeats = 5, allowParallel = T),
+    tuneGrid = expand.grid(C = seq(.001, 1.001, by = .01))
+)
+on.exit(stopCluster(cl))
+```
+
+```{r}
+c <- svm_1$finalModel@param$C
+alpha_i <- svm_1$finalModel@alpha[[1]]
+index <- svm_1$finalModel@alphaindex[[1]]
+
+cat('Entre les frontières:')
+cat(names_train[index[which(alpha_i == c)]])
+```
+
+```{r}
+pred <- predict(svm_1$finalModel, newdata = select(dval, -Salary)) %>% as.numeric
+acc <- 1 - mean(pred != test)
+rc <- roc(test, pred)
+roclist[['svmLinear']] <- rc
+results <- results %>% bind_rows(
+    tibble(model = 'svmLinear', accuracy = acc, auc = rc$auc %>% as.double)
+)
+
+cat(paste(
+    'Risque moyen:', 1 - acc,
+    '\nTest AUC: ', rc$auc
+))
+
+ggroc(rc, legacy.axes = T) +
+ggtitle("ROC: svm linéaire")
+```
+
+## Question 5
+
+```{r}
+cl <- makePSOCKcluster(10)
+registerDoParallel(cl)
+
+svm_2 <- caret::train(
+    Salary~., data = dtrain, method = 'svmRadial',
+    trControl = trainControl("cv", number = 5, allowParallel = T),
+    tuneGrid = expand.grid(sigma = seq(0, 1, by = .2), C = seq(.01, 1, by = .09))
+)
+
+c <- svm_2$finalModel@param$C
+result <- tibble(sigma = numeric(), Rempirique = double())
+for (s in seq(0, 1, by = .2)){
+    model <- kernlab::ksvm(Salary~.,data=dtrain,scaled=FALSE,type="C-svc",kernel="rbfdot",kpar=list(sigma=0.001),C=c)
+    result <- result  %>% bind_rows(tibble(
+        sigma = s, Rempirique = model@error
+    ))
+}
+
+
+on.exit(stopCluster(cl))
+```
+
+```{r}
+svm_2$results %>% filter(C == c) %>% 
+mutate(Rval = 1-Accuracy) %>% select(Rval) %>% 
+bind_cols(result) %>% gather(risk, value, - sigma) %>% 
+ggplot()+ aes(sigma, value, color = risk) + geom_line() + 
+ggtitle(paste("risques en fonction de sigma pour C =", c))
+```
+
+```{r}
+pred <- predict(svm_2$finalModel, newdata = select(dval, -Salary)) %>% as.numeric
+acc <- 1 - mean(pred != test)
+rc <- roc(test, pred)
+roclist[['svmRadial']] <- rc
+results <- results %>% bind_rows(
+    tibble(model = 'svmRadial', accuracy = acc, auc = rc$auc %>% as.double)
+)
+
+cat(paste(
+    'Risque moyen:', 1 - acc,
+    '\nValidation AUC: ', rc$auc
+))
+
+ggroc(rc, legacy.axes = T) +
+ggtitle("ROC: svm Radial")
+```
+
+## Question 6
+
+```{r}
+cl <- makePSOCKcluster(10)
+registerDoParallel(cl)
+
+rf_1 <- caret::train(
+    Salary~., data = dtrain, method = 'ranger', importance = 'impurity_corrected',
+    trControl = trainControl(method = "oob", allowParallel = T),
+    tuneGrid = expand.grid(
+        mtry = seq(1, length(dtrain)-1),
+        splitrule = "gini", min.node.size = 1
+    )
+)
+on.exit(stopCluster(cl))
+```
+
+```{r}
+rf_1$results %>% mutate(Rval = 1-Accuracy) %>% 
+ggplot() + aes(x = mtry, y = Rval) + 
+geom_line() +
+ggtitle('Risque estimé par OOB')
+```
+
+```{r}
+pred <- predict(rf_1$finalModel, data = select(dval, -Salary))$prediction %>% as.numeric
+acc <- 1 - mean(pred != test)
+rc <- roc(test, pred)
+roclist[['RF']] <- rc
+results <- results %>% bind_rows(
+    tibble(model = 'RF', accuracy = acc, auc = rc$auc %>% as.double)
+)
+
+cat(paste(
+    'Risque moyen:', 1-acc,
+    '\nTest AUC: ', rc$auc
+))
+
+ggroc(rc, legacy.axes = T) +
+ggtitle("ROC: random forest")
+```
+
+```{r}
+rf_naive_vars <- rf_1$finalModel$variable.importance
+rf_naive_vars <- tibble(variable = names(rf_naive_vars), importance = rf_naive_vars) %>% 
+    arrange(importance) %>% mutate(variable = factor(variable, levels = variable))
+
+ggplot(rf_naive_vars) + coord_flip() + 
+  aes(x = variable, y = importance, fill = importance) + geom_bar(stat = "identity") + 
+  labs(title = "variables classées par importance", x = "") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+## Question 7
+
+```{r}
+cl <- makePSOCKcluster(10)
+registerDoParallel(cl)
+
+xgb_1 <- caret::train(
+    Salary~., data = dtrain, method = 'xgbTree',
+    trControl = trainControl("cv", number = 5, allowParallel = T),
+    tuneGrid = expand.grid(
+        nrounds = seq(1, 100, by=10), eta = c(.025, .05, .1, .2),
+        max_depth = c(2,4,6), gamma = c(0, .05, .1, .5, .75, 1),
+        colsample_bytree = 1, min_child_weight = 1, subsample = 1
+    )
+)
+on.exit(stopCluster(cl))
+```
+
+```{r}
+xgb_1$results %>% 
+mutate(
+    eta = as.factor(eta),
+    max_depth = as.factor(max_depth),
+    gamma = as.factor(gamma),
+    error = 1-Accuracy
+) %>% ggplot() + aes(nrounds, error, color = gamma) +
+geom_line() + facet_grid(eta~max_depth) +
+ggtitle('rique estimé en fonction de max_depth (2,4,6), eta et nrounds')
+```
+
+```{r}
+pred <- (predict(xgb_1$finalModel, newdata = select(dval, -Salary) %>% as.matrix) < .5) %>% as.factor %>% as.numeric
+acc <- 1 - mean(pred != test)
+rc <- roc(test, pred)
+roclist[['xgboost']] <- rc
+results <- results %>% bind_rows(
+    tibble(model = 'xgboost', accuracy = acc, auc = rc$auc %>% as.double)
+)
+
+cat(paste(
+    'Risque moyen:', 1-acc,
+    '\nTest AUC: ', rc$auc
+))
+
+ggroc(rc, legacy.axes = T) +
+ggtitle("ROC: xgboost")
+```
+
+## Question 8
+Lors de l'apprentissage on a utilisé le risque estimé par validation pour choisir nos meilleurs hyperparamètres.  
+Pour choisir le meilleur modèle, on a aussi introduit le score AUC (~ courbe ROC).
+
+Les forêts aléatoires et xgboost ayant sensiblement les même performance d'après leur accuracy, leur AUC permet de les départager. On choisira xgboost si on se fie à l'AUC.
+
+```{r}
+results
+
+results %>% 
+gather(metric, value, -model) %>% 
+ggplot() +
+aes(fill = metric, y = value, x = model) +
+geom_bar(position = "dodge", stat = "identity") +
+coord_flip(ylim = c(.7, 1)) +
+labs(title = "Comparaison des modèles") +
+theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+ggroc(roclist) +
+ggtitle("ROC: modèles")
+```
