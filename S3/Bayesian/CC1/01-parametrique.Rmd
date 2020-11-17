@@ -1,0 +1,98 @@
+# Modèle paramétrique
+
+$$f_X(x) = \frac{\alpha}{\theta^\alpha} x^{\alpha-1} {1}_{0 \leq x \leq \theta} \quad \forall x \in \mathbb{R} $$
+$(X_i)_{i \geq 1}$ iid de même loi que X.
+
+## Question 1
+On suppose qu'on connaît $\theta$ et on cherche à estimer $\alpha$.  
+Montrer que $Y = ln(\frac{\theta}{X}) \sim \mathcal{E}(\lambda)$.
+
+Soit $g$ une fonction strictement décroissante et dérivable.
+
+$$\begin{aligned}
+g:&\mathbb{R}_{*}^+&\longrightarrow &\mathbb{R}\\
+&x&\longmapsto&y = ln(\frac{\theta}{x})
+\end{aligned}$$
+
+Alors on a $g^{-1}:y\to \theta e^{-y}$ et $\frac{\partial}{\partial y}g^{-1} = -\theta e^{-y}$.
+
+$$\begin{aligned}
+f_Y(y)&=\frac{\partial}{\partial y}\mathbb{P}[\,Y\leq y]\, = \frac{\partial}{\partial y}\mathbb{P}[\,g(X)\leq y]\,\\
+&=\frac{\partial}{\partial y}\mathbb{P}[\,g^{-1}.g(X)\geq g^{-1}(y)]\,=\frac{\partial}{\partial y} 1-F_X(g^{-1}(y))\\
+&=\left |\frac{\partial}{\partial y}g^{-1}(y)\right | f_X(g^{-1}(y)) = \alpha \frac{e^{-\alpha y+y}}{e^{y}}\\
+f_Y(y)&=\alpha e^{-\alpha y}
+\end{aligned}$$
+donc $Y \sim \mathcal{E}(\alpha)$.
+
+$\mathbb{E}[\,Y]\,=\frac{1}{\alpha}$ et $\mathbb{V}[\,Y]\,=\frac{1}{\alpha^{2}}$.
+
+On peut en déduire l'information de Fisher $I_X(\alpha)$ du modèle.
+
+$$\begin{aligned}
+\mathcal{L}(x_i;\alpha) &= ln\, L(x_i;\alpha) = n\,ln\frac{\alpha}{\theta^\alpha} + \sum_{i=1}^n ln\,x_i^{\alpha-1}\\
+&\\
+\frac{\partial}{\partial \alpha}\mathcal{L}(x_i;\alpha)&=\frac{n}{\alpha}-n\,ln\,\theta + \sum_{i=1}^n ln\,x_i\\
+&=\frac{n}{\alpha} - \sum_{i=1}^n ln\,\theta-ln\,x_i\\
+&=\frac{n}{\alpha} - \sum_{i=1}^n y_i\\
+\frac{\partial}{\partial \alpha}\mathcal{L}(x_i;\alpha)&=\frac{\partial}{\partial \alpha}\mathcal{L}(y_i;\alpha)\\
+&\\
+I_X(\alpha)&=\mathbb{V}\left [ \frac{\partial}{\partial \alpha}\mathcal{L}(x_i;\alpha)\right ]\\
+&=n\,\mathbb{V}[\,Y]\,\\
+I_X(\alpha)&=\frac{n}{\alpha^2}
+\end{aligned}$$
+
+## Question 2
+Estimateur de maximum de vraisemblance.
+
+$$\begin{aligned}
+&\frac{\partial}{\partial \alpha}\mathcal{L}(x_i;\alpha) = 0\\
+\Leftrightarrow\quad &\alpha=\frac{n}{\sum_{i=1}^n y_i}\\
+\Leftrightarrow\quad &\alpha=\frac{1}{\frac{1}{n}\sum_{i=1}^n g(x_i)}\\
+\tilde{\alpha}_{EMV} &= \frac{1}{\frac{1}{n}\sum_{i=1}^n ln\frac{\theta}{X_i}}
+\end{aligned}$$
+
+## Question 3
+On suppose à présent que $\theta$ et $\alpha$ sont inconnus.  
+Information de Fisher $I_X(\alpha,\theta)$ du modèle.  
+Comme le support de $f_X$ dépend de $\theta$, on ne peut pas déduire l'information de Fisher à partir de la relation de second ordre. On utilisera donc l'espérance du carrée du premier niveau des dérivée partielle.
+
+$$\begin{aligned}
+\mathcal{L}(x_i;\alpha,\theta) &= ln\, L(x_i;\alpha,\theta) = n\,ln\frac{\alpha}{\theta^\alpha} + \sum_{i=1}^n ln\,x_i^{\alpha-1}\\
+&\\
+\frac{\partial}{\partial \alpha}\mathcal{L}(x_i;\alpha,\theta)&=\frac{n}{\alpha} - \sum_{i=1}^n y_i\\
+\frac{\partial}{\partial \theta}\mathcal{L}(x_i;\alpha,\theta)&=-\frac{n\alpha}{\theta}\\
+&\\
+&\\
+\mathbb{E}\left [ \left (\frac{\partial}{\partial \alpha}\mathcal{L}(x_i;\alpha,\theta)\right )^{2}\right ]&=\frac{n^2}{\alpha^2}+\mathbb{E}\left [ \left (\sum_{i=1}^n y_i\right )^{2}\right ] - 2\frac{n}{\alpha}\mathbb{E}\left [\sum_{i=1}^n y_i\right ]\\
+&=\frac{n^2}{\alpha^2}+\mathbb{V}\left [\sum_{i=1}^n y_i\right ] + \left ( \mathbb{E}\left [\sum_{i=1}^n y_i\right ]\right )^2 - 2\frac{n}{\alpha}\mathbb{E}\left [\sum_{i=1}^n y_i\right ]\\
+&=\frac{n^2}{\alpha^2}+n\mathbb{V}[Y] + n^2\mathbb{E}^2[Y] - 2\frac{n^2}{\alpha}\mathbb{E}[Y]\\
+\mathbb{E}\left [ \left (\frac{\partial}{\partial \alpha}\mathcal{L}(x_i;\alpha,\theta)\right )^{2}\right ]&=\frac{n}{\alpha^2}\\
+&\\
+&\\
+\mathbb{E}\left [ \left (\frac{\partial}{\partial \theta}\mathcal{L}(x_i;\alpha,\theta)\right )^{2}\right ]&=\frac{n^2\alpha^2}{\theta^2}\\
+&\\
+\mathbb{E}\left [ \frac{\partial}{\partial \alpha}\mathcal{L}(x_i;\alpha,\theta)\,.\,\frac{\partial}{\partial \theta}\mathcal{L}(x_i;\alpha,\theta)\right ]&= \frac{n^2\alpha}{\theta}\mathbb{E}[Y] - \frac{n^2\alpha}{\theta\alpha} = 0\\
+&\\
+\end{aligned}$$
+
+$$\begin{aligned}
+&\\
+I_X(\alpha,\theta)&=\mathbb{E}\left [\nabla_{\alpha,\theta}\mathcal{L}(x_i;\alpha,\theta)^t. \nabla_{\alpha,\theta}\mathcal{L}(x_i;\alpha,\theta)\right ]\\
+&=\begin{pmatrix}
+\mathbb{E}\left [ \left (\frac{\partial}{\partial \alpha}\mathcal{L}(x_i;\alpha,\theta)\right )^{2}\right ] & \mathbb{E}\left [ \frac{\partial}{\partial \alpha}\mathcal{L}(x_i;\alpha,\theta)\,.\,\frac{\partial}{\partial \theta}\mathcal{L}(x_i;\alpha,\theta)\right ]\\
+\mathbb{E}\left [ \frac{\partial}{\partial \theta}\mathcal{L}(x_i;\alpha,\theta)\,.\,\frac{\partial}{\partial \alpha}\mathcal{L}(x_i;\alpha,\theta)\right ] & \mathbb{E}\left [ \left (\frac{\partial}{\partial \theta}\mathcal{L}(x_i;\alpha,\theta)\right )^{2}\right ]
+\end{pmatrix}\\
+I_X(\alpha,\theta)&=\begin{pmatrix}
+n\alpha^{-2} & 0\\
+0 & n^2\alpha^2\theta^{-2}
+\end{pmatrix}
+\end{aligned}$$
+
+\newpage
+## Question 4
+Estimateurs.
+
+$\frac{\partial^2}{\partial^2 \theta}\mathcal{L}(x_i;\alpha,\theta) > 0$ donc $\mathcal{L}(x_i;\alpha,\theta)$ est convexe.  
+$\mathcal{L}(x_i;\alpha,\theta)$ est maximale pour $\hat{\theta}_{EMV} = max_{j=1}^n X_j$ car $\frac{\alpha}{\theta^\alpha}$ est décroissante.  
+$\hat{\alpha}_{EMV} = \tilde{\alpha}_{EMV}$ avec $\theta : \hat{\theta}_{EMV}$ car $\frac{\partial}{\partial \alpha}\mathcal{L}(x_i;\alpha,\theta) = \frac{\partial}{\partial \alpha}\mathcal{L}(x_i;\alpha)$. Ainsi:
+$$\hat{\theta}_{EMV} =  max_{j=1}^n X_j \qquad\qquad \hat{\alpha}_{EMV} = \frac{1}{\frac{1}{n}\sum_{i=1}^n ln\frac{\hat{\theta}_{EMV}}{X_i}}$$

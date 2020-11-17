@@ -1,0 +1,163 @@
+# Modèle bayesien
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+library(tidyverse)
+X <- read_csv("infarct.txt", col_names = FALSE, col_types = "d") %>% pull(X1)
+```
+
+```{r}
+n <- length(X)
+```
+
+
+## Question 5
+Loi de Jeffreys.
+
+$$\begin{aligned}
+\sqrt{\text{det}(I_X(\alpha,\theta))} &= \frac{n\sqrt{n}}{\theta}\\
+\pi(\alpha,\theta) &\propto \frac{1}{\theta}\\
+&\\
+L(x|\alpha,\theta)\pi(\alpha,\theta) &\propto \alpha^n\theta^{-n\alpha-1}\prod_{i=1}^n x_i^{\alpha-1}{1}_{0 \leq x_i \leq \theta}
+\end{aligned}$$
+
+Comme on a l'indicateur ${1}_{0 \leq x_i \leq \theta}$, $\theta \in [max_j X_j, +\infty[$ et $\alpha > 0$.  
+On pose $s$, $t$ et $S_{\alpha,\theta}$ tel que:
+$$\begin{aligned}
+s &= \sum_{i=1}^n ln\,x_i\\
+t &= max_j \,x_j\\
+S_{\alpha,\theta} &= \int_{\alpha,\theta} L(x|\alpha,\theta)\pi(\alpha,\theta) \,d(\alpha,\theta)\\
+&\\
+S_{\theta} &= \int_t^{+\infty} L(x|\alpha,\theta)\pi(\alpha,\theta) \,d\theta\\
+&=\alpha^n\prod_{i=1}^n x_i^{\alpha-1} \int_t^{+\infty}\theta^{-n\alpha-1}\,d\theta\\
+&=\alpha^{n-1}\prod_{i=1}^n x_i^{\alpha-1} \frac{1}{nt^{n\alpha}}\\
+S_{\theta} &= \alpha^{n-1} e^{(\alpha-1)s} \frac{1}{nt^{n\alpha}}\\
+&\\
+S_{\alpha,\theta} &= \int_0^{+\infty} S_{\theta}\,d\alpha\\
+&= \frac{1}{n} e^{-s} \int_0^{+\infty} \frac{1}{t^{n\alpha}}\alpha^{n-1} e^{\alpha s} d\alpha\\
+S_{\alpha,\theta} &= \frac{1}{n} e^{-s} \,\Gamma(n)\,(-s)^{-n}\left (1-\frac{n\,ln\,t}{s}\right )^{-n}\\
+&\\
+S_{\alpha,\theta}^{-1} &= n\,e^{\sum_{i=1}^n ln\,x_i}\,\left (\sum_{i=1}^n ln\,x_i^{-1}\right )^n \frac{\left [-\left(n\,ln\,max_j\,x_j - \sum_{i=1}^n ln\,x_i \right ) \left(\sum_{i=1}^n ln\,x_i\right )^{-1} \right ]^n}{\Gamma(n)}\\
+&= n\,\prod_{i=1}^n x_i \,\left (\sum_{i=1}^n ln\,x_i^{-1}\right )^n \frac{\left(\sum_{i=1}^n ln \frac{max_j\,x_j}{x_i}  \right)^n \,\left (\sum_{i=1}^n ln\,x_i^{-1}\right )^{-n}}{\Gamma(n)}\\
+S_{\alpha,\theta}^{-1} &= n\,\prod_{i=1}^n x_i\, \frac{\left(\sum_{i=1}^n ln \frac{max_j\,x_j}{x_i}  \right)^n}{\Gamma(n)}
+\end{aligned}$$
+
+Alors on obtient:
+$$\begin{aligned}
+\pi(\alpha,\theta|x) &= L(x|\alpha,\theta)\,\pi(\alpha,\theta)\,S_{\alpha,\theta}^{-1}\\
+&=\frac{\alpha^n}{\theta^{n\alpha+1}} \frac{\left (\prod_{i=1}^n x_i\right )^\alpha}{\prod_{i=1}^n x_i}n\,\prod_{i=1}^n x_i\, \frac{\left(\sum_{i=1}^n ln \frac{max_j\,x_j}{x_i}  \right)^n}{\Gamma(n)}{1}_{\theta \geq max_j\,x_j}\\
+\pi(\alpha,\theta|x) &=\frac{\alpha^n}{\theta^{n\alpha+1}}\, n\left (\prod_{i=1}^n x_i\right )^\alpha \frac{\left(\sum_{i=1}^n ln \frac{max_j\,x_j}{x_i}  \right)^n}{\Gamma(n)}{1}_{\theta \geq max_j\,x_j}
+\end{aligned}$$
+
+## Question 6
+Comme $ln(x)$ est strictement croissante, on a la relation:  
+$(\hat{\alpha},\hat{\theta})_{MAP}\; = \;argmax_{\alpha,\theta} \pi(\alpha,\theta|x)\; = \;argmax_{\alpha,\theta}\,ln\,\pi(\alpha,\theta|x)$.  
+
+
+$$\begin{aligned}
+ln\,\pi(\alpha,\theta|x) &= ln\,n+\alpha\sum_{i=1}^n ln\,x_i + n\,ln \left ( \sum_{i=1}^n ln\frac{max\,x}{x_i}\right )\\
+&+n\,ln\,\alpha - ln\,\Gamma{n} - n\alpha\,ln\,\theta - ln\,\theta\\
+&\\
+\frac{\partial}{\partial\alpha}ln\,\pi(\alpha,\theta|x) &= \sum_{i=1}^n ln\,x_i + \frac{n}{\alpha} - n\,ln\,\theta\\
+\frac{\partial}{\partial\theta}ln\,\pi(\alpha,\theta|x) &= -\frac{n\alpha+1}{\theta}
+&\\
+\nabla_{\alpha,\theta}ln\,\pi(\alpha,\theta|x) = 0_{\mathbb{R}^2} &\Leftrightarrow
+\begin{cases}
+\alpha &=-\frac{1}{n} \\
+\theta &= e^{-n+\frac{1}{n}\sum_{i=1}^n ln\,x_i}
+\end{cases}\\
+\end{aligned}$$
+
+Or on devrait avoir $\alpha > 0$ et $\theta \geq max_j\,x_j$ donc:
+$$\begin{aligned}
+\begin{cases}
+\sum_{i=1}^n ln\,x_i + \frac{n}{\alpha} - n\,ln\,\theta &= 0\\
+\alpha &> 0\\
+\theta &\geq max_j\,x_j
+\end{cases}&\Leftrightarrow
+\begin{cases}
+\alpha &= \frac{n}{\sum_{i=1}^n ln \frac{\theta}{x_i}}\\
+\theta &= max_j\,x_j
+\end{cases}
+&\\
+&\\
+(\hat{\alpha},\hat{\theta})_{MAP} &= \left (\frac{n}{\sum_{i=1}^n ln \frac{max_j\,x_j}{x_i}}, max_j\,x_j\right)
+\end{aligned}$$
+
+Valeurs pour le jeu de données `infarctus`.
+
+```{r}
+t <- max(X)
+a <- n/(sum(log(t/X)))
+hat <- c(a,t)
+hat
+```
+
+
+## Question 7
+
+$$\begin{aligned}
+\pi(\alpha,\theta) &\propto \frac{\alpha^3 e^{-2\alpha}}{\theta}\\
+&\\
+L(x|\alpha,\theta)\pi(\alpha,\theta) &\propto \alpha^{n+3}\theta^{-n\alpha-1}e^{-2\alpha}\prod_{i=1}^n x_i^{\alpha-1}{1}_{0 \leq x_i \leq \theta}
+\end{aligned}$$
+
+Comme à la [question 5](## Question 5), on garde les variables $s$ et $t$.
+$$\begin{aligned}
+S_{\theta} &= \alpha^{n+3} e^{-2\alpha} \prod_{i=1}^n x_i^{\alpha-1}\int_t^{+\infty}\theta^{-n\alpha-1}\,d\theta\\
+&=\alpha^{n+2}e^{-2\alpha}\prod_{i=1}^n x_i^{\alpha-1}\frac{1}{nt^{n\alpha}}\\
+S_{\theta}&=\alpha^{n+2}e^{(\alpha-1)s - 2\alpha}\frac{1}{nt^{n\alpha}}\\
+&\\
+S_{\alpha,\theta} &= \int_0^{+\infty}S_\theta\, d\alpha\\
+&=\frac{1}{n}e^{-s} \int_0^{+\infty} \frac{1}{t^{n\alpha}}\alpha^{n+2}e^{(s-2)\alpha}\,d\alpha\\
+S_{\alpha,\theta} &= \frac{1}{n}e^{-s}\,\Gamma(n+3)\,(2-s)^{n+3}\,\left(1+\frac{n\,ln\,t}{2-s} \right )^{n+3}\\
+&\\
+S_{\alpha,\theta}^{-1} &= n\,e^s\,(2-s)^{n+3}\frac{(2-s+n\,ln\,t)^{n+3}(2-s)^{-n-3}}{\Gamma(n+3)}\\
+&= n\,\prod_{i=1}^n x_i \frac{\left(2-\sum_{i=1}^n ln\,x_i-\sum_{i=1}^nln\,max_j\,x_j\right)^{n+3}}{\Gamma(n+3)}\\
+S_{\alpha,\theta}^{-1} &= n\,\prod_{i=1}^n x_i \frac{\left(2+\sum_{i=1}^n ln\frac{max_j\,x_j}{x_i}\right)^{n+3}}{\Gamma(n+3)}
+\end{aligned}$$
+
+Ainsi, on obtient:
+$$\begin{aligned}
+\pi(\alpha,\theta|x) &= L(x|\alpha,\theta)\,\pi(\alpha,\theta)\,S_{\alpha,\theta}^{-1}\\
+&=\frac{\alpha^{n+3}e^{-2\alpha}}{\theta^{n\alpha+1}} \frac{\left (\prod_{i=1}^n x_i\right )^\alpha}{\prod_{i=1}^n x_i}n\,\prod_{i=1}^n x_i\, \frac{\left(2+\sum_{i=1}^n ln \frac{max_j\,x_j}{x_i}  \right)^n}{\Gamma(n+3)}{1}_{\theta \geq max_j\,x_j}\\
+\pi(\alpha,\theta|x) &=\frac{\alpha^{n+3}e^{-2\alpha}}{\theta^{n\alpha+1}}\, n\left (\prod_{i=1}^n x_i\right )^\alpha \frac{\left(2+\sum_{i=1}^n ln \frac{max_j\,x_j}{x_i}  \right)^{n+3}}{\Gamma(n+3)}{1}_{\theta \geq max_j\,x_j}
+\end{aligned}$$
+
+## Question 8
+
+Comme à la [question 6](## Question 6), on évaluera donc uniquement la dérivée partielle par rapport à $\alpha$ et on prendra la plus petite valeur que $\theta$ peut prendre pour avoir le dénominateur minimal:
+
+$(\tilde{\alpha},\tilde{\theta})_{MAP}\; = \;argmax_{\alpha,\theta} \pi(\alpha,\theta|x)\; = \;argmax_{\alpha,\theta}\,ln\,\pi(\alpha,\theta|x)$.
+
+$$\begin{aligned}
+ln\,\pi(\alpha,\theta|x)&=ln\,n + \alpha\sum_{i=1}^n ln\,x_i + (n+3)\,ln\left ( 2+\sum_{i=1}^n ln\frac{max\,x}{x_i}\right ) +(n+3)\,ln\,\alpha -2\alpha-n\alpha\,ln\,\theta - ln\,\theta\\
+\frac{\partial}{\partial\alpha}ln\,\pi(\alpha,\theta|x)&= \sum_{i=1}^n ln\,x_i + \frac{n+3}{\alpha} - n\,ln\,\theta\,-2\\
+&\\
+&\begin{cases}
+\sum_{i=1}^n ln\,x_i + \frac{n+3}{\alpha} - n\,ln\,\theta\,-2 &= 0\\
+\alpha &> 0\\
+\theta &\geq max_j\,x_j
+\end{cases}\Leftrightarrow
+\begin{cases}
+\alpha &= \frac{n+3}{2+\sum_{i=1}^n ln \frac{\theta}{x_i}}\\
+\theta &= max_j\,x_j
+\end{cases}
+&\\
+&\\
+&(\tilde{\alpha},\tilde{\theta})_{MAP} = \left (\frac{n+3}{2+\sum_{i=1}^n ln \frac{max_j\,x_j}{x_i}}, max_j\,x_j\right)
+\end{aligned}$$
+
+```{r}
+a <- (n+3)/(2+sum(log(t/X)))
+tilde <- c(a,t)
+tilde
+```
+
+## Question 9
+
+La machine étant incapable de calculer/représenter $\Gamma(n+3)$ avec $n =$ `r cat(n)`, ~~on choisira un échantillon aléatoire parmi nos individus~~.
+
+
+
+
+## Question 10
