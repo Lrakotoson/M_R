@@ -1,7 +1,0 @@
-bookdown::gitbook:
-  config:
-    download: ["pdf"]
-bookdown::pdf_book:
-  toc: false
-  keep_tex: yes
-bookdown::epub_book: default

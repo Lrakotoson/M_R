@@ -1,9 +1,0 @@
---- 
-title: "Algorithme de Gibbs sur  ́echantillon gaussien"
-author: "Loïc Rakotoson"
-date: "2020-12-20"
-site: bookdown::bookdown_site
-documentclass: report
-geometry: "left=2cm, right=1.5cm, top=2.5cm, bottom=2.5cm"
-fontsize: 12pt
----
