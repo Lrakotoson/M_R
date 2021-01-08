@@ -1,0 +1,408 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+  12pt,
+]{scrreprt}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Infarctus à l'hôpital public},
+  pdfauthor={Loïc Rakotoson},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[left=2cm, right=1.5cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{longtable,booktabs}
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\usepackage[normalem]{ulem}
+% Avoid problems with \sout in headers with hyperref
+\pdfstringdefDisableCommands{\renewcommand{\sout}{}}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{5}
+
+\title{Infarctus à l'hôpital public}
+\author{Loïc Rakotoson}
+\date{2020-11-13}
+
+\begin{document}
+\maketitle
+
+\hypertarget{moduxe8le-paramuxe9trique}{%
+\chapter{Modèle paramétrique}\label{moduxe8le-paramuxe9trique}}
+
+\[f_X(x) = \frac{\alpha}{\theta^\alpha} x^{\alpha-1} {1}_{0 \leq x \leq \theta} \quad \forall x \in \mathbb{R} \]
+\((X_i)_{i \geq 1}\) iid de même loi que X.
+
+\hypertarget{question-1}{%
+\section{Question 1}\label{question-1}}
+
+On suppose qu'on connaît \(\theta\) et on cherche à estimer \(\alpha\).\\
+Montrer que \(Y = ln(\frac{\theta}{X}) \sim \mathcal{E}(\lambda)\).
+
+Soit \(g\) une fonction strictement décroissante et dérivable.
+
+\[\begin{aligned}
+g:&\mathbb{R}_{*}^+&\longrightarrow &\mathbb{R}\\
+&x&\longmapsto&y = ln(\frac{\theta}{x})
+\end{aligned}\]
+
+Alors on a \(g^{-1}:y\to \theta e^{-y}\) et \(\frac{\partial}{\partial y}g^{-1} = -\theta e^{-y}\).
+
+\[\begin{aligned}
+f_Y(y)&=\frac{\partial}{\partial y}\mathbb{P}[\,Y\leq y]\, = \frac{\partial}{\partial y}\mathbb{P}[\,g(X)\leq y]\,\\
+&=\frac{\partial}{\partial y}\mathbb{P}[\,g^{-1}.g(X)\geq g^{-1}(y)]\,=\frac{\partial}{\partial y} 1-F_X(g^{-1}(y))\\
+&=\left |\frac{\partial}{\partial y}g^{-1}(y)\right | f_X(g^{-1}(y)) = \alpha \frac{e^{-\alpha y+y}}{e^{y}}\\
+f_Y(y)&=\alpha e^{-\alpha y}
+\end{aligned}\]
+donc \(Y \sim \mathcal{E}(\alpha)\).
+
+\(\mathbb{E}[\,Y]\,=\frac{1}{\alpha}\) et \(\mathbb{V}[\,Y]\,=\frac{1}{\alpha^{2}}\).
+
+On peut en déduire l'information de Fisher \(I_X(\alpha)\) du modèle.
+
+\[\begin{aligned}
+\mathcal{L}(x_i;\alpha) &= ln\, L(x_i;\alpha) = n\,ln\frac{\alpha}{\theta^\alpha} + \sum_{i=1}^n ln\,x_i^{\alpha-1}\\
+&\\
+\frac{\partial}{\partial \alpha}\mathcal{L}(x_i;\alpha)&=\frac{n}{\alpha}-n\,ln\,\theta + \sum_{i=1}^n ln\,x_i\\
+&=\frac{n}{\alpha} - \sum_{i=1}^n ln\,\theta-ln\,x_i\\
+&=\frac{n}{\alpha} - \sum_{i=1}^n y_i\\
+\frac{\partial}{\partial \alpha}\mathcal{L}(x_i;\alpha)&=\frac{\partial}{\partial \alpha}\mathcal{L}(y_i;\alpha)\\
+&\\
+I_X(\alpha)&=\mathbb{V}\left [ \frac{\partial}{\partial \alpha}\mathcal{L}(x_i;\alpha)\right ]\\
+&=n\,\mathbb{V}[\,Y]\,\\
+I_X(\alpha)&=\frac{n}{\alpha^2}
+\end{aligned}\]
+
+\hypertarget{question-2}{%
+\section{Question 2}\label{question-2}}
+
+Estimateur de maximum de vraisemblance.
+
+\[\begin{aligned}
+&\frac{\partial}{\partial \alpha}\mathcal{L}(x_i;\alpha) = 0\\
+\Leftrightarrow\quad &\alpha=\frac{n}{\sum_{i=1}^n y_i}\\
+\Leftrightarrow\quad &\alpha=\frac{1}{\frac{1}{n}\sum_{i=1}^n g(x_i)}\\
+\tilde{\alpha}_{EMV} &= \frac{1}{\frac{1}{n}\sum_{i=1}^n ln\frac{\theta}{X_i}}
+\end{aligned}\]
+
+\hypertarget{question-3}{%
+\section{Question 3}\label{question-3}}
+
+On suppose à présent que \(\theta\) et \(\alpha\) sont inconnus.\\
+Information de Fisher \(I_X(\alpha,\theta)\) du modèle.\\
+Comme le support de \(f_X\) dépend de \(\theta\), on ne peut pas déduire l'information de Fisher à partir de la relation de second ordre. On utilisera donc l'espérance du carrée du premier niveau des dérivée partielle.
+
+\[\begin{aligned}
+\mathcal{L}(x_i;\alpha,\theta) &= ln\, L(x_i;\alpha,\theta) = n\,ln\frac{\alpha}{\theta^\alpha} + \sum_{i=1}^n ln\,x_i^{\alpha-1}\\
+&\\
+\frac{\partial}{\partial \alpha}\mathcal{L}(x_i;\alpha,\theta)&=\frac{n}{\alpha} - \sum_{i=1}^n y_i\\
+\frac{\partial}{\partial \theta}\mathcal{L}(x_i;\alpha,\theta)&=-\frac{n\alpha}{\theta}\\
+&\\
+&\\
+\mathbb{E}\left [ \left (\frac{\partial}{\partial \alpha}\mathcal{L}(x_i;\alpha,\theta)\right )^{2}\right ]&=\frac{n^2}{\alpha^2}+\mathbb{E}\left [ \left (\sum_{i=1}^n y_i\right )^{2}\right ] - 2\frac{n}{\alpha}\mathbb{E}\left [\sum_{i=1}^n y_i\right ]\\
+&=\frac{n^2}{\alpha^2}+\mathbb{V}\left [\sum_{i=1}^n y_i\right ] + \left ( \mathbb{E}\left [\sum_{i=1}^n y_i\right ]\right )^2 - 2\frac{n}{\alpha}\mathbb{E}\left [\sum_{i=1}^n y_i\right ]\\
+&=\frac{n^2}{\alpha^2}+n\mathbb{V}[Y] + n^2\mathbb{E}^2[Y] - 2\frac{n^2}{\alpha}\mathbb{E}[Y]\\
+\mathbb{E}\left [ \left (\frac{\partial}{\partial \alpha}\mathcal{L}(x_i;\alpha,\theta)\right )^{2}\right ]&=\frac{n}{\alpha^2}\\
+&\\
+&\\
+\mathbb{E}\left [ \left (\frac{\partial}{\partial \theta}\mathcal{L}(x_i;\alpha,\theta)\right )^{2}\right ]&=\frac{n^2\alpha^2}{\theta^2}\\
+&\\
+\mathbb{E}\left [ \frac{\partial}{\partial \alpha}\mathcal{L}(x_i;\alpha,\theta)\,.\,\frac{\partial}{\partial \theta}\mathcal{L}(x_i;\alpha,\theta)\right ]&= \frac{n^2\alpha}{\theta}\mathbb{E}[Y] - \frac{n^2\alpha}{\theta\alpha} = 0\\
+&\\
+\end{aligned}\]
+
+\[\begin{aligned}
+&\\
+I_X(\alpha,\theta)&=\mathbb{E}\left [\nabla_{\alpha,\theta}\mathcal{L}(x_i;\alpha,\theta)^t. \nabla_{\alpha,\theta}\mathcal{L}(x_i;\alpha,\theta)\right ]\\
+&=\begin{pmatrix}
+\mathbb{E}\left [ \left (\frac{\partial}{\partial \alpha}\mathcal{L}(x_i;\alpha,\theta)\right )^{2}\right ] & \mathbb{E}\left [ \frac{\partial}{\partial \alpha}\mathcal{L}(x_i;\alpha,\theta)\,.\,\frac{\partial}{\partial \theta}\mathcal{L}(x_i;\alpha,\theta)\right ]\\
+\mathbb{E}\left [ \frac{\partial}{\partial \theta}\mathcal{L}(x_i;\alpha,\theta)\,.\,\frac{\partial}{\partial \alpha}\mathcal{L}(x_i;\alpha,\theta)\right ] & \mathbb{E}\left [ \left (\frac{\partial}{\partial \theta}\mathcal{L}(x_i;\alpha,\theta)\right )^{2}\right ]
+\end{pmatrix}\\
+I_X(\alpha,\theta)&=\begin{pmatrix}
+n\alpha^{-2} & 0\\
+0 & n^2\alpha^2\theta^{-2}
+\end{pmatrix}
+\end{aligned}\]
+
+\newpage
+
+\hypertarget{question-4}{%
+\section{Question 4}\label{question-4}}
+
+Estimateurs.
+
+\(\frac{\partial^2}{\partial^2 \theta}\mathcal{L}(x_i;\alpha,\theta) > 0\) donc \(\mathcal{L}(x_i;\alpha,\theta)\) est convexe.\\
+\(\mathcal{L}(x_i;\alpha,\theta)\) est maximale pour \(\hat{\theta}_{EMV} = max_{j=1}^n X_j\) car \(\frac{\alpha}{\theta^\alpha}\) est décroissante.\\
+\(\hat{\alpha}_{EMV} = \tilde{\alpha}_{EMV}\) avec \(\theta : \hat{\theta}_{EMV}\) car \(\frac{\partial}{\partial \alpha}\mathcal{L}(x_i;\alpha,\theta) = \frac{\partial}{\partial \alpha}\mathcal{L}(x_i;\alpha)\). Ainsi:
+\[\hat{\theta}_{EMV} =  max_{j=1}^n X_j \qquad\qquad \hat{\alpha}_{EMV} = \frac{1}{\frac{1}{n}\sum_{i=1}^n ln\frac{\hat{\theta}_{EMV}}{X_i}}\]
+
+\hypertarget{moduxe8le-bayesien}{%
+\chapter{Modèle bayesien}\label{moduxe8le-bayesien}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{n <-}\StringTok{ }\KeywordTok{length}\NormalTok{(X)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{question-5}{%
+\section{Question 5}\label{question-5}}
+
+Loi de Jeffreys.
+
+\[\begin{aligned}
+\sqrt{\text{det}(I_X(\alpha,\theta))} &= \frac{n\sqrt{n}}{\theta}\\
+\pi(\alpha,\theta) &\propto \frac{1}{\theta}\\
+&\\
+L(x|\alpha,\theta)\pi(\alpha,\theta) &\propto \alpha^n\theta^{-n\alpha-1}\prod_{i=1}^n x_i^{\alpha-1}{1}_{0 \leq x_i \leq \theta}
+\end{aligned}\]
+
+Comme on a l'indicateur \({1}_{0 \leq x_i \leq \theta}\), \(\theta \in [max_j X_j, +\infty[\) et \(\alpha > 0\).\\
+On pose \(s\), \(t\) et \(S_{\alpha,\theta}\) tel que:
+\[\begin{aligned}
+s &= \sum_{i=1}^n ln\,x_i\\
+t &= max_j \,x_j\\
+S_{\alpha,\theta} &= \int_{\alpha,\theta} L(x|\alpha,\theta)\pi(\alpha,\theta) \,d(\alpha,\theta)\\
+&\\
+S_{\theta} &= \int_t^{+\infty} L(x|\alpha,\theta)\pi(\alpha,\theta) \,d\theta\\
+&=\alpha^n\prod_{i=1}^n x_i^{\alpha-1} \int_t^{+\infty}\theta^{-n\alpha-1}\,d\theta\\
+&=\alpha^{n-1}\prod_{i=1}^n x_i^{\alpha-1} \frac{1}{nt^{n\alpha}}\\
+S_{\theta} &= \alpha^{n-1} e^{(\alpha-1)s} \frac{1}{nt^{n\alpha}}\\
+&\\
+S_{\alpha,\theta} &= \int_0^{+\infty} S_{\theta}\,d\alpha\\
+&= \frac{1}{n} e^{-s} \int_0^{+\infty} \frac{1}{t^{n\alpha}}\alpha^{n-1} e^{\alpha s} d\alpha\\
+S_{\alpha,\theta} &= \frac{1}{n} e^{-s} \,\Gamma(n)\,(-s)^{-n}\left (1-\frac{n\,ln\,t}{s}\right )^{-n}\\
+&\\
+S_{\alpha,\theta}^{-1} &= n\,e^{\sum_{i=1}^n ln\,x_i}\,\left (\sum_{i=1}^n ln\,x_i^{-1}\right )^n \frac{\left [-\left(n\,ln\,max_j\,x_j - \sum_{i=1}^n ln\,x_i \right ) \left(\sum_{i=1}^n ln\,x_i\right )^{-1} \right ]^n}{\Gamma(n)}\\
+&= n\,\prod_{i=1}^n x_i \,\left (\sum_{i=1}^n ln\,x_i^{-1}\right )^n \frac{\left(\sum_{i=1}^n ln \frac{max_j\,x_j}{x_i}  \right)^n \,\left (\sum_{i=1}^n ln\,x_i^{-1}\right )^{-n}}{\Gamma(n)}\\
+S_{\alpha,\theta}^{-1} &= n\,\prod_{i=1}^n x_i\, \frac{\left(\sum_{i=1}^n ln \frac{max_j\,x_j}{x_i}  \right)^n}{\Gamma(n)}
+\end{aligned}\]
+
+Alors on obtient:
+\[\begin{aligned}
+\pi(\alpha,\theta|x) &= L(x|\alpha,\theta)\,\pi(\alpha,\theta)\,S_{\alpha,\theta}^{-1}\\
+&=\frac{\alpha^n}{\theta^{n\alpha+1}} \frac{\left (\prod_{i=1}^n x_i\right )^\alpha}{\prod_{i=1}^n x_i}n\,\prod_{i=1}^n x_i\, \frac{\left(\sum_{i=1}^n ln \frac{max_j\,x_j}{x_i}  \right)^n}{\Gamma(n)}{1}_{\theta \geq max_j\,x_j}\\
+\pi(\alpha,\theta|x) &=\frac{\alpha^n}{\theta^{n\alpha+1}}\, n\left (\prod_{i=1}^n x_i\right )^\alpha \frac{\left(\sum_{i=1}^n ln \frac{max_j\,x_j}{x_i}  \right)^n}{\Gamma(n)}{1}_{\theta \geq max_j\,x_j}
+\end{aligned}\]
+
+\hypertarget{question-6}{%
+\section{Question 6}\label{question-6}}
+
+Comme \(ln(x)\) est strictement croissante, on a la relation:\\
+\((\hat{\alpha},\hat{\theta})_{MAP}\; = \;argmax_{\alpha,\theta} \pi(\alpha,\theta|x)\; = \;argmax_{\alpha,\theta}\,ln\,\pi(\alpha,\theta|x)\).
+
+\[\begin{aligned}
+ln\,\pi(\alpha,\theta|x) &= ln\,n+\alpha\sum_{i=1}^n ln\,x_i + n\,ln \left ( \sum_{i=1}^n ln\frac{max\,x}{x_i}\right )\\
+&+n\,ln\,\alpha - ln\,\Gamma{n} - n\alpha\,ln\,\theta - ln\,\theta\\
+&\\
+\frac{\partial}{\partial\alpha}ln\,\pi(\alpha,\theta|x) &= \sum_{i=1}^n ln\,x_i + \frac{n}{\alpha} - n\,ln\,\theta\\
+\frac{\partial}{\partial\theta}ln\,\pi(\alpha,\theta|x) &= -\frac{n\alpha+1}{\theta}
+&\\
+\nabla_{\alpha,\theta}ln\,\pi(\alpha,\theta|x) = 0_{\mathbb{R}^2} &\Leftrightarrow
+\begin{cases}
+\alpha &=-\frac{1}{n} \\
+\theta &= e^{-n+\frac{1}{n}\sum_{i=1}^n ln\,x_i}
+\end{cases}\\
+\end{aligned}\]
+
+Or on devrait avoir \(\alpha > 0\) et \(\theta \geq max_j\,x_j\) donc:
+\[\begin{aligned}
+\begin{cases}
+\sum_{i=1}^n ln\,x_i + \frac{n}{\alpha} - n\,ln\,\theta &= 0\\
+\alpha &> 0\\
+\theta &\geq max_j\,x_j
+\end{cases}&\Leftrightarrow
+\begin{cases}
+\alpha &= \frac{n}{\sum_{i=1}^n ln \frac{\theta}{x_i}}\\
+\theta &= max_j\,x_j
+\end{cases}
+&\\
+&\\
+(\hat{\alpha},\hat{\theta})_{MAP} &= \left (\frac{n}{\sum_{i=1}^n ln \frac{max_j\,x_j}{x_i}}, max_j\,x_j\right)
+\end{aligned}\]
+
+Valeurs pour le jeu de données \texttt{infarctus}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{t <-}\StringTok{ }\KeywordTok{max}\NormalTok{(X)}
+\NormalTok{a <-}\StringTok{ }\NormalTok{n}\OperatorTok{/}\NormalTok{(}\KeywordTok{sum}\NormalTok{(}\KeywordTok{log}\NormalTok{(t}\OperatorTok{/}\NormalTok{X)))}
+\NormalTok{hat <-}\StringTok{ }\KeywordTok{c}\NormalTok{(a,t)}
+\NormalTok{hat}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1]  2.370016 99.810744
+\end{verbatim}
+
+\hypertarget{question-7}{%
+\section{Question 7}\label{question-7}}
+
+\[\begin{aligned}
+\pi(\alpha,\theta) &\propto \frac{\alpha^3 e^{-2\alpha}}{\theta}\\
+&\\
+L(x|\alpha,\theta)\pi(\alpha,\theta) &\propto \alpha^{n+3}\theta^{-n\alpha-1}e^{-2\alpha}\prod_{i=1}^n x_i^{\alpha-1}{1}_{0 \leq x_i \leq \theta}
+\end{aligned}\]
+
+Comme à la \protect\hyperlink{ux5cux23ux5cux2520Questionux5cux25205}{question 5}, on garde les variables \(s\) et \(t\).
+\[\begin{aligned}
+S_{\theta} &= \alpha^{n+3} e^{-2\alpha} \prod_{i=1}^n x_i^{\alpha-1}\int_t^{+\infty}\theta^{-n\alpha-1}\,d\theta\\
+&=\alpha^{n+2}e^{-2\alpha}\prod_{i=1}^n x_i^{\alpha-1}\frac{1}{nt^{n\alpha}}\\
+S_{\theta}&=\alpha^{n+2}e^{(\alpha-1)s - 2\alpha}\frac{1}{nt^{n\alpha}}\\
+&\\
+S_{\alpha,\theta} &= \int_0^{+\infty}S_\theta\, d\alpha\\
+&=\frac{1}{n}e^{-s} \int_0^{+\infty} \frac{1}{t^{n\alpha}}\alpha^{n+2}e^{(s-2)\alpha}\,d\alpha\\
+S_{\alpha,\theta} &= \frac{1}{n}e^{-s}\,\Gamma(n+3)\,(2-s)^{n+3}\,\left(1+\frac{n\,ln\,t}{2-s} \right )^{n+3}\\
+&\\
+S_{\alpha,\theta}^{-1} &= n\,e^s\,(2-s)^{n+3}\frac{(2-s+n\,ln\,t)^{n+3}(2-s)^{-n-3}}{\Gamma(n+3)}\\
+&= n\,\prod_{i=1}^n x_i \frac{\left(2-\sum_{i=1}^n ln\,x_i-\sum_{i=1}^nln\,max_j\,x_j\right)^{n+3}}{\Gamma(n+3)}\\
+S_{\alpha,\theta}^{-1} &= n\,\prod_{i=1}^n x_i \frac{\left(2+\sum_{i=1}^n ln\frac{max_j\,x_j}{x_i}\right)^{n+3}}{\Gamma(n+3)}
+\end{aligned}\]
+
+Ainsi, on obtient:
+\[\begin{aligned}
+\pi(\alpha,\theta|x) &= L(x|\alpha,\theta)\,\pi(\alpha,\theta)\,S_{\alpha,\theta}^{-1}\\
+&=\frac{\alpha^{n+3}e^{-2\alpha}}{\theta^{n\alpha+1}} \frac{\left (\prod_{i=1}^n x_i\right )^\alpha}{\prod_{i=1}^n x_i}n\,\prod_{i=1}^n x_i\, \frac{\left(2+\sum_{i=1}^n ln \frac{max_j\,x_j}{x_i}  \right)^n}{\Gamma(n+3)}{1}_{\theta \geq max_j\,x_j}\\
+\pi(\alpha,\theta|x) &=\frac{\alpha^{n+3}e^{-2\alpha}}{\theta^{n\alpha+1}}\, n\left (\prod_{i=1}^n x_i\right )^\alpha \frac{\left(2+\sum_{i=1}^n ln \frac{max_j\,x_j}{x_i}  \right)^{n+3}}{\Gamma(n+3)}{1}_{\theta \geq max_j\,x_j}
+\end{aligned}\]
+
+\hypertarget{question-8}{%
+\section{Question 8}\label{question-8}}
+
+Comme à la \protect\hyperlink{ux5cux23ux5cux2520Questionux5cux25206}{question 6}, on évaluera donc uniquement la dérivée partielle par rapport à \(\alpha\) et on prendra la plus petite valeur que \(\theta\) peut prendre pour avoir le dénominateur minimal:
+
+\((\tilde{\alpha},\tilde{\theta})_{MAP}\; = \;argmax_{\alpha,\theta} \pi(\alpha,\theta|x)\; = \;argmax_{\alpha,\theta}\,ln\,\pi(\alpha,\theta|x)\).
+
+\[\begin{aligned}
+ln\,\pi(\alpha,\theta|x)&=ln\,n + \alpha\sum_{i=1}^n ln\,x_i + (n+3)\,ln\left ( 2+\sum_{i=1}^n ln\frac{max\,x}{x_i}\right ) +(n+3)\,ln\,\alpha -2\alpha-n\alpha\,ln\,\theta - ln\,\theta\\
+\frac{\partial}{\partial\alpha}ln\,\pi(\alpha,\theta|x)&= \sum_{i=1}^n ln\,x_i + \frac{n+3}{\alpha} - n\,ln\,\theta\,-2\\
+&\\
+&\begin{cases}
+\sum_{i=1}^n ln\,x_i + \frac{n+3}{\alpha} - n\,ln\,\theta\,-2 &= 0\\
+\alpha &> 0\\
+\theta &\geq max_j\,x_j
+\end{cases}\Leftrightarrow
+\begin{cases}
+\alpha &= \frac{n+3}{2+\sum_{i=1}^n ln \frac{\theta}{x_i}}\\
+\theta &= max_j\,x_j
+\end{cases}
+&\\
+&\\
+&(\tilde{\alpha},\tilde{\theta})_{MAP} = \left (\frac{n+3}{2+\sum_{i=1}^n ln \frac{max_j\,x_j}{x_i}}, max_j\,x_j\right)
+\end{aligned}\]
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{a <-}\StringTok{ }\NormalTok{(n}\OperatorTok{+}\DecValTok{3}\NormalTok{)}\OperatorTok{/}\NormalTok{(}\DecValTok{2}\OperatorTok{+}\KeywordTok{sum}\NormalTok{(}\KeywordTok{log}\NormalTok{(t}\OperatorTok{/}\NormalTok{X)))}
+\NormalTok{tilde <-}\StringTok{ }\KeywordTok{c}\NormalTok{(a,t)}
+\NormalTok{tilde}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1]  2.361845 99.810744
+\end{verbatim}
+
+\hypertarget{question-9}{%
+\section{Question 9}\label{question-9}}
+
+La machine étant incapable de calculer/représenter \(\Gamma(n+3)\) avec \(n =\) , \sout{on choisira un échantillon aléatoire parmi nos individus}.
+
+\hypertarget{question-10}{%
+\section{Question 10}\label{question-10}}
+
+\end{document}

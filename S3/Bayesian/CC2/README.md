@@ -1,0 +1,1 @@
+Algorithme de Gibbs sur  ́echantillon gaussien
