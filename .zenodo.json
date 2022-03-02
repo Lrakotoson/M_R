@@ -24,13 +24,9 @@
             "scheme": "doi",
             "identifier": "10.48550/arXiv.2111.05808",
             "relation": "isSupplementTo",
-            "resource_type": "conference-paper"
+            "resource_type": "publication-article"
         }
     ],
 
-    "keywords": ["NLP", "BERT", "Bagging", "Ensemble Learning", "Topic Classification"],
-
-    "communities": [
-        {"identifier": "biocreative"}
-    ]
+    "keywords": ["NLP", "BERT", "Bagging", "Ensemble Learning", "Topic Classification"]
 }
