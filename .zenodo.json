@@ -1,0 +1,36 @@
+{
+    "creators": [
+        {
+            "orcid": "0000-0002-1825-0097",
+            "affiliation": "Feline reasearch institute",
+            "name": "Field, Gar"
+        },
+        {
+            "orcid": "0000-0002-1825-0097",
+            "affiliation": "Feline reasearch institute",
+            "name": "Cat, Felix"
+        }
+    ],
+
+    "title": "BagBERT: BERT-based bagging-stacking for multi-topic classification",
+    "description": "Code implementation of BagBERT: BERT-based bagging-stacking",
+
+    "conference_title": "BioCreative",
+    "conference_session": "VII",
+    "conference_dates": "November 8-10, 2021",
+
+    "related_identifiers": [
+        {
+            "scheme": "doi",
+            "identifier": "10.48550/arXiv.2111.05808",
+            "relation": "isSupplementTo",
+            "resource_type": "conference-paper"
+        }
+    ],
+
+    "keywords": ["NLP", "BERT", "Bagging", "Ensemble Learning", "Topic Classification"],
+
+    "communities": [
+        {"identifier": "biocreative"}
+    ]
+}
